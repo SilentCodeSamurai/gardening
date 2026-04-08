@@ -50,7 +50,7 @@ export function useSpeciesCategoryCreateMutation() {
 					);
 				}
 				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m["collections.speciesCategory.actionError"]());
+				toast.error(m.collections_speciesCategory_actionError());
 			},
 			onSuccess: (entity, _vars, ctx) => {
 				if (ctx?.pendingId) {
@@ -70,7 +70,7 @@ export function useSpeciesCategoryCreateMutation() {
 					);
 				}
 				queryClient.setQueryData(queryKeys.speciesCategory.detail(entity.id).queryKey, entity);
-				toast.success(m["collections.speciesCategory.createSuccess"]());
+				toast.success(m.collections_speciesCategory_createSuccess());
 			},
 		}),
 	);
@@ -113,7 +113,7 @@ export function useSpeciesCategoryUpdateMutation() {
 				void variables;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
 				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m["collections.speciesCategory.actionError"]());
+				toast.error(m.collections_speciesCategory_actionError());
 			},
 			onSuccess: (entity) => {
 				queryClient.setQueryData<ItemsContainer<SpeciesCategoryEntity>>(
@@ -121,7 +121,7 @@ export function useSpeciesCategoryUpdateMutation() {
 					(prev) => upsertInItemsContainer(prev, entity),
 				);
 				queryClient.setQueryData(queryKeys.speciesCategory.detail(entity.id).queryKey, entity);
-				toast.success(m["collections.speciesCategory.updateSuccess"]());
+				toast.success(m.collections_speciesCategory_updateSuccess());
 			},
 		}),
 	);
@@ -150,7 +150,7 @@ export function useSpeciesCategoryDeleteMutation() {
 				void variables;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
 				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m["collections.speciesCategory.actionError"]());
+				toast.error(m.collections_speciesCategory_actionError());
 			},
 			onSuccess: (deletedId) => {
 				queryClient.setQueryData<ItemsContainer<SpeciesCategoryEntity>>(
@@ -158,7 +158,7 @@ export function useSpeciesCategoryDeleteMutation() {
 					(prev) => dropPendingInItemsContainer(prev, deletedId),
 				);
 				queryClient.setQueryData(queryKeys.speciesCategory.detail(deletedId).queryKey, undefined);
-				toast.success(m["collections.speciesCategory.deleteSuccess"]());
+				toast.success(m.collections_speciesCategory_deleteSuccess());
 			},
 		}),
 	);

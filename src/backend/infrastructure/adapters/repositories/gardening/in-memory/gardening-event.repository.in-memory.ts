@@ -1,5 +1,4 @@
 import type {
-	GardeningEventRepositoryPort,
 	GardeningEventRepositoryBindToLocationInputDTO,
 	GardeningEventRepositoryBindToLocationOutputDTO,
 	GardeningEventRepositoryBindToPlantInputDTO,
@@ -9,14 +8,15 @@ import type {
 	GardeningEventRepositoryDeleteInputDTO,
 	GardeningEventRepositoryDeleteOutputDTO,
 	GardeningEventRepositoryGetAllOutputDTO,
+	GardeningEventRepositoryGetBindingsForEventInputDTO,
+	GardeningEventRepositoryGetBindingsForEventOutputDTO,
 	GardeningEventRepositoryGetByIdInputDTO,
 	GardeningEventRepositoryGetByIdOutputDTO,
 	GardeningEventRepositoryGetForLocationInputDTO,
 	GardeningEventRepositoryGetForLocationOutputDTO,
 	GardeningEventRepositoryGetForPlantInputDTO,
 	GardeningEventRepositoryGetForPlantOutputDTO,
-	GardeningEventRepositoryGetBindingsForEventInputDTO,
-	GardeningEventRepositoryGetBindingsForEventOutputDTO,
+	GardeningEventRepositoryPort,
 	GardeningEventRepositoryUpdateInputDTO,
 	GardeningEventRepositoryUpdateOutputDTO,
 } from "@backend/core/application/ports/repositories/gardening/gardening-event.repository.port";

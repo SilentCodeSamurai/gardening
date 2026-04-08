@@ -1,10 +1,15 @@
-import { useEffect, useMemo } from "react";
+import type { CultivarEntityId } from "@backend/core/domain/gardening/entities";
+import type { SpatialNodeEntityId } from "@backend/core/domain/spatial/entities";
 import { useStore } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
-
+import { useEffect, useMemo } from "react";
 import { SELECT_NONE } from "@/components/form/select-sentinel";
+import type { SpatialGeometry } from "@/components/spatial-layout-editor";
+import {
+	allocateNumberedLabelsForNewSiblings,
+	duplicateNumberingStem,
+} from "@/components/spatial-layout-editor/spatial-layout-editor.naming";
 import { Button } from "@/components/ui/button";
-import * as m from "@/paraglide/messages.js";
 import {
 	Dialog,
 	DialogContent,
@@ -13,15 +18,9 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import type { CultivarEntityId } from "@backend/core/domain/gardening/entities";
-import type { SpatialNodeEntityId } from "@backend/core/domain/spatial/entities";
 import { useAppForm } from "@/hooks/form";
+import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
-import type { SpatialGeometry } from "@/components/spatial-layout-editor";
-import {
-	allocateNumberedLabelsForNewSiblings,
-	duplicateNumberingStem,
-} from "@/components/spatial-layout-editor/spatial-layout-editor.naming";
 import { usePlantCreateManyMutation, useSpatialNodeCreateMutation } from "@/store/mutations";
 
 type LayoutDraft = {
@@ -79,11 +78,11 @@ export function PlantCreateManyDialog({
 		() => [
 			{
 				value: "preview" as const,
-				label: m["components.locationLayoutEditor.createManyNameModePreview"](),
+				label: m.components_locationLayoutEditor_createManyNameModePreview(),
 			},
 			{
 				value: "customStem" as const,
-				label: m["components.locationLayoutEditor.createManyNameModeCustomStem"](),
+				label: m.components_locationLayoutEditor_createManyNameModeCustomStem(),
 			},
 		],
 		[],
@@ -157,9 +156,9 @@ export function PlantCreateManyDialog({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>{m["components.locationLayoutEditor.createManyPlantsTitle"]()}</DialogTitle>
+					<DialogTitle>{m.components_locationLayoutEditor_createManyPlantsTitle()}</DialogTitle>
 					<DialogDescription className="sr-only">
-						{m["components.locationLayoutEditor.createManyPlantsTitle"]()}
+						{m.components_locationLayoutEditor_createManyPlantsTitle()}
 					</DialogDescription>
 				</DialogHeader>
 				<form.AppForm>
@@ -177,14 +176,14 @@ export function PlantCreateManyDialog({
 							name="cultivarId"
 							validators={{
 								onSubmit: ({ value }) =>
-									!value || value === SELECT_NONE ? m["fields.selectRequired"]() : undefined,
+									!value || value === SELECT_NONE ? m.fields_selectRequired() : undefined,
 							}}
 						>
 							{(field) => (
 								<field.CatalogCombobox
-									label={m["collections.cultivar.title"]()}
-									placeholder={m["fields.selectPlaceholder"]()}
-									emptyLabel={m["filtering.comboboxEmpty"]()}
+									label={m.collections_cultivar_title()}
+									placeholder={m.fields_selectPlaceholder()}
+									emptyLabel={m.filtering_comboboxEmpty()}
 									values={cultivarOptions}
 								/>
 							)}
@@ -192,7 +191,7 @@ export function PlantCreateManyDialog({
 						<form.AppField name="nameMode">
 							{(field) => (
 								<field.Select
-									label={m["components.locationLayoutEditor.createManyNamesLabel"]()}
+									label={m.components_locationLayoutEditor_createManyNamesLabel()}
 									values={nameModeOptions}
 								/>
 							)}
@@ -201,27 +200,22 @@ export function PlantCreateManyDialog({
 							<form.AppField name="customStem">
 								{(field) => (
 									<field.TextField
-										label={m["components.locationLayoutEditor.createManyCustomStemLabel"]()}
-										placeholder={m[
-											"components.locationLayoutEditor.createManyCustomStemPlaceholder"
-										]()}
+										label={m.components_locationLayoutEditor_createManyCustomStemLabel()}
+										placeholder={m.components_locationLayoutEditor_createManyCustomStemPlaceholder()}
 									/>
 								)}
 							</form.AppField>
 						) : null}
 						<form.AppField name="description">
 							{(field) => (
-								<field.TextField
-									label={m["fields.description"]()}
-									placeholder={m["fields.description"]()}
-								/>
+								<field.TextField label={m.fields_description()} placeholder={m.fields_description()} />
 							)}
 						</form.AppField>
 						<DialogFooter>
 							<Button type="button" variant="outline" onClick={close}>
-								{m["common.cancel"]()}
+								{m.common_cancel()}
 							</Button>
-							<form.SubscribeButton label={m["common.create"]()} />
+							<form.SubscribeButton label={m.common_create()} />
 						</DialogFooter>
 					</form>
 				</form.AppForm>

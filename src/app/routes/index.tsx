@@ -16,24 +16,24 @@ function HubPage() {
 	return (
 		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
 			<PageHeading>
-				<h1 className="font-heading font-medium text-xl">{m["components.hub.title"]()}</h1>
+				<h1 className="font-heading font-medium text-xl">{m.components_hub_title()}</h1>
 			</PageHeading>
 			<PageContent className="flex flex-col gap-6 overflow-y-auto pb-6">
-				<p className="max-w-prose text-muted-foreground text-sm">{m["components.hub.intro"]()}</p>
+				<p className="max-w-prose text-muted-foreground text-sm">{m.components_hub_intro()}</p>
 				<ul className="grid gap-3 sm:grid-cols-2">
 					<li>
 						<Link to="/catalog/species" search={{ category: "" }} className={cn(cardClass)}>
-							{m["components.hub.catalogLinkPrefix"]()} {m["collections.species.titlePlural"]()}
+							{m.components_hub_catalogLinkPrefix()} {m.collections_species_titlePlural()}
 						</Link>
 					</li>
 					<li>
 						<Link to="/catalog/species-categories" className={cn(cardClass)}>
-							{m["components.hub.catalogLinkPrefix"]()} {m["collections.speciesCategory.titlePlural"]()}
+							{m.components_hub_catalogLinkPrefix()} {m.collections_speciesCategory_titlePlural()}
 						</Link>
 					</li>
 					<li>
 						<Link to="/catalog/cultivars" search={{ category: "", species: "" }} className={cn(cardClass)}>
-							{m["components.hub.catalogLinkPrefix"]()} {m["collections.cultivar.titlePlural"]()}
+							{m.components_hub_catalogLinkPrefix()} {m.collections_cultivar_titlePlural()}
 						</Link>
 					</li>
 					<li>
@@ -42,17 +42,17 @@ function HubPage() {
 							search={{ category: "", species: "", cultivar: "" }}
 							className={cn(cardClass)}
 						>
-							{m["collections.plant.titlePlural"]()}
+							{m.collections_plant_titlePlural()}
 						</Link>
 					</li>
 					<li>
 						<Link to="/locations" className={cn(cardClass)}>
-							{m["collections.location.titlePlural"]()}
+							{m.collections_location_titlePlural()}
 						</Link>
 					</li>
 					<li>
 						<Link to="/gardening-events" className={cn(cardClass)}>
-							{m["collections.gardeningEvent.titlePlural"]()}
+							{m.collections_gardeningEvent_titlePlural()}
 						</Link>
 					</li>
 				</ul>

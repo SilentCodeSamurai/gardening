@@ -44,7 +44,7 @@ export function useSpeciesCreateMutation() {
 				if (!ctx) return;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
 				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m["collections.species.actionError"]());
+				toast.error(m.collections_species_actionError());
 			},
 			onSuccess: (entity, _vars, ctx) => {
 				if (ctx?.pendingId) {
@@ -59,7 +59,7 @@ export function useSpeciesCreateMutation() {
 					);
 				}
 				queryClient.setQueryData(queryKeys.species.detail(entity.id).queryKey, entity);
-				toast.success(m["collections.species.createSuccess"]());
+				toast.success(m.collections_species_createSuccess());
 			},
 		}),
 	);
@@ -102,7 +102,7 @@ export function useSpeciesUpdateMutation() {
 				void variables;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
 				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m["collections.species.actionError"]());
+				toast.error(m.collections_species_actionError());
 			},
 			onSuccess: (entity) => {
 				queryClient.setQueryData<ItemsContainer<SpeciesEntity>>(queryKeys.species.all.queryKey, (prev) =>
@@ -126,7 +126,7 @@ export function useSpeciesUpdateMutation() {
 						),
 					};
 				});
-				toast.success(m["collections.species.updateSuccess"]());
+				toast.success(m.collections_species_updateSuccess());
 			},
 		}),
 	);
@@ -154,14 +154,14 @@ export function useSpeciesDeleteMutation() {
 				void variables;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
 				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m["collections.species.actionError"]());
+				toast.error(m.collections_species_actionError());
 			},
 			onSuccess: (deletedId) => {
 				queryClient.setQueryData<ItemsContainer<SpeciesEntity>>(queryKeys.species.all.queryKey, (prev) =>
 					dropPendingInItemsContainer(prev, deletedId),
 				);
 				queryClient.setQueryData(queryKeys.species.detail(deletedId).queryKey, undefined);
-				toast.success(m["collections.species.deleteSuccess"]());
+				toast.success(m.collections_species_deleteSuccess());
 			},
 		}),
 	);

@@ -56,7 +56,7 @@ export function useCultivarCreateMutation() {
 				if (!ctx) return;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
 				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m["collections.cultivar.actionError"]());
+				toast.error(m.collections_cultivar_actionError());
 			},
 			onSuccess: async (entity, _vars, ctx) => {
 				if (ctx?.pendingId) {
@@ -74,7 +74,7 @@ export function useCultivarCreateMutation() {
 				}
 				queryClient.setQueryData(queryKeys.cultivar.detail(entity.id).queryKey, entity);
 				await refreshCultivarFullByIdIfCached(queryClient, entity.id);
-				toast.success(m["collections.cultivar.createSuccess"]());
+				toast.success(m.collections_cultivar_createSuccess());
 			},
 		}),
 	);
@@ -117,7 +117,7 @@ export function useCultivarUpdateMutation() {
 				void variables;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
 				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m["collections.cultivar.actionError"]());
+				toast.error(m.collections_cultivar_actionError());
 			},
 			onSuccess: async (entity) => {
 				queryClient.setQueryData<ItemsContainer<CultivarEntity>>(queryKeys.cultivar.all.queryKey, (prev) =>
@@ -148,7 +148,7 @@ export function useCultivarUpdateMutation() {
 					};
 				});
 				await refreshCultivarFullByIdIfCached(queryClient, entity.id);
-				toast.success(m["collections.cultivar.updateSuccess"]());
+				toast.success(m.collections_cultivar_updateSuccess());
 			},
 		}),
 	);
@@ -177,7 +177,7 @@ export function useCultivarDeleteMutation() {
 				void variables;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
 				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m["collections.cultivar.actionError"]());
+				toast.error(m.collections_cultivar_actionError());
 			},
 			onSuccess: (deletedId) => {
 				queryClient.setQueryData<ItemsContainer<CultivarEntity>>(queryKeys.cultivar.all.queryKey, (prev) =>
@@ -185,7 +185,7 @@ export function useCultivarDeleteMutation() {
 				);
 				queryClient.setQueryData(queryKeys.cultivar.detail(deletedId).queryKey, undefined);
 				queryClient.setQueryData(queryKeys.cultivar.fullById(deletedId).queryKey, undefined);
-				toast.success(m["collections.cultivar.deleteSuccess"]());
+				toast.success(m.collections_cultivar_deleteSuccess());
 			},
 		}),
 	);

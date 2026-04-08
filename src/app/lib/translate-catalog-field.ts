@@ -7,6 +7,7 @@ import * as m from "@/paraglide/messages.js";
 export function translateCatalogField(stored: string | null, isDefault: boolean): string | null {
 	if (stored == null) return null;
 	if (!isDefault) return stored;
-	const fn = (m as Record<string, unknown>)[stored];
+	const table = m as Record<string, unknown>;
+	const fn = table[stored] ?? table[stored.replaceAll(".", "_")];
 	return typeof fn === "function" ? (fn as () => string)() : stored;
 }

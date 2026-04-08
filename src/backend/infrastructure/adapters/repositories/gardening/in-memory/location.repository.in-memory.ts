@@ -1,5 +1,4 @@
 import type {
-	LocationRepositoryPort,
 	LocationRepositoryCreateInputDTO,
 	LocationRepositoryCreateOutputDTO,
 	LocationRepositoryDeleteInputDTO,
@@ -9,6 +8,7 @@ import type {
 	LocationRepositoryGetAllOutputDTO,
 	LocationRepositoryGetByIdInputDTO,
 	LocationRepositoryGetByIdOutputDTO,
+	LocationRepositoryPort,
 	LocationRepositoryUpdateInputDTO,
 	LocationRepositoryUpdateOutputDTO,
 } from "@backend/core/application/ports/repositories/gardening/location.repository.port";

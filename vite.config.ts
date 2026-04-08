@@ -33,6 +33,9 @@ const config = defineConfig({
 			start: {
 				entry: "app/start.ts",
 			},
+			server: {
+				entry: "app/server.ts",
+			},
 			router: {
 				routesDirectory: "app/routes",
 				entry: "app/router.tsx",

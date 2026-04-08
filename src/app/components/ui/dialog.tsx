@@ -79,11 +79,11 @@ function DialogContent({
 							<DialogPrimitive.Close data-slot="dialog-close" asChild>
 								<Button variant="ghost" className="absolute top-2 right-2" size="icon-sm">
 									<XIcon />
-									<span className="sr-only">{m["common.close"]()}</span>
+									<span className="sr-only">{m.common_close()}</span>
 								</Button>
 							</DialogPrimitive.Close>
 						</TooltipTrigger>
-						<TooltipContent side="left">{m["common.close"]()}</TooltipContent>
+						<TooltipContent side="left">{m.common_close()}</TooltipContent>
 					</Tooltip>
 				)}
 			</DialogPrimitive.Content>

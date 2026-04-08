@@ -1,9 +1,13 @@
-import { useEffect, useMemo } from "react";
+import type { SpatialNodeEntityId } from "@backend/core/domain/spatial/entities";
 import { useStore } from "@tanstack/react-form";
-
+import { useEffect, useMemo } from "react";
 import { SELECT_NONE } from "@/components/form/select-sentinel";
+import type { SpatialGeometry } from "@/components/spatial-layout-editor";
+import {
+	allocateNumberedLabelsForNewSiblings,
+	duplicateNumberingStem,
+} from "@/components/spatial-layout-editor/spatial-layout-editor.naming";
 import { Button } from "@/components/ui/button";
-import * as m from "@/paraglide/messages.js";
 import {
 	Dialog,
 	DialogContent,
@@ -12,14 +16,9 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import type { SpatialNodeEntityId } from "@backend/core/domain/spatial/entities";
 import { useAppForm } from "@/hooks/form";
 import { normalizePresentationInput } from "@/lib/item-presentation";
-import type { SpatialGeometry } from "@/components/spatial-layout-editor";
-import {
-	allocateNumberedLabelsForNewSiblings,
-	duplicateNumberingStem,
-} from "@/components/spatial-layout-editor/spatial-layout-editor.naming";
+import * as m from "@/paraglide/messages.js";
 import { useLocationCreateMutation, useSpatialNodeCreateMutation } from "@/store/mutations";
 
 type LayoutDraft = {
@@ -68,11 +67,11 @@ export function LocationCreateManyDialog({
 		() => [
 			{
 				value: "preview" as const,
-				label: m["components.locationLayoutEditor.createManyNameModePreview"](),
+				label: m.components_locationLayoutEditor_createManyNameModePreview(),
 			},
 			{
 				value: "customStem" as const,
-				label: m["components.locationLayoutEditor.createManyNameModeCustomStem"](),
+				label: m.components_locationLayoutEditor_createManyNameModeCustomStem(),
 			},
 		],
 		[],
@@ -146,9 +145,9 @@ export function LocationCreateManyDialog({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>{m["components.locationLayoutEditor.createManyLocationsTitle"]()}</DialogTitle>
+					<DialogTitle>{m.components_locationLayoutEditor_createManyLocationsTitle()}</DialogTitle>
 					<DialogDescription className="sr-only">
-						{m["components.locationLayoutEditor.createManyLocationsTitle"]()}
+						{m.components_locationLayoutEditor_createManyLocationsTitle()}
 					</DialogDescription>
 				</DialogHeader>
 				<form.AppForm>
@@ -165,7 +164,7 @@ export function LocationCreateManyDialog({
 						<form.AppField name="nameMode">
 							{(field) => (
 								<field.Select
-									label={m["components.locationLayoutEditor.createManyNamesLabel"]()}
+									label={m.components_locationLayoutEditor_createManyNamesLabel()}
 									values={nameModeOptions}
 								/>
 							)}
@@ -174,10 +173,8 @@ export function LocationCreateManyDialog({
 							<form.AppField name="customStem">
 								{(field) => (
 									<field.TextField
-										label={m["components.locationLayoutEditor.createManyCustomStemLabel"]()}
-										placeholder={m[
-											"components.locationLayoutEditor.createManyCustomStemPlaceholder"
-										]()}
+										label={m.components_locationLayoutEditor_createManyCustomStemLabel()}
+										placeholder={m.components_locationLayoutEditor_createManyCustomStemPlaceholder()}
 									/>
 								)}
 							</form.AppField>
@@ -186,27 +183,27 @@ export function LocationCreateManyDialog({
 							<form.AppField name="iconKey">
 								{(field) => (
 									<field.IconPicker
-										label={m["fields.icon"]()}
-										noneLabel={m["fields.iconNone"]()}
+										label={m.fields_icon()}
+										noneLabel={m.fields_iconNone()}
 										iconColor={iconColor}
 										backgroundColor={backgroundColor}
 									/>
 								)}
 							</form.AppField>
 							<form.AppField name="iconColor">
-								{(field) => <field.ColorPicker label={m["fields.iconColor"]()} placeholder="#2f855a" />}
+								{(field) => <field.ColorPicker label={m.fields_iconColor()} placeholder="#2f855a" />}
 							</form.AppField>
 							<form.AppField name="backgroundColor">
 								{(field) => (
-									<field.ColorPicker label={m["fields.backgroundColor"]()} placeholder="#e6ffed" />
+									<field.ColorPicker label={m.fields_backgroundColor()} placeholder="#e6ffed" />
 								)}
 							</form.AppField>
 						</div>
 						<DialogFooter>
 							<Button type="button" variant="outline" onClick={close}>
-								{m["common.cancel"]()}
+								{m.common_cancel()}
 							</Button>
-							<form.SubscribeButton label={m["common.create"]()} />
+							<form.SubscribeButton label={m.common_create()} />
 						</DialogFooter>
 					</form>
 				</form.AppForm>

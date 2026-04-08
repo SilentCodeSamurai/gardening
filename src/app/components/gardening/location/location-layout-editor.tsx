@@ -1,43 +1,42 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type HTMLAttributes } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { getRouteApi, useNavigate } from "@tanstack/react-router";
-import * as m from "@/paraglide/messages.js";
 import type {
 	HydratedPlantEntity,
 	LocationEntity,
 	LocationEntityId,
 	PlantEntityId,
 } from "@backend/core/domain/gardening/entities";
+import type { ItemPresentationValueObject } from "@backend/core/domain/gardening/value-objects";
 import type {
 	SpatialNodeEntity,
 	SpatialNodeEntityId,
 	SpatialNodeTreeNode,
 } from "@backend/core/domain/spatial/entities";
-import type { ItemPresentationValueObject } from "@backend/core/domain/gardening/value-objects";
+import { useQuery } from "@tanstack/react-query";
+import { getRouteApi, useNavigate } from "@tanstack/react-router";
+import { type HTMLAttributes, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SELECT_NONE } from "@/components/form/select-sentinel";
-import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
+import {
+	GardeningEventCreateDialog,
+	type GardeningEventCreateDialogInitialValues,
+} from "@/components/gardening/gardening-event/gardening-event-create-dialog";
 import { LocationCreateDialog } from "@/components/gardening/location/location-create-dialog";
 import { LocationCreateManyDialog } from "@/components/gardening/location/location-create-many-dialog";
 import { LocationUpdateDialog } from "@/components/gardening/location/location-update-dialog";
 import { PlantCreateDialog } from "@/components/gardening/plant/plant-create-dialog";
 import { PlantCreateManyDialog } from "@/components/gardening/plant/plant-create-many-dialog";
 import { PlantUpdateDialog } from "@/components/gardening/plant/plant-update-dialog";
+import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
 import {
-	GardeningEventCreateDialog,
-	type GardeningEventCreateDialogInitialValues,
-} from "@/components/gardening/gardening-event/gardening-event-create-dialog";
-import {
-	SpatialLayoutEditor,
 	type SpatialAutoLayoutMode,
+	type SpatialGeometry,
 	type SpatialLayoutCreateOption,
+	SpatialLayoutEditor,
 	type SpatialLayoutEditorHistoryOptions,
 	type SpatialLayoutEditorLabels,
-	type SpatialLayoutNodeContextActionSlices,
-	type SpatialLayoutPlacementCandidate,
-	type SpatialGeometry,
 	type SpatialLayoutNode,
+	type SpatialLayoutNodeContextActionSlices,
 	type SpatialLayoutNodeSnapshot,
 	type SpatialLayoutOperation,
+	type SpatialLayoutPlacementCandidate,
 	useSpatialLayoutHistory,
 } from "@/components/spatial-layout-editor";
 import { Button } from "@/components/ui/button";
@@ -49,11 +48,6 @@ import {
 	ComboboxItem,
 	ComboboxList,
 } from "@/components/ui/combobox";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { queryKeys } from "@/store/keys";
-import { getSpatialPlacementStatusByRef, spatialNodeHasParent } from "@/store/spatial-placement";
-import { useSpatialLayoutApplyOperationsMutation, useSpatialNodeCreateMutation } from "@/store/mutations";
-import { flattenSpatialLayoutOperations } from "@/store/mutations/spatial-layout-flatten-ops";
 import {
 	ContextMenuGroup,
 	ContextMenuItem,
@@ -61,6 +55,12 @@ import {
 	ContextMenuSubContent,
 	ContextMenuSubTrigger,
 } from "@/components/ui/context-menu";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import * as m from "@/paraglide/messages.js";
+import { queryKeys } from "@/store/keys";
+import { useSpatialLayoutApplyOperationsMutation, useSpatialNodeCreateMutation } from "@/store/mutations";
+import { flattenSpatialLayoutOperations } from "@/store/mutations/spatial-layout-flatten-ops";
+import { getSpatialPlacementStatusByRef, spatialNodeHasParent } from "@/store/spatial-placement";
 
 const locationLayoutRouteApi = getRouteApi("/location/$locationId/layout");
 
@@ -214,98 +214,96 @@ function collectDescendantLayoutNodesForSpatialRoot(args: {
 
 export function LocationLayoutEditor({ rootLocation, className, highlightLocationEntityId }: Props) {
 	const spatialLayoutLabels = useMemo((): SpatialLayoutEditorLabels => {
-		const prefix = "components.spatialLayoutEditor";
-		const al = `${prefix}.autoLayout`;
 		return {
-			fallbackHeader: m[`${prefix}.fallbackTitle` as keyof typeof m](),
-			autoLayoutMenu: m[`${prefix}.autoLayoutMenu` as keyof typeof m](),
-			createMenu: m[`${prefix}.createMenu` as keyof typeof m](),
-			resetView: m[`${prefix}.resetView` as keyof typeof m](),
-			undo: m[`${prefix}.undo` as keyof typeof m](),
-			redo: m[`${prefix}.redo` as keyof typeof m](),
-			duplicate: m[`${prefix}.duplicate` as keyof typeof m](),
-			createManyMenu: m[`${prefix}.createManyMenu` as keyof typeof m](),
-			createManyQuantity: m[`${prefix}.createManyQuantity` as keyof typeof m](),
-			createManyLayoutMode: m[`${prefix}.createManyLayoutMode` as keyof typeof m](),
-			duplicateNoSpaceAlert: m[`${prefix}.duplicateNoSpaceAlert` as keyof typeof m](),
-			autoLayoutNoFitAlert: m[`${prefix}.autoLayoutNoFitAlert` as keyof typeof m](),
+			fallbackHeader: m.components_spatialLayoutEditor_fallbackTitle(),
+			autoLayoutMenu: m.components_spatialLayoutEditor_autoLayoutMenu(),
+			createMenu: m.components_spatialLayoutEditor_createMenu(),
+			resetView: m.components_spatialLayoutEditor_resetView(),
+			undo: m.components_spatialLayoutEditor_undo(),
+			redo: m.components_spatialLayoutEditor_redo(),
+			duplicate: m.components_spatialLayoutEditor_duplicate(),
+			createManyMenu: m.components_spatialLayoutEditor_createManyMenu(),
+			createManyQuantity: m.components_spatialLayoutEditor_createManyQuantity(),
+			createManyLayoutMode: m.components_spatialLayoutEditor_createManyLayoutMode(),
+			duplicateNoSpaceAlert: m.components_spatialLayoutEditor_duplicateNoSpaceAlert(),
+			autoLayoutNoFitAlert: m.components_spatialLayoutEditor_autoLayoutNoFitAlert(),
 			autoLayoutGroupLabels: {
-				stack: m[`${prefix}.autoLayoutGroups.stack` as keyof typeof m](),
-				rows: m[`${prefix}.autoLayoutGroups.rows` as keyof typeof m](),
-				columns: m[`${prefix}.autoLayoutGroups.columns` as keyof typeof m](),
+				stack: m.components_spatialLayoutEditor_autoLayoutGroups_stack(),
+				rows: m.components_spatialLayoutEditor_autoLayoutGroups_rows(),
+				columns: m.components_spatialLayoutEditor_autoLayoutGroups_columns(),
 			},
-			createManyCancel: m["common.cancel"](),
-			createManyContinue: m[`${prefix}.createManyContinueToForm` as keyof typeof m](),
-			toolbarAutoLayout: m[`${prefix}.toolbarAutoLayout` as keyof typeof m](),
-			zoomOut: m[`${prefix}.zoomOut` as keyof typeof m](),
-			zoomIn: m[`${prefix}.zoomIn` as keyof typeof m](),
-			lockLayoutToggleUnlockHint: m[`${prefix}.lockLayoutToggleUnlockHint` as keyof typeof m](),
-			lockLayoutToggleLockHint: m[`${prefix}.lockLayoutToggleLockHint` as keyof typeof m](),
-			canvasMenu: m[`${prefix}.canvas` as keyof typeof m](),
-			detach: m[`${prefix}.detach` as keyof typeof m](),
-			remove: m[`${prefix}.remove` as keyof typeof m](),
-			detachOrRemoveWithChildren: m[`${prefix}.detachOrRemoveWithChildren` as keyof typeof m](),
-			detachOrRemoveWithoutChildren: m[`${prefix}.detachOrRemoveWithoutChildren` as keyof typeof m](),
-			headerLabel: m["components.locationLayoutEditor.layoutPageTitle"](),
-			confirmPlacement: m["common.add"](),
-			duplicateConfirmPlacement: m["common.save"](),
-			cancelPlacement: m["common.cancel"](),
+			createManyCancel: m.common_cancel(),
+			createManyContinue: m.components_spatialLayoutEditor_createManyContinueToForm(),
+			toolbarAutoLayout: m.components_spatialLayoutEditor_toolbarAutoLayout(),
+			zoomOut: m.components_spatialLayoutEditor_zoomOut(),
+			zoomIn: m.components_spatialLayoutEditor_zoomIn(),
+			lockLayoutToggleUnlockHint: m.components_spatialLayoutEditor_lockLayoutToggleUnlockHint(),
+			lockLayoutToggleLockHint: m.components_spatialLayoutEditor_lockLayoutToggleLockHint(),
+			canvasMenu: m.components_spatialLayoutEditor_canvas(),
+			detach: m.components_spatialLayoutEditor_detach(),
+			remove: m.components_spatialLayoutEditor_remove(),
+			detachOrRemoveWithChildren: m.components_spatialLayoutEditor_detachOrRemoveWithChildren(),
+			detachOrRemoveWithoutChildren: m.components_spatialLayoutEditor_detachOrRemoveWithoutChildren(),
+			headerLabel: m.components_locationLayoutEditor_layoutPageTitle(),
+			confirmPlacement: m.common_add(),
+			duplicateConfirmPlacement: m.common_save(),
+			cancelPlacement: m.common_cancel(),
 			autoLayoutModes: {
 				"stack-left": {
-					label: m[`${al}.stackLeft.label` as keyof typeof m](),
-					hint: m[`${al}.stackLeft.hint` as keyof typeof m](),
+					label: m.components_spatialLayoutEditor_autoLayout_stackLeft_label(),
+					hint: m.components_spatialLayoutEditor_autoLayout_stackLeft_hint(),
 				},
 				"stack-middle": {
-					label: m[`${al}.stackMiddle.label` as keyof typeof m](),
-					hint: m[`${al}.stackMiddle.hint` as keyof typeof m](),
+					label: m.components_spatialLayoutEditor_autoLayout_stackMiddle_label(),
+					hint: m.components_spatialLayoutEditor_autoLayout_stackMiddle_hint(),
 				},
 				"stack-right": {
-					label: m[`${al}.stackRight.label` as keyof typeof m](),
-					hint: m[`${al}.stackRight.hint` as keyof typeof m](),
+					label: m.components_spatialLayoutEditor_autoLayout_stackRight_label(),
+					hint: m.components_spatialLayoutEditor_autoLayout_stackRight_hint(),
 				},
 				"stack-top": {
-					label: m[`${al}.stackTop.label` as keyof typeof m](),
-					hint: m[`${al}.stackTop.hint` as keyof typeof m](),
+					label: m.components_spatialLayoutEditor_autoLayout_stackTop_label(),
+					hint: m.components_spatialLayoutEditor_autoLayout_stackTop_hint(),
 				},
 				"stack-bottom": {
-					label: m[`${al}.stackBottom.label` as keyof typeof m](),
-					hint: m[`${al}.stackBottom.hint` as keyof typeof m](),
+					label: m.components_spatialLayoutEditor_autoLayout_stackBottom_label(),
+					hint: m.components_spatialLayoutEditor_autoLayout_stackBottom_hint(),
 				},
 				"row-top": {
-					label: m[`${al}.rowTop.label` as keyof typeof m](),
-					hint: m[`${al}.rowTop.hint` as keyof typeof m](),
+					label: m.components_spatialLayoutEditor_autoLayout_rowTop_label(),
+					hint: m.components_spatialLayoutEditor_autoLayout_rowTop_hint(),
 				},
 				"row-middle": {
-					label: m[`${al}.rowMiddle.label` as keyof typeof m](),
-					hint: m[`${al}.rowMiddle.hint` as keyof typeof m](),
+					label: m.components_spatialLayoutEditor_autoLayout_rowMiddle_label(),
+					hint: m.components_spatialLayoutEditor_autoLayout_rowMiddle_hint(),
 				},
 				"row-bottom": {
-					label: m[`${al}.rowBottom.label` as keyof typeof m](),
-					hint: m[`${al}.rowBottom.hint` as keyof typeof m](),
+					label: m.components_spatialLayoutEditor_autoLayout_rowBottom_label(),
+					hint: m.components_spatialLayoutEditor_autoLayout_rowBottom_hint(),
 				},
 				"column-left": {
-					label: m[`${al}.columnLeft.label` as keyof typeof m](),
-					hint: m[`${al}.columnLeft.hint` as keyof typeof m](),
+					label: m.components_spatialLayoutEditor_autoLayout_columnLeft_label(),
+					hint: m.components_spatialLayoutEditor_autoLayout_columnLeft_hint(),
 				},
 				"column-center": {
-					label: m[`${al}.columnCenter.label` as keyof typeof m](),
-					hint: m[`${al}.columnCenter.hint` as keyof typeof m](),
+					label: m.components_spatialLayoutEditor_autoLayout_columnCenter_label(),
+					hint: m.components_spatialLayoutEditor_autoLayout_columnCenter_hint(),
 				},
 				"column-right": {
-					label: m[`${al}.columnRight.label` as keyof typeof m](),
-					hint: m[`${al}.columnRight.hint` as keyof typeof m](),
+					label: m.components_spatialLayoutEditor_autoLayout_columnRight_label(),
+					hint: m.components_spatialLayoutEditor_autoLayout_columnRight_hint(),
 				},
 				"grid-balanced": {
-					label: m[`${al}.gridBalanced.label` as keyof typeof m](),
-					hint: m[`${al}.gridBalanced.hint` as keyof typeof m](),
+					label: m.components_spatialLayoutEditor_autoLayout_gridBalanced_label(),
+					hint: m.components_spatialLayoutEditor_autoLayout_gridBalanced_hint(),
 				},
 				"space-between": {
-					label: m[`${al}.spaceBetween.label` as keyof typeof m](),
-					hint: m[`${al}.spaceBetween.hint` as keyof typeof m](),
+					label: m.components_spatialLayoutEditor_autoLayout_spaceBetween_label(),
+					hint: m.components_spatialLayoutEditor_autoLayout_spaceBetween_hint(),
 				},
 				"space-around": {
-					label: m[`${al}.spaceAround.label` as keyof typeof m](),
-					hint: m[`${al}.spaceAround.hint` as keyof typeof m](),
+					label: m.components_spatialLayoutEditor_autoLayout_spaceAround_label(),
+					hint: m.components_spatialLayoutEditor_autoLayout_spaceAround_hint(),
 				},
 			} satisfies Record<SpatialAutoLayoutMode, { label: string; hint: string }>,
 		};
@@ -598,27 +596,27 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 				? [
 						{
 							id: "location",
-							label: m["components.locationLayoutEditor.newLocationLabel"](),
+							label: m.components_locationLayoutEditor_newLocationLabel(),
 							createNode: (targetParent) => ({
 								id: `pending-location-${Date.now()}`,
 								parentId: String(targetParent.id),
 								geometry: { x: 0, y: 0, width: 80, height: 80 },
 								acceptsChildren: true,
 								nodeType: "location",
-								label: m["components.locationLayoutEditor.newLocationLabel"](),
+								label: m.components_locationLayoutEditor_newLocationLabel(),
 								ref: { entity: "location", entityId: "" },
 							}),
 						},
 						{
 							id: "plant",
-							label: m["components.locationLayoutEditor.newPlantLabel"](),
+							label: m.components_locationLayoutEditor_newPlantLabel(),
 							createNode: (targetParent) => ({
 								id: `pending-plant-${Date.now()}`,
 								parentId: String(targetParent.id),
 								geometry: { x: 0, y: 0, width: 40, height: 40 },
 								acceptsChildren: false,
 								nodeType: "plant",
-								label: m["components.locationLayoutEditor.newPlantLabel"](),
+								label: m.components_locationLayoutEditor_newPlantLabel(),
 								ref: { entity: "plant", entityId: "" },
 							}),
 						},
@@ -879,9 +877,7 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 
 			const layoutSlice = node.acceptsChildren ? (
 				<ContextMenuSub>
-					<ContextMenuSubTrigger>
-						{m["components.locationLayoutEditor.addExistingMenu"]()}
-					</ContextMenuSubTrigger>
+					<ContextMenuSubTrigger>{m.components_locationLayoutEditor_addExistingMenu()}</ContextMenuSubTrigger>
 					<ContextMenuSubContent>
 						<ContextMenuGroup>
 							<ContextMenuItem
@@ -893,7 +889,7 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 									})
 								}
 							>
-								{m["components.locationLayoutEditor.addExistingLocationMenu"]()}
+								{m.components_locationLayoutEditor_addExistingLocationMenu()}
 							</ContextMenuItem>
 							<ContextMenuItem
 								onClick={() =>
@@ -904,7 +900,7 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 									})
 								}
 							>
-								{m["components.locationLayoutEditor.addExistingPlantMenu"]()}
+								{m.components_locationLayoutEditor_addExistingPlantMenu()}
 							</ContextMenuItem>
 						</ContextMenuGroup>
 					</ContextMenuSubContent>
@@ -922,7 +918,7 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 							}
 						}}
 					>
-						{m["common.open"]()}
+						{m.common_open()}
 					</ContextMenuItem>
 					<ContextMenuItem
 						onClick={() => {
@@ -935,7 +931,7 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 							}
 						}}
 					>
-						{m["common.edit"]()}
+						{m.common_edit()}
 					</ContextMenuItem>
 					<ContextMenuItem
 						onClick={() => {
@@ -955,7 +951,7 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 							setGardeningEventCreateOpen(true);
 						}}
 					>
-						{m["components.locationLayoutEditor.addEventMenu"]()}
+						{m.components_locationLayoutEditor_addEventMenu()}
 					</ContextMenuItem>
 				</ContextMenuGroup>
 			) : null;
@@ -967,12 +963,12 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 				...(otherSlice ? { other: otherSlice } : {}),
 			};
 		},
-		[locationItems, navigate, plantItems, t],
+		[locationItems, navigate, plantItems],
 	);
 
 	if (!rootLocation) return null;
 	if (!rootSpatialNode || !spatialTree || !spatialRoot) {
-		return <div className="text-sm text-muted-foreground">{m["common.loading"]()}</div>;
+		return <div className="text-muted-foreground text-sm">{m.common_loading()}</div>;
 	}
 
 	return (
@@ -1120,7 +1116,7 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>{m["components.locationLayoutEditor.dialogAddExistingLocation"]()}</DialogTitle>
+						<DialogTitle>{m.components_locationLayoutEditor_dialogAddExistingLocation()}</DialogTitle>
 					</DialogHeader>
 					<Combobox
 						name="existing-location"
@@ -1140,11 +1136,11 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 						isItemEqualToValue={comboboxLayoutEqual}
 					>
 						<ComboboxInput
-							placeholder={m["components.locationLayoutEditor.searchLocationsPlaceholder"]()}
+							placeholder={m.components_locationLayoutEditor_searchLocationsPlaceholder()}
 							showClear
 						/>
 						<ComboboxContent className="z-100">
-							<ComboboxEmpty>{m["components.locationLayoutEditor.noLocationsAvailable"]()}</ComboboxEmpty>
+							<ComboboxEmpty>{m.components_locationLayoutEditor_noLocationsAvailable()}</ComboboxEmpty>
 							<ComboboxList>
 								{(item) => (
 									<ComboboxItem key={item.id} value={item}>
@@ -1159,13 +1155,13 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 							variant="outline"
 							onClick={() => setAddExistingContainerState((prev) => ({ ...prev, open: false }))}
 						>
-							{m["common.cancel"]()}
+							{m.common_cancel()}
 						</Button>
 						<Button
 							disabled={!addExistingContainerState.selectedId}
 							onClick={() => void submitAddExistingContainer()}
 						>
-							{m["common.add"]()}
+							{m.common_add()}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
@@ -1177,7 +1173,7 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 			>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>{m["components.locationLayoutEditor.dialogAddExistingPlant"]()}</DialogTitle>
+						<DialogTitle>{m.components_locationLayoutEditor_dialogAddExistingPlant()}</DialogTitle>
 					</DialogHeader>
 					<Combobox
 						name="existing-plant"
@@ -1194,11 +1190,11 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 						isItemEqualToValue={comboboxLayoutEqual}
 					>
 						<ComboboxInput
-							placeholder={m["components.locationLayoutEditor.searchPlantsPlaceholder"]()}
+							placeholder={m.components_locationLayoutEditor_searchPlantsPlaceholder()}
 							showClear
 						/>
 						<ComboboxContent className="z-100">
-							<ComboboxEmpty>{m["components.locationLayoutEditor.noPlantsAvailable"]()}</ComboboxEmpty>
+							<ComboboxEmpty>{m.components_locationLayoutEditor_noPlantsAvailable()}</ComboboxEmpty>
 							<ComboboxList>
 								{(item) => (
 									<ComboboxItem key={item.id} value={item}>
@@ -1214,13 +1210,13 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 							variant="outline"
 							onClick={() => setAddExistingItemState((prev) => ({ ...prev, open: false }))}
 						>
-							{m["common.cancel"]()}
+							{m.common_cancel()}
 						</Button>
 						<Button
 							disabled={!addExistingItemState.selectedId}
 							onClick={() => void submitAddExistingItem()}
 						>
-							{m["common.add"]()}
+							{m.common_add()}
 						</Button>
 					</DialogFooter>
 				</DialogContent>

@@ -1,23 +1,23 @@
-import { useState } from "react";
-import { Link } from "@tanstack/react-router";
 import type { SpeciesCategoryEntity } from "@backend/core/domain/gardening/entities";
-import { translateCatalogField } from "@/lib/translate-catalog-field";
-import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
-import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
-import { SpeciesCategoryUpdateDialog } from "@/components/gardening/species-category/species-category-update-dialog";
-import { Button } from "@/components/ui/button";
-import { IconTooltip } from "@/components/ui/button-tooltip";
-import { useSpeciesCategoryDeleteMutation } from "@/store/mutations";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Card, CardAction, CardContent } from "@/components/ui/card";
+import { Link } from "@tanstack/react-router";
 import { ExternalLinkIcon, PencilIcon, PencilOffIcon, Trash2Icon } from "lucide-react";
-import * as m from "@/paraglide/messages.js";
+import { useState } from "react";
+import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
+import { SpeciesCategoryUpdateDialog } from "@/components/gardening/species-category/species-category-update-dialog";
+import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
+import { Button } from "@/components/ui/button";
+import { ButtonTooltip } from "@/components/ui/button-tooltip";
+import { Card, CardAction, CardContent } from "@/components/ui/card";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { translateCatalogField } from "@/lib/translate-catalog-field";
+import * as m from "@/paraglide/messages.js";
+import { useSpeciesCategoryDeleteMutation } from "@/store/mutations";
 
 type Props = {
 	category: SpeciesCategoryEntity;
@@ -36,25 +36,23 @@ export function SpeciesCategoryListCard({ category }: Props) {
 					to="/catalog/species-category/$speciesCategoryId"
 					params={{ speciesCategoryId: String(category.id) }}
 					className="absolute inset-0 z-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-					aria-label={`${label} — ${m["common.open"]()} ${m["common.details"]().toLowerCase()}`}
+					aria-label={`${label} — ${m.common_open()} ${m.common_details().toLowerCase()}`}
 				/>
-				<div className="relative z-10 flex min-w-0 flex-1 items-center gap-2 pointer-events-none">
+				<div className="pointer-events-none relative z-10 flex min-w-0 flex-1 items-center gap-2">
 					<ItemPresentationIcon presentation={category.presentation} />
 					<span className="truncate font-medium">{label}</span>
 				</div>
 				<CardAction className="relative z-20 flex h-full shrink-0 items-center gap-1">
-					<IconTooltip
+					<ButtonTooltip
 						disabled={category.isDefault}
-						label={category.isDefault ? m["common.editDisabledDefaultCatalog"]() : m["common.edit"]()}
+						label={category.isDefault ? m.common_editDisabledDefaultCatalog() : m.common_edit()}
 					>
 						<Button
 							type="button"
 							variant="outline"
 							size="icon-sm"
 							disabled={category.isDefault}
-							aria-label={
-								category.isDefault ? m["common.editDisabledDefaultCatalog"]() : m["common.edit"]()
-							}
+							aria-label={category.isDefault ? m.common_editDisabledDefaultCatalog() : m.common_edit()}
 							onClick={() => setEditOpen(true)}
 						>
 							{category.isDefault ? (
@@ -63,31 +61,29 @@ export function SpeciesCategoryListCard({ category }: Props) {
 								<PencilIcon className="size-4" />
 							)}
 						</Button>
-					</IconTooltip>
+					</ButtonTooltip>
 					{!category.isDefault ? (
 						<SpeciesCategoryUpdateDialog category={category} open={editOpen} onOpenChange={setEditOpen} />
 					) : null}
-					<IconTooltip
+					<ButtonTooltip
 						disabled={category.isDefault}
-						label={category.isDefault ? m["common.editDisabledDefaultCatalog"]() : m["common.delete"]()}
+						label={category.isDefault ? m.common_editDisabledDefaultCatalog() : m.common_delete()}
 					>
 						<Button
 							type="button"
 							variant="outline"
 							size="icon-sm"
 							disabled={category.isDefault}
-							aria-label={
-								category.isDefault ? m["common.editDisabledDefaultCatalog"]() : m["common.delete"]()
-							}
+							aria-label={category.isDefault ? m.common_editDisabledDefaultCatalog() : m.common_delete()}
 							onClick={() => setDeleteOpen(true)}
 						>
 							<Trash2Icon className="size-4" />
 						</Button>
-					</IconTooltip>
+					</ButtonTooltip>
 					<DeleteConfirmDialog
 						open={deleteOpen}
 						onOpenChange={setDeleteOpen}
-						title={m["collections.speciesCategory.delete"]()}
+						title={m.collections_speciesCategory_delete()}
 						description={label ?? ""}
 						isPending={del.isPending}
 						onConfirm={async () => {
@@ -103,13 +99,13 @@ export function SpeciesCategoryListCard({ category }: Props) {
 										type="button"
 										variant="outline"
 										size="icon-sm"
-										aria-label={m["common.openRelatedList"]()}
+										aria-label={m.common_openRelatedList()}
 									>
 										<ExternalLinkIcon />
 									</Button>
 								</DropdownMenuTrigger>
 							</TooltipTrigger>
-							<TooltipContent>{m["common.openRelatedList"]()}</TooltipContent>
+							<TooltipContent>{m.common_openRelatedList()}</TooltipContent>
 						</Tooltip>
 						<DropdownMenuContent className="flex flex-col gap-1" align="end">
 							<DropdownMenuItem asChild>
@@ -117,9 +113,9 @@ export function SpeciesCategoryListCard({ category }: Props) {
 									<Link
 										to="/catalog/species"
 										search={{ category: String(category.id) }}
-										aria-label={m["common.openRelatedList"]()}
+										aria-label={m.common_openRelatedList()}
 									>
-										{m["collections.species.titlePlural"]()}
+										{m.collections_species_titlePlural()}
 									</Link>
 								</Button>
 							</DropdownMenuItem>
@@ -128,9 +124,9 @@ export function SpeciesCategoryListCard({ category }: Props) {
 									<Link
 										to="/catalog/cultivars"
 										search={{ category: String(category.id), species: "" }}
-										aria-label={m["common.openRelatedList"]()}
+										aria-label={m.common_openRelatedList()}
 									>
-										{m["collections.cultivar.titlePlural"]()}
+										{m.collections_cultivar_titlePlural()}
 									</Link>
 								</Button>
 							</DropdownMenuItem>
@@ -139,9 +135,9 @@ export function SpeciesCategoryListCard({ category }: Props) {
 									<Link
 										to="/plants"
 										search={{ category: String(category.id), species: "", cultivar: "" }}
-										aria-label={m["common.openRelatedList"]()}
+										aria-label={m.common_openRelatedList()}
 									>
-										{m["collections.plant.titlePlural"]()}
+										{m.collections_plant_titlePlural()}
 									</Link>
 								</Button>
 							</DropdownMenuItem>

@@ -104,7 +104,7 @@ function SpeciesCategoriesPage() {
 			columnHelper.accessor(
 				(category) => {
 					const title = translateCatalogField(category.title, category.isDefault) ?? "";
-					const origin = category.isDefault ? m["common.default"]() : m["common.custom"]();
+					const origin = category.isDefault ? m.common_default() : m.common_custom();
 					return `${title} ${origin}`;
 				},
 				{
@@ -119,7 +119,7 @@ function SpeciesCategoriesPage() {
 			columnHelper.accessor((category) => translateCatalogField(category.title, category.isDefault) ?? "", {
 				id: "title",
 				...tableListColumnSizes.primaryLink,
-				header: ({ column }) => <DataTableColumnHeader column={column} title={m["fields.title"]()} />,
+				header: ({ column }) => <DataTableColumnHeader column={column} title={m.fields_title()} />,
 				filterFn: "includesString",
 				enableGlobalFilter: false,
 				cell: ({ row }) => {
@@ -139,7 +139,7 @@ function SpeciesCategoriesPage() {
 
 			columnHelper.accessor((category) => category.updatedAt.getTime(), {
 				id: "updatedAt",
-				header: ({ column }) => <DataTableColumnHeader column={column} title={m["fields.updatedAt"]()} />,
+				header: ({ column }) => <DataTableColumnHeader column={column} title={m.fields_updatedAt()} />,
 				sortingFn: "datetime",
 				enableColumnFilter: false,
 				enableGlobalFilter: false,
@@ -155,7 +155,7 @@ function SpeciesCategoriesPage() {
 			columnHelper.accessor((category) => (category.isDefault ? "default" : "custom"), {
 				id: "isCustom",
 				...tableListColumnSizes.iconFlag,
-				header: () => <div className={tableListCompactHeaderInnerClass}>{m["fields.isCustom"]()}</div>,
+				header: () => <div className={tableListCompactHeaderInnerClass}>{m.fields_isCustom()}</div>,
 				enableSorting: false,
 				filterFn: createTriStateColumnFilterFn({
 					filterTrue: "custom",
@@ -178,9 +178,9 @@ function SpeciesCategoriesPage() {
 								filterTrue="custom"
 								filterFalse="default"
 								labels={{
-									all: m["filtering.customFilterAll"](),
-									true: m["filtering.customFilterCustom"](),
-									false: m["filtering.customFilterDefault"](),
+									all: m.filtering_customFilterAll(),
+									true: m.filtering_customFilterCustom(),
+									false: m.filtering_customFilterDefault(),
 								}}
 							/>
 						</div>
@@ -191,9 +191,9 @@ function SpeciesCategoriesPage() {
 					return (
 						<div className="flex w-full items-center justify-center">
 							{isCustom ? (
-								<CheckIcon aria-label={m["fields.isCustom"]()} className="size-3.5 text-emerald-500" />
+								<CheckIcon aria-label={m.fields_isCustom()} className="size-3.5 text-emerald-500" />
 							) : (
-								<XIcon aria-label={m["common.default"]()} className="size-3.5 text-muted-foreground" />
+								<XIcon aria-label={m.common_default()} className="size-3.5 text-muted-foreground" />
 							)}
 						</div>
 					);
@@ -204,7 +204,7 @@ function SpeciesCategoriesPage() {
 				...tableListColumnSizes.rowActions,
 				header: () => (
 					<div className={tableListCompactHeaderInnerClassMuted}>
-						<span className="text-center leading-tight">{m["common.actions"]()}</span>
+						<span className="text-center leading-tight">{m.common_actions()}</span>
 					</div>
 				),
 				enableColumnFilter: false,
@@ -250,10 +250,10 @@ function SpeciesCategoriesPage() {
 	return (
 		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
 			<PageHeading collection="speciesCategory">
-				<h1 className="font-heading font-medium text-lg">{m["collections.speciesCategory.titlePlural"]()}</h1>
-				<ButtonTooltip label={m["collections.speciesCategory.create"]()}>
+				<h1 className="font-heading font-medium text-lg">{m.collections_speciesCategory_titlePlural()}</h1>
+				<ButtonTooltip label={m.collections_speciesCategory_create()}>
 					<Button type="button" size="icon" variant="outline" onClick={() => setCreateOpen(true)}>
-						<span className="sr-only">{m["collections.speciesCategory.create"]()}</span>
+						<span className="sr-only">{m.collections_speciesCategory_create()}</span>
 						<PlusIcon />
 					</Button>
 				</ButtonTooltip>
@@ -262,11 +262,11 @@ function SpeciesCategoriesPage() {
 				<div className="flex flex-wrap items-end gap-2">
 					<Input
 						className="w-full min-w-40 sm:w-56"
-						placeholder={m["filtering.searchPlaceholder"]()}
+						placeholder={m.filtering_searchPlaceholder()}
 						value={globalFilter}
 						onChange={(event) => setGlobalFilter(event.target.value)}
 					/>
-					<ButtonTooltip label={m["filtering.clearFilters"]()}>
+					<ButtonTooltip label={m.filtering_clearFilters()}>
 						<Button
 							type="button"
 							variant="outline"
@@ -276,7 +276,7 @@ function SpeciesCategoriesPage() {
 								table.resetColumnFilters();
 								setRowSelection({});
 							}}
-							aria-label={m["filtering.clearFilters"]()}
+							aria-label={m.filtering_clearFilters()}
 						>
 							<XIcon />
 						</Button>
@@ -287,8 +287,8 @@ function SpeciesCategoriesPage() {
 						table={table}
 						isPending={isPending}
 						isError={isError}
-						errorMessage={m["common.loadError"]()}
-						emptyMessage={m["items.noElements"]()}
+						errorMessage={m.common_loadError()}
+						emptyMessage={m.items_noElements()}
 					/>
 				</div>
 			</PageContent>
@@ -302,15 +302,15 @@ function SpeciesCategoryRowActions({ category }: { category: SpeciesCategoryEnti
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const del = useSpeciesCategoryDeleteMutation();
 	const label = translateCatalogField(category.title, category.isDefault);
-	const editTitle = category.isDefault ? m["common.editDisabledDefaultCatalog"]() : m["common.edit"]();
-	const deleteTitle = category.isDefault ? m["common.editDisabledDefaultCatalog"]() : m["common.delete"]();
-	const linkedTitle = m["common.related"]();
+	const editTitle = category.isDefault ? m.common_editDisabledDefaultCatalog() : m.common_edit();
+	const deleteTitle = category.isDefault ? m.common_editDisabledDefaultCatalog() : m.common_delete();
+	const linkedTitle = m.common_related();
 
 	return (
 		<div className="flex w-full items-center justify-center">
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
-					<Button type="button" variant="outline" size="icon" aria-label={m["common.actions"]()}>
+					<Button type="button" variant="outline" size="icon" aria-label={m.common_actions()}>
 						<EllipsisVerticalIcon />
 					</Button>
 				</DropdownMenuTrigger>
@@ -319,13 +319,13 @@ function SpeciesCategoryRowActions({ category }: { category: SpeciesCategoryEnti
 						<ButtonTooltip label={editTitle} disabled>
 							<DropdownMenuItem disabled title={editTitle}>
 								<PencilIcon />
-								{m["common.edit"]()}
+								{m.common_edit()}
 							</DropdownMenuItem>
 						</ButtonTooltip>
 					) : (
 						<DropdownMenuItem onSelect={() => setEditOpen(true)} title={editTitle}>
 							<PencilIcon />
-							{m["common.edit"]()}
+							{m.common_edit()}
 						</DropdownMenuItem>
 					)}
 
@@ -333,13 +333,13 @@ function SpeciesCategoryRowActions({ category }: { category: SpeciesCategoryEnti
 						<ButtonTooltip label={deleteTitle} disabled>
 							<DropdownMenuItem disabled title={deleteTitle}>
 								<Trash2Icon />
-								{m["common.delete"]()}
+								{m.common_delete()}
 							</DropdownMenuItem>
 						</ButtonTooltip>
 					) : (
 						<DropdownMenuItem onSelect={() => setDeleteOpen(true)} title={deleteTitle}>
 							<Trash2Icon />
-							{m["common.delete"]()}
+							{m.common_delete()}
 						</DropdownMenuItem>
 					)}
 					<DropdownMenuSub>
@@ -356,7 +356,7 @@ function SpeciesCategoryRowActions({ category }: { category: SpeciesCategoryEnti
 										aria-label={linkedTitle}
 									>
 										<ExternalLinkIcon />
-										{m["collections.species.titlePlural"]()}
+										{m.collections_species_titlePlural()}
 									</Link>
 								</Button>
 							</DropdownMenuItem>
@@ -368,7 +368,7 @@ function SpeciesCategoryRowActions({ category }: { category: SpeciesCategoryEnti
 										aria-label={linkedTitle}
 									>
 										<ExternalLinkIcon />
-										{m["collections.cultivar.titlePlural"]()}
+										{m.collections_cultivar_titlePlural()}
 									</Link>
 								</Button>
 							</DropdownMenuItem>
@@ -380,7 +380,7 @@ function SpeciesCategoryRowActions({ category }: { category: SpeciesCategoryEnti
 										aria-label={linkedTitle}
 									>
 										<ExternalLinkIcon />
-										{m["collections.plant.titlePlural"]()}
+										{m.collections_plant_titlePlural()}
 									</Link>
 								</Button>
 							</DropdownMenuItem>
@@ -394,7 +394,7 @@ function SpeciesCategoryRowActions({ category }: { category: SpeciesCategoryEnti
 			<DeleteConfirmDialog
 				open={deleteOpen}
 				onOpenChange={setDeleteOpen}
-				title={m["collections.speciesCategory.delete"]()}
+				title={m.collections_speciesCategory_delete()}
 				description={label ?? ""}
 				isPending={del.isPending}
 				onConfirm={async () => {

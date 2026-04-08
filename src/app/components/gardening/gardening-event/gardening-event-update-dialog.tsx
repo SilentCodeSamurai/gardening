@@ -1,7 +1,8 @@
+import type { GardeningEventEntity } from "@backend/core/domain/gardening/entities";
+import { GardeningActionType } from "@backend/core/domain/gardening/enums";
+import type { GardeningAction } from "@backend/core/domain/gardening/value-objects";
 import { useEffect, useMemo } from "react";
-
 import { Button } from "@/components/ui/button";
-import * as m from "@/paraglide/messages.js";
 import {
 	Dialog,
 	DialogContent,
@@ -10,10 +11,9 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { GardeningActionType } from "@backend/core/domain/gardening/enums";
-import type { GardeningEventEntity } from "@backend/core/domain/gardening/entities";
-import type { GardeningAction } from "@backend/core/domain/gardening/value-objects";
 import { useAppForm } from "@/hooks/form";
+import { gardeningActionMessage } from "@/lib/gardening-action-messages";
+import * as m from "@/paraglide/messages.js";
 import { useGardeningEventUpdateMutation } from "@/store/mutations";
 
 type Props = {
@@ -34,7 +34,7 @@ export function GardeningEventUpdateDialog({ event, open, onOpenChange }: Props)
 		() =>
 			(Object.values(GardeningActionType) as GardeningAction["type"][]).map((type) => ({
 				value: type,
-				label: m[`gardeningActions.${type}` as keyof typeof m](),
+				label: gardeningActionMessage(type),
 			})),
 		[],
 	);
@@ -74,10 +74,8 @@ export function GardeningEventUpdateDialog({ event, open, onOpenChange }: Props)
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>{m["collections.gardeningEvent.update"]()}</DialogTitle>
-					<DialogDescription className="sr-only">
-						{m["collections.gardeningEvent.update"]()}
-					</DialogDescription>
+					<DialogTitle>{m.collections_gardeningEvent_update()}</DialogTitle>
+					<DialogDescription className="sr-only">{m.collections_gardeningEvent_update()}</DialogDescription>
 				</DialogHeader>
 				<form.AppForm>
 					<form
@@ -93,25 +91,25 @@ export function GardeningEventUpdateDialog({ event, open, onOpenChange }: Props)
 						<form.AppField
 							name="actionType"
 							validators={{
-								onSubmit: ({ value }) => (!value?.trim() ? m["fields.selectRequired"]() : undefined),
+								onSubmit: ({ value }) => (!value?.trim() ? m.fields_selectRequired() : undefined),
 							}}
 						>
 							{(field) => (
 								<field.Select
-									label={m["components.detail.field.actionType"]()}
-									placeholder={m["fields.selectPlaceholder"]()}
+									label={m.components_detail_field_actionType()}
+									placeholder={m.fields_selectPlaceholder()}
 									values={actionTypeValues}
 								/>
 							)}
 						</form.AppField>
 						<form.AppField name="content">
-							{(field) => <field.TextArea label={m["fields.description"]()} rows={4} />}
+							{(field) => <field.TextArea label={m.fields_description()} rows={4} />}
 						</form.AppField>
 						<DialogFooter>
 							<Button type="button" variant="outline" onClick={close}>
-								{m["common.cancel"]()}
+								{m.common_cancel()}
 							</Button>
-							<form.SubscribeButton label={m["common.save"]()} />
+							<form.SubscribeButton label={m.common_save()} />
 						</DialogFooter>
 					</form>
 				</form.AppForm>

@@ -1,9 +1,10 @@
-import { useEffect, useMemo } from "react";
+import type { LocationEntityId, PlantEntityId } from "@backend/core/domain/gardening/entities";
+import { GardeningActionType } from "@backend/core/domain/gardening/enums";
+import type { GardeningAction, ItemPresentationValueObject } from "@backend/core/domain/gardening/value-objects";
 import { useStore } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { MinusIcon } from "lucide-react";
-import * as m from "@/paraglide/messages.js";
-
+import { useEffect, useMemo } from "react";
 import { GardeningActionPresentationIcon } from "@/components/gardening/gardening-action-icon";
 import { getPlantDisplayTitle } from "@/components/gardening/plant/plant-list-card";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
@@ -29,15 +30,14 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import type { LocationEntityId, PlantEntityId } from "@backend/core/domain/gardening/entities";
-import { GardeningActionType } from "@backend/core/domain/gardening/enums";
-import type { GardeningAction, ItemPresentationValueObject } from "@backend/core/domain/gardening/value-objects";
 import { useAppForm } from "@/hooks/form";
+import { gardeningActionMessage } from "@/lib/gardening-action-messages";
+import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import {
-	useGardeningEventCreateMutation,
 	useGardeningEventCreateForLocationMutation,
 	useGardeningEventCreateForPlantListMutation,
+	useGardeningEventCreateMutation,
 } from "@/store/mutations";
 
 type GardeningEventCreateTargetLocationInitialValues = {
@@ -102,7 +102,7 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 		() =>
 			(Object.values(GardeningActionType) as GardeningAction["type"][]).map((type) => ({
 				value: type,
-				label: m[`gardeningActions.${type}` as keyof typeof m](),
+				label: gardeningActionMessage(type),
 			})),
 		[],
 	);
@@ -124,7 +124,7 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 				label: getPlantDisplayTitle(plant),
 				presentation: plant.cultivar.presentation,
 			})),
-		[plantData?.items, t],
+		[plantData?.items],
 	);
 
 	const form = useAppForm({
@@ -244,10 +244,8 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>{m["collections.gardeningEvent.create"]()}</DialogTitle>
-					<DialogDescription className="sr-only">
-						{m["collections.gardeningEvent.create"]()}
-					</DialogDescription>
+					<DialogTitle>{m.collections_gardeningEvent_create()}</DialogTitle>
+					<DialogDescription className="sr-only">{m.collections_gardeningEvent_create()}</DialogDescription>
 				</DialogHeader>
 				<form.AppForm>
 					<form
@@ -282,14 +280,14 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 												validators={{
 													onSubmit: ({ value }) =>
 														typeof value !== "string" || !value.trim()
-															? m["fields.selectRequired"]()
+															? m.fields_selectRequired()
 															: undefined,
 												}}
 											>
 												{(field) => (
 													<field.Select
-														label={m["common.linkedTo"]()}
-														placeholder={m["fields.selectPlaceholder"]()}
+														label={m.common_linkedTo()}
+														placeholder={m.fields_selectPlaceholder()}
 														values={[
 															{
 																value: "none",
@@ -301,11 +299,11 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 															},
 															{
 																value: "location",
-																label: m["collections.location.title"](),
+																label: m.collections_location_title(),
 															},
 															{
 																value: "plants",
-																label: m["collections.plant.titlePlural"](),
+																label: m.collections_plant_titlePlural(),
 															},
 														]}
 													/>
@@ -318,15 +316,15 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 												validators={{
 													onSubmit: ({ value }) =>
 														typeof value !== "string" || !value.trim()
-															? m["fields.selectRequired"]()
+															? m.fields_selectRequired()
 															: undefined,
 												}}
 											>
 												{(field) => (
 													<field.CatalogCombobox
-														label={m["collections.location.title"]()}
-														placeholder={m["fields.selectPlaceholder"]()}
-														emptyLabel={m["filtering.comboboxEmpty"]()}
+														label={m.collections_location_title()}
+														placeholder={m.fields_selectPlaceholder()}
+														emptyLabel={m.filtering_comboboxEmpty()}
 														values={locationValuesWithFallback}
 														disabled={isLocationLocked}
 													/>
@@ -339,14 +337,14 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 													onSubmit: ({ value, fieldApi }) =>
 														fieldApi.form.state.values.target === "plants" &&
 														(!Array.isArray(value) || value.length === 0)
-															? m["fields.required"]()
+															? m.fields_required()
 															: undefined,
 												}}
 											>
 												{(field) => (
 													<div className="grid gap-1">
-														<p className="text-xs font-medium">
-															{m["collections.plant.titlePlural"]()}
+														<p className="font-medium text-xs">
+															{m.collections_plant_titlePlural()}
 														</p>
 														<Combobox
 															multiple
@@ -390,9 +388,7 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 																				</ComboboxChip>
 																			))}
 																			<ComboboxChipsInput
-																				placeholder={m[
-																					"fields.selectPlaceholder"
-																				]()}
+																				placeholder={m.fields_selectPlaceholder()}
 																				disabled={isPlantsLocked}
 																			/>
 																		</>
@@ -401,7 +397,7 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 															</ComboboxChips>
 															<ComboboxContent className="z-100" anchor={plantsAnchor}>
 																<ComboboxEmpty>
-																	{m["filtering.comboboxEmpty"]()}
+																	{m.filtering_comboboxEmpty()}
 																</ComboboxEmpty>
 																<ComboboxList>
 																	{(item) => (
@@ -426,7 +422,7 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 														) : null}
 														{field.state.meta.isTouched &&
 														field.state.meta.errors.length > 0 ? (
-															<p className="text-destructive text-xs font-medium">
+															<p className="font-medium text-destructive text-xs">
 																{String(field.state.meta.errors[0])}
 															</p>
 														) : null}
@@ -436,7 +432,7 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 										) : null}
 										{target === "none" ? (
 											<p className="text-muted-foreground text-xs">
-												{m["collections.gardeningEvent.createUnboundHint"]()}
+												{m.collections_gardeningEvent_createUnboundHint()}
 											</p>
 										) : null}
 									</>
@@ -447,14 +443,12 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 							name="actionType"
 							validators={{
 								onSubmit: ({ value }) =>
-									typeof value !== "string" || !value.trim()
-										? m["fields.selectRequired"]()
-										: undefined,
+									typeof value !== "string" || !value.trim() ? m.fields_selectRequired() : undefined,
 							}}
 						>
 							{(field) => (
 								<div className="grid gap-1">
-									<p className="text-xs font-medium">{m["components.detail.field.actionType"]()}</p>
+									<p className="font-medium text-xs">{m.components_detail_field_actionType()}</p>
 									<Combobox
 										items={actionTypeValues}
 										value={selectedAction}
@@ -464,7 +458,7 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 										isItemEqualToValue={(a, b) => a.value === b.value}
 									>
 										<ComboboxInput
-											placeholder={m["fields.selectPlaceholder"]()}
+											placeholder={m.fields_selectPlaceholder()}
 											showClear
 											onBlur={field.handleBlur}
 											startAdornment={
@@ -476,7 +470,7 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 											}
 										/>
 										<ComboboxContent className="z-100">
-											<ComboboxEmpty>{m["filtering.comboboxEmpty"]()}</ComboboxEmpty>
+											<ComboboxEmpty>{m.filtering_comboboxEmpty()}</ComboboxEmpty>
 											<ComboboxList>
 												{(item) => (
 													<ComboboxItem key={item.value} value={item}>
@@ -490,7 +484,7 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 										</ComboboxContent>
 									</Combobox>
 									{field.state.meta.isTouched && field.state.meta.errors.length > 0 ? (
-										<p className="text-destructive text-xs font-medium">
+										<p className="font-medium text-destructive text-xs">
 											{String(field.state.meta.errors[0])}
 										</p>
 									) : null}
@@ -498,13 +492,13 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 							)}
 						</form.AppField>
 						<form.AppField name="content">
-							{(field) => <field.TextArea label={m["fields.description"]()} rows={4} />}
+							{(field) => <field.TextArea label={m.fields_description()} rows={4} />}
 						</form.AppField>
 						<DialogFooter>
 							<Button type="button" variant="outline" onClick={close}>
-								{m["common.cancel"]()}
+								{m.common_cancel()}
 							</Button>
-							<form.SubscribeButton label={m["common.save"]()} />
+							<form.SubscribeButton label={m.common_save()} />
 						</DialogFooter>
 					</form>
 				</form.AppForm>

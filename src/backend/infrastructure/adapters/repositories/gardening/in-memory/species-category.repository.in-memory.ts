@@ -1,5 +1,4 @@
 import type {
-	SpeciesCategoryRepositoryPort,
 	SpeciesCategoryRepositoryCreateInputDTO,
 	SpeciesCategoryRepositoryCreateOutputDTO,
 	SpeciesCategoryRepositoryDeleteInputDTO,
@@ -7,6 +6,7 @@ import type {
 	SpeciesCategoryRepositoryGetAllOutputDTO,
 	SpeciesCategoryRepositoryGetByIdInputDTO,
 	SpeciesCategoryRepositoryGetByIdOutputDTO,
+	SpeciesCategoryRepositoryPort,
 	SpeciesCategoryRepositoryUpdateInputDTO,
 	SpeciesCategoryRepositoryUpdateOutputDTO,
 } from "@backend/core/application/ports/repositories/gardening/species-category.repository.port";

@@ -165,7 +165,7 @@ export function DataTable<TData extends RowData>({
 									<Input
 										value={(header.column.getFilterValue() as string) ?? ""}
 										onChange={(event) => header.column.setFilterValue(event.target.value)}
-										placeholder={m["filtering.searchPlaceholder"]()}
+										placeholder={m.filtering_searchPlaceholder()}
 									/>
 								)
 							) : null}

@@ -95,9 +95,9 @@ function LocationsPage() {
 			.filter((l) => parentIds.has(String(l.id)))
 			.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
 		return [
-			{ id: "all", filter: "", label: m["filtering.placedFilterAll"]() },
-			{ id: "unplaced", filter: "unplaced", label: m["filtering.placedFilterUnplaced"]() },
-			{ id: "self", filter: "self", label: m["fields.placementRoot"]() },
+			{ id: "all", filter: "", label: m.filtering_placedFilterAll() },
+			{ id: "unplaced", filter: "unplaced", label: m.filtering_placedFilterUnplaced() },
+			{ id: "self", filter: "self", label: m.fields_placementRoot() },
 			...underLocs.map((loc) => ({
 				id: `under-${String(loc.id)}`,
 				filter: `under:${String(loc.id)}`,
@@ -162,7 +162,7 @@ function LocationsPage() {
 			columnHelper.accessor("name", {
 				id: "name",
 				...tableListColumnSizes.primaryLink,
-				header: ({ column }) => <DataTableColumnHeader column={column} title={m["fields.name"]()} />,
+				header: ({ column }) => <DataTableColumnHeader column={column} title={m.fields_name()} />,
 				filterFn: "includesString",
 				enableGlobalFilter: false,
 				cell: ({ row }) => (
@@ -178,7 +178,7 @@ function LocationsPage() {
 			}),
 			columnHelper.accessor((location) => location.createdAt.getTime(), {
 				id: "createdAt",
-				header: ({ column }) => <DataTableColumnHeader column={column} title={m["sorting.newestFirst"]()} />,
+				header: ({ column }) => <DataTableColumnHeader column={column} title={m.sorting_newestFirst()} />,
 				sortingFn: "datetime",
 				enableColumnFilter: false,
 				enableGlobalFilter: false,
@@ -197,7 +197,7 @@ function LocationsPage() {
 				{
 					id: "placement",
 					...tableListColumnSizes.placement,
-					header: () => <span className={tableListPlacementHeaderInnerClass}>{m["fields.placement"]()}</span>,
+					header: () => <span className={tableListPlacementHeaderInnerClass}>{m.fields_placement()}</span>,
 					enableSorting: false,
 					filterFn: (row, columnId, filterValue) => {
 						const v = String(filterValue ?? "");
@@ -218,10 +218,10 @@ function LocationsPage() {
 								<TablePlacementFilterCombobox
 									column={column}
 									items={locationPlacementFilterItems}
-									allPlaceholder={m["filtering.placedFilterAll"]()}
-									emptyMessage={m["filtering.comboboxEmpty"]()}
-									ariaLabel={m["filtering.filterBy"]({
-										label: m["fields.placement"]().toLowerCase(),
+									allPlaceholder={m.filtering_placedFilterAll()}
+									emptyMessage={m.filtering_comboboxEmpty()}
+									ariaLabel={m.filtering_filterBy({
+										label: m.fields_placement().toLowerCase(),
 									})}
 								/>
 							</div>
@@ -231,8 +231,8 @@ function LocationsPage() {
 						<TablePlacementCell
 							mode="location"
 							summary={getLocationPlacementSummary(spatialData?.items ?? [], row.original, rootItems)}
-							rootLabel={m["fields.placementRoot"]()}
-							unplacedAriaLabel={`${m["fields.placement"]()}: ${m["filtering.placedFilterUnplaced"]()}`}
+							rootLabel={m.fields_placementRoot()}
+							unplacedAriaLabel={`${m.fields_placement()}: ${m.filtering_placedFilterUnplaced()}`}
 						/>
 					),
 				},
@@ -242,7 +242,7 @@ function LocationsPage() {
 				...tableListColumnSizes.rowActions,
 				header: () => (
 					<div className={tableListCompactHeaderInnerClassMuted}>
-						<span className="text-center leading-tight">{m["common.actions"]()}</span>
+						<span className="text-center leading-tight">{m.common_actions()}</span>
 					</div>
 				),
 				enableColumnFilter: false,
@@ -306,12 +306,12 @@ function LocationsPage() {
 		selectedCount: selectedLocationIds.length,
 		hasPlacedInSelection: selectionHasPlacedLocation,
 		whenMoreThanOne: "pickSingleLocationForEvent",
-		enabledTooltip: m["collections.gardeningEvent.createFromTableLocationSelection"](),
+		enabledTooltip: m.collections_gardeningEvent_createFromTableLocationSelection(),
 	});
 	const bulkDeleteManyTooltip = tableSelectionBulkTooltip({
 		selectedCount: selectedLocationIds.length,
 		hasPlacedInSelection: selectionHasPlacedLocation,
-		enabledTooltip: m["collections.location.deleteManyTooltip"](),
+		enabledTooltip: m.collections_location_deleteManyTooltip(),
 	});
 	const selectedSingleLocationEventInitialValues = useMemo<
 		GardeningEventCreateDialogInitialValues | undefined
@@ -323,18 +323,18 @@ function LocationsPage() {
 
 	const emptyMessage =
 		rootItems.length === 0
-			? m["items.noElements"]()
+			? m.items_noElements()
 			: filteredRowCount === 0
-				? m["filtering.noFilteredElements"]()
-				: m["items.noElements"]();
+				? m.filtering_noFilteredElements()
+				: m.items_noElements();
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
 			<PageHeading collection="location">
-				<h1 className="font-heading font-medium text-lg">{m["collections.location.titlePlural"]()}</h1>
-				<ButtonTooltip label={m["collections.location.create"]()}>
+				<h1 className="font-heading font-medium text-lg">{m.collections_location_titlePlural()}</h1>
+				<ButtonTooltip label={m.collections_location_create()}>
 					<Button type="button" size="icon" variant="outline" onClick={() => setCreateOpen(true)}>
-						<span className="sr-only">{m["collections.location.create"]()}</span>
+						<span className="sr-only">{m.collections_location_create()}</span>
 						<PlusIcon />
 					</Button>
 				</ButtonTooltip>
@@ -343,11 +343,11 @@ function LocationsPage() {
 				<div className="flex flex-wrap items-end gap-2">
 					<Input
 						className="w-full min-w-40 sm:w-56"
-						placeholder={m["filtering.searchPlaceholder"]()}
+						placeholder={m.filtering_searchPlaceholder()}
 						value={globalFilter}
 						onChange={(event) => setGlobalFilter(event.target.value)}
 					/>
-					<ButtonTooltip label={m["filtering.clearFilters"]()}>
+					<ButtonTooltip label={m.filtering_clearFilters()}>
 						<Button
 							type="button"
 							variant="outline"
@@ -357,7 +357,7 @@ function LocationsPage() {
 								table.resetColumnFilters();
 								setRowSelection({});
 							}}
-							aria-label={m["filtering.clearFilters"]()}
+							aria-label={m.filtering_clearFilters()}
 						>
 							<XIcon />
 						</Button>
@@ -368,7 +368,7 @@ function LocationsPage() {
 						table={table}
 						isPending={isPending}
 						isError={isError}
-						errorMessage={m["common.loadError"]()}
+						errorMessage={m.common_loadError()}
 						emptyMessage={emptyMessage}
 						selectedActions={
 							<div className="flex flex-wrap items-center gap-2">
@@ -382,7 +382,7 @@ function LocationsPage() {
 										disabled={bulkLocationCreateEventDisabled}
 										onClick={() => setCreateEventOpen(true)}
 									>
-										{m["collections.gardeningEvent.create"]()}
+										{m.collections_gardeningEvent_create()}
 									</Button>
 								</ButtonTooltip>
 								<ButtonTooltip label={bulkDeleteManyTooltip} disabled={bulkLocationDeleteDisabled}>
@@ -392,7 +392,7 @@ function LocationsPage() {
 										disabled={bulkLocationDeleteDisabled}
 										onClick={() => setBulkDeleteOpen(true)}
 									>
-										{m["collections.location.deleteMany"]()}
+										{m.collections_location_deleteMany()}
 									</Button>
 								</ButtonTooltip>
 							</div>
@@ -409,8 +409,8 @@ function LocationsPage() {
 			<DeleteConfirmDialog
 				open={bulkDeleteOpen}
 				onOpenChange={setBulkDeleteOpen}
-				title={m["collections.location.deleteMany"]()}
-				description={m["collections.location.deleteManyConfirmDescription"]({
+				title={m.collections_location_deleteMany()}
+				description={m.collections_location_deleteManyConfirmDescription({
 					count: selectedLocationIds.length,
 				})}
 				isPending={bulkDeleteMany.isPending}
@@ -430,40 +430,40 @@ function LocationRowActions({ location, isPlaced }: { location: LocationEntity; 
 	const [createEventOpen, setCreateEventOpen] = useState(false);
 	const del = useLocationDeleteMutation();
 
-	const deleteTitle = isPlaced ? m["common.deleteDisabledWhilePlaced"]() : m["common.delete"]();
+	const deleteTitle = isPlaced ? m.common_deleteDisabledWhilePlaced() : m.common_delete();
 
 	return (
 		<div className="flex w-full items-center justify-center">
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
-					<Button type="button" variant="outline" size="icon" aria-label={m["common.actions"]()}>
+					<Button type="button" variant="outline" size="icon" aria-label={m.common_actions()}>
 						<EllipsisVerticalIcon />
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent className="flex flex-col gap-1" align="end">
 					<DropdownMenuItem
 						onSelect={() => setCreateEventOpen(true)}
-						title={m["collections.gardeningEvent.createForLocationRowHint"]()}
+						title={m.collections_gardeningEvent_createForLocationRowHint()}
 					>
 						<PlusIcon />
-						{m["collections.gardeningEvent.create"]()}
+						{m.collections_gardeningEvent_create()}
 					</DropdownMenuItem>
-					<DropdownMenuItem onSelect={() => setEditOpen(true)} title={m["common.edit"]()}>
+					<DropdownMenuItem onSelect={() => setEditOpen(true)} title={m.common_edit()}>
 						<PencilIcon />
-						{m["common.edit"]()}
+						{m.common_edit()}
 					</DropdownMenuItem>
 
 					{isPlaced ? (
 						<ButtonTooltip label={deleteTitle} disabled>
 							<DropdownMenuItem disabled title={deleteTitle}>
 								<Trash2Icon />
-								{m["common.delete"]()}
+								{m.common_delete()}
 							</DropdownMenuItem>
 						</ButtonTooltip>
 					) : (
 						<DropdownMenuItem onSelect={() => setDeleteOpen(true)} title={deleteTitle}>
 							<Trash2Icon />
-							{m["common.delete"]()}
+							{m.common_delete()}
 						</DropdownMenuItem>
 					)}
 				</DropdownMenuContent>
@@ -481,7 +481,7 @@ function LocationRowActions({ location, isPlaced }: { location: LocationEntity; 
 			<DeleteConfirmDialog
 				open={deleteOpen}
 				onOpenChange={setDeleteOpen}
-				title={m["collections.location.delete"]()}
+				title={m.collections_location_delete()}
 				description={location.name}
 				isPending={del.isPending}
 				onConfirm={async () => {

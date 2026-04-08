@@ -77,7 +77,7 @@ export function usePlantCreateMutation() {
 					);
 				}
 				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m["collections.plant.actionError"]());
+				toast.error(m.collections_plant_actionError());
 			},
 			onSuccess: (entity, _vars, ctx) => {
 				if (ctx?.pendingIds?.[0]) {
@@ -97,7 +97,7 @@ export function usePlantCreateMutation() {
 					);
 				}
 				queryClient.setQueryData(queryKeys.plant.detail(entity.id).queryKey, entity);
-				toast.success(m["collections.plant.createSuccess"]());
+				toast.success(m.collections_plant_createSuccess());
 			},
 		}),
 	);
@@ -139,7 +139,7 @@ export function usePlantCreateManyMutation() {
 				if (!ctx) return;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
 				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m["collections.plant.actionError"]());
+				toast.error(m.collections_plant_actionError());
 			},
 			onSuccess: (container, _vars, ctx) => {
 				if (ctx?.pendingIds?.length) {
@@ -151,7 +151,7 @@ export function usePlantCreateManyMutation() {
 				queryClient.setQueryData<ItemsContainer<HydratedPlantEntity>>(queryKeys.plant.all.queryKey, (prev) =>
 					appendManyToItemsContainer(prev, container.items),
 				);
-				toast.success(m["collections.plant.createManySuccess"]());
+				toast.success(m.collections_plant_createManySuccess());
 			},
 		}),
 	);
@@ -200,14 +200,14 @@ export function usePlantUpdateMutation() {
 				void variables;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
 				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m["collections.plant.actionError"]());
+				toast.error(m.collections_plant_actionError());
 			},
 			onSuccess: (entity) => {
 				queryClient.setQueryData<ItemsContainer<HydratedPlantEntity>>(queryKeys.plant.all.queryKey, (prev) =>
 					upsertInItemsContainer(prev, entity),
 				);
 				queryClient.setQueryData(queryKeys.plant.detail(entity.id).queryKey, entity);
-				toast.success(m["collections.plant.updateSuccess"]());
+				toast.success(m.collections_plant_updateSuccess());
 			},
 		}),
 	);
@@ -259,7 +259,7 @@ export function usePlantDeleteMutation() {
 					}
 				}
 				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m["collections.plant.actionError"]());
+				toast.error(m.collections_plant_actionError());
 			},
 			onSuccess: (deletedId) => {
 				queryClient.setQueryData<ItemsContainer<HydratedPlantEntity>>(queryKeys.plant.all.queryKey, (prev) =>
@@ -269,7 +269,7 @@ export function usePlantDeleteMutation() {
 					queryKey: queryKeys.gardeningEvent.forPlant(deletedId).queryKey,
 				});
 				queryClient.setQueryData(queryKeys.plant.detail(deletedId).queryKey, undefined);
-				toast.success(m["collections.plant.deleteSuccess"]());
+				toast.success(m.collections_plant_deleteSuccess());
 			},
 		}),
 	);
@@ -328,7 +328,7 @@ export function usePlantDeleteManyMutation() {
 					}
 				}
 				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m["collections.plant.actionError"]());
+				toast.error(m.collections_plant_actionError());
 			},
 			onSuccess: (result) => {
 				queryClient.setQueryData<ItemsContainer<HydratedPlantEntity>>(queryKeys.plant.all.queryKey, (prev) =>
@@ -340,7 +340,7 @@ export function usePlantDeleteManyMutation() {
 					});
 					queryClient.setQueryData(queryKeys.plant.detail(deletedId).queryKey, undefined);
 				}
-				toast.success(m["collections.plant.deleteManySuccess"]());
+				toast.success(m.collections_plant_deleteManySuccess());
 			},
 		}),
 	);

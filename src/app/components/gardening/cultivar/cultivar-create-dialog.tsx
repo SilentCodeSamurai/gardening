@@ -45,7 +45,7 @@ export function CultivarCreateDialog({ open, onOpenChange }: Props) {
 			label: translateCatalogField(s.characteristics.name, s.isDefault) ?? String(s.id),
 			presentation: s.presentation,
 		}));
-	}, [speciesData?.items, t]);
+	}, [speciesData?.items]);
 
 	const form = useAppForm({
 		defaultValues: {
@@ -87,8 +87,8 @@ export function CultivarCreateDialog({ open, onOpenChange }: Props) {
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>{m["collections.cultivar.create"]()}</DialogTitle>
-					<DialogDescription className="sr-only">{m["collections.cultivar.create"]()}</DialogDescription>
+					<DialogTitle>{m.collections_cultivar_create()}</DialogTitle>
+					<DialogDescription className="sr-only">{m.collections_cultivar_create()}</DialogDescription>
 				</DialogHeader>
 				<form.AppForm>
 					<form
@@ -105,14 +105,14 @@ export function CultivarCreateDialog({ open, onOpenChange }: Props) {
 							name="speciesId"
 							validators={{
 								onSubmit: ({ value }) =>
-									!value || value === SELECT_NONE ? m["fields.selectRequired"]() : undefined,
+									!value || value === SELECT_NONE ? m.fields_selectRequired() : undefined,
 							}}
 						>
 							{(field) => (
 								<field.CatalogCombobox
-									label={m["collections.species.title"]()}
-									placeholder={m["fields.selectPlaceholder"]()}
-									emptyLabel={m["filtering.comboboxEmpty"]()}
+									label={m.collections_species_title()}
+									placeholder={m.fields_selectPlaceholder()}
+									emptyLabel={m.filtering_comboboxEmpty()}
 									values={speciesOptions}
 								/>
 							)}
@@ -120,16 +120,16 @@ export function CultivarCreateDialog({ open, onOpenChange }: Props) {
 						<form.AppField
 							name="name"
 							validators={{
-								onSubmit: ({ value }) => (!value?.trim() ? m["fields.required"]() : undefined),
+								onSubmit: ({ value }) => (!value?.trim() ? m.fields_required() : undefined),
 							}}
 						>
-							{(field) => <field.TextField label={m["fields.name"]()} placeholder={m["fields.name"]()} />}
+							{(field) => <field.TextField label={m.fields_name()} placeholder={m.fields_name()} />}
 						</form.AppField>
 						<form.AppField name="description">
 							{(field) => (
 								<field.TextField
-									label={m["fields.description"]()}
-									placeholder={m["fields.description"]()}
+									label={m.fields_description()}
+									placeholder={m.fields_description()}
 								/>
 							)}
 						</form.AppField>
@@ -137,27 +137,27 @@ export function CultivarCreateDialog({ open, onOpenChange }: Props) {
 							<form.AppField name="iconKey">
 								{(field) => (
 									<field.IconPicker
-										label={m["fields.icon"]()}
-										noneLabel={m["fields.iconNone"]()}
+										label={m.fields_icon()}
+										noneLabel={m.fields_iconNone()}
 										iconColor={iconColor}
 										backgroundColor={backgroundColor}
 									/>
 								)}
 							</form.AppField>
 							<form.AppField name="iconColor">
-								{(field) => <field.ColorPicker label={m["fields.iconColor"]()} placeholder="#2f855a" />}
+								{(field) => <field.ColorPicker label={m.fields_iconColor()} placeholder="#2f855a" />}
 							</form.AppField>
 							<form.AppField name="backgroundColor">
 								{(field) => (
-									<field.ColorPicker label={m["fields.backgroundColor"]()} placeholder="#e6ffed" />
+									<field.ColorPicker label={m.fields_backgroundColor()} placeholder="#e6ffed" />
 								)}
 							</form.AppField>
 						</div>
 						<DialogFooter>
 							<Button type="button" variant="outline" onClick={close}>
-								{m["common.cancel"]()}
+								{m.common_cancel()}
 							</Button>
-							<form.SubscribeButton label={m["common.save"]()} />
+							<form.SubscribeButton label={m.common_save()} />
 						</DialogFooter>
 					</form>
 				</form.AppForm>

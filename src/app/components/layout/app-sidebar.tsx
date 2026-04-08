@@ -24,14 +24,14 @@ export function AppSidebar() {
 	const isActivePath = (to: string) => pathname === to;
 
 	return (
-		<Sidebar variant="inset" collapsible="offcanvas" aria-label={m["components.layout.appShell.sidebarNavLabel"]()}>
+		<Sidebar variant="inset" collapsible="offcanvas" aria-label={m.components_layout_appShell_sidebarNavLabel()}>
 			<SidebarContent>
 				<SidebarGroup>
 					<SidebarGroupContent>
 						<SidebarMenu>
 							<SidebarMenuItem>
 								<SidebarMenuButton asChild isActive={isActivePath("/")}>
-									<Link to="/">{m["components.layout.nav.home"]()}</Link>
+									<Link to="/">{m.components_layout_nav_home()}</Link>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 						</SidebarMenu>
@@ -41,7 +41,7 @@ export function AppSidebar() {
 					<SidebarGroup>
 						<SidebarGroupLabel asChild>
 							<CollapsibleTrigger className="w-full">
-								{m["components.layout.nav.catalogSection"]()}
+								{m.components_layout_nav_catalogSection()}
 								<ChevronDownIcon className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180" />
 							</CollapsibleTrigger>
 						</SidebarGroupLabel>
@@ -58,7 +58,7 @@ export function AppSidebar() {
 												className="flex w-full min-w-0 items-center gap-2"
 											>
 												<CollectionIcon collection="speciesCategory" className="size-4" />
-												{m["collections.speciesCategory.titlePlural"]()}
+												{m.collections_speciesCategory_titlePlural()}
 											</Link>
 										</SidebarMenuButton>
 									</SidebarMenuItem>
@@ -70,7 +70,7 @@ export function AppSidebar() {
 												className="flex w-full min-w-0 items-center gap-2"
 											>
 												<CollectionIcon collection="species" className="size-4" />
-												{m["collections.species.titlePlural"]()}
+												{m.collections_species_titlePlural()}
 											</Link>
 										</SidebarMenuButton>
 									</SidebarMenuItem>
@@ -82,7 +82,7 @@ export function AppSidebar() {
 												className="flex w-full min-w-0 items-center gap-2"
 											>
 												<CollectionIcon collection="cultivar" className="size-4" />
-												{m["collections.cultivar.titlePlural"]()}
+												{m.collections_cultivar_titlePlural()}
 											</Link>
 										</SidebarMenuButton>
 									</SidebarMenuItem>
@@ -102,7 +102,7 @@ export function AppSidebar() {
 										className="flex w-full min-w-0 items-center gap-2"
 									>
 										<CollectionIcon collection="plant" className="size-4" />
-										{m["collections.plant.titlePlural"]()}
+										{m.collections_plant_titlePlural()}
 									</Link>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
@@ -110,7 +110,7 @@ export function AppSidebar() {
 								<SidebarMenuButton asChild isActive={isActivePath("/locations")}>
 									<Link to="/locations" className="flex w-full min-w-0 items-center gap-2">
 										<CollectionIcon collection="location" className="size-4" />
-										{m["collections.location.titlePlural"]()}
+										{m.collections_location_titlePlural()}
 									</Link>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
@@ -118,7 +118,7 @@ export function AppSidebar() {
 								<SidebarMenuButton asChild isActive={isActivePath("/gardening-events")}>
 									<Link to="/gardening-events" className="flex w-full min-w-0 items-center gap-2">
 										<CollectionIcon collection="gardeningEvent" className="size-4" />
-										{m["collections.gardeningEvent.titlePlural"]()}
+										{m.collections_gardeningEvent_titlePlural()}
 									</Link>
 								</SidebarMenuButton>
 							</SidebarMenuItem>

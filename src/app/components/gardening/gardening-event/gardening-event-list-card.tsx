@@ -1,12 +1,13 @@
-import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import type { GardeningEventEntity } from "@backend/core/domain/gardening/entities";
+import { Link } from "@tanstack/react-router";
+import { PencilIcon } from "lucide-react";
+import { useState } from "react";
 import { GardeningActionPresentationIcon } from "@/components/gardening/gardening-action-icon";
 import { GardeningEventUpdateDialog } from "@/components/gardening/gardening-event/gardening-event-update-dialog";
 import { Button } from "@/components/ui/button";
 import { ButtonTooltip } from "@/components/ui/button-tooltip";
-import { Link } from "@tanstack/react-router";
-import { PencilIcon } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { gardeningActionMessage } from "@/lib/gardening-action-messages";
 import * as m from "@/paraglide/messages.js";
 import { getLocale } from "@/paraglide/runtime";
 
@@ -15,7 +16,7 @@ type Props = {
 };
 export function GardeningEventListCard({ event }: Props) {
 	const [editOpen, setEditOpen] = useState(false);
-	const actionLabel = m[`gardeningActions.${event.action.type}` as keyof typeof m]();
+	const actionLabel = gardeningActionMessage(event.action.type);
 	const when = event.createdAt.toLocaleString(getLocale(), {
 		dateStyle: "short",
 		timeStyle: "short",
@@ -28,11 +29,11 @@ export function GardeningEventListCard({ event }: Props) {
 					to="/gardening-event/$gardeningEventId"
 					params={{ gardeningEventId: String(event.id) }}
 					className="absolute inset-0 z-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-					aria-label={`${actionLabel}, ${when} — ${m["common.open"]()} ${m["common.details"]().toLowerCase()}`}
+					aria-label={`${actionLabel}, ${when} — ${m.common_open()} ${m.common_details().toLowerCase()}`}
 				/>
-				<div className="relative z-10 flex min-w-0 flex-1 flex-row items-center gap-2 pointer-events-none">
+				<div className="pointer-events-none relative z-10 flex min-w-0 flex-1 flex-row items-center gap-2">
 					<GardeningActionPresentationIcon action={event.action} />
-					<div className="flex min-w-0 flex-col justify-center items-start">
+					<div className="flex min-w-0 flex-col items-start justify-center">
 						<span className="font-medium capitalize">{actionLabel}</span>
 						<span className="text-muted-foreground text-xs">{when}</span>
 					</div>
@@ -41,12 +42,12 @@ export function GardeningEventListCard({ event }: Props) {
 					) : null}
 				</div>
 				<div className="relative z-20 flex shrink-0 items-center">
-					<ButtonTooltip label={m["common.edit"]()}>
+					<ButtonTooltip label={m.common_edit()}>
 						<Button
 							type="button"
 							variant="outline"
 							size="icon-sm"
-							aria-label={m["common.edit"]()}
+							aria-label={m.common_edit()}
 							onClick={() => setEditOpen(true)}
 						>
 							<PencilIcon />

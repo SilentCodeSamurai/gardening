@@ -15,10 +15,10 @@ export type TableSelectionBulkTooltipInput = {
  * Shared copy for table bulk actions: none selected, optional single-row rule, placed guard, then enabled hint.
  */
 export function tableSelectionBulkTooltip(input: TableSelectionBulkTooltipInput): string {
-	if (input.selectedCount === 0) return m["common.actionRequiresSelection"]();
-	if (input.hasPlacedInSelection) return m["common.actionDisabledSelectionContainsPlaced"]();
+	if (input.selectedCount === 0) return m.common_actionRequiresSelection();
+	if (input.hasPlacedInSelection) return m.common_actionDisabledSelectionContainsPlaced();
 	if (input.whenMoreThanOne === "pickSingleLocationForEvent" && input.selectedCount !== 1) {
-		return m["collections.gardeningEvent.createFromTablePickSingleLocation"]();
+		return m.collections_gardeningEvent_createFromTablePickSingleLocation();
 	}
 	return input.enabledTooltip;
 }

@@ -75,8 +75,8 @@ export function PlantUpdateDialog({ plant, open, onOpenChange }: Props) {
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>{m["collections.plant.update"]()}</DialogTitle>
-					<DialogDescription className="sr-only">{m["collections.plant.update"]()}</DialogDescription>
+					<DialogTitle>{m.collections_plant_update()}</DialogTitle>
+					<DialogDescription className="sr-only">{m.collections_plant_update()}</DialogDescription>
 				</DialogHeader>
 				<form.AppForm>
 					<form
@@ -93,36 +93,36 @@ export function PlantUpdateDialog({ plant, open, onOpenChange }: Props) {
 							name="cultivarId"
 							validators={{
 								onSubmit: ({ value }) =>
-									!value || value === SELECT_NONE ? m["fields.selectRequired"]() : undefined,
+									!value || value === SELECT_NONE ? m.fields_selectRequired() : undefined,
 							}}
 						>
 							{(field) => (
 								<field.CatalogCombobox
-									label={m["collections.cultivar.title"]()}
-									placeholder={m["fields.selectPlaceholder"]()}
-									emptyLabel={m["filtering.comboboxEmpty"]()}
+									label={m.collections_cultivar_title()}
+									placeholder={m.fields_selectPlaceholder()}
+									emptyLabel={m.filtering_comboboxEmpty()}
 									values={cultivarOptions}
 								/>
 							)}
 						</form.AppField>
 						<form.AppField name="title">
 							{(field) => (
-								<field.TextField label={m["fields.title"]()} placeholder={m["fields.title"]()} />
+								<field.TextField label={m.fields_title()} placeholder={m.fields_title()} />
 							)}
 						</form.AppField>
 						<form.AppField name="description">
 							{(field) => (
 								<field.TextField
-									label={m["fields.description"]()}
-									placeholder={m["fields.description"]()}
+									label={m.fields_description()}
+									placeholder={m.fields_description()}
 								/>
 							)}
 						</form.AppField>
 						<DialogFooter>
 							<Button type="button" variant="outline" onClick={close}>
-								{m["common.cancel"]()}
+								{m.common_cancel()}
 							</Button>
-							<form.SubscribeButton label={m["common.save"]()} />
+							<form.SubscribeButton label={m.common_save()} />
 						</DialogFooter>
 					</form>
 				</form.AppForm>

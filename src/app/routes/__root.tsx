@@ -87,7 +87,7 @@ function RootDocument() {
 				<script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
 				<HeadContent />
 			</head>
-			<body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
+			<body className="wrap-anywhere font-sans antialiased selection:bg-[rgba(79,184,178,0.24)]">
 				<ThemeProvider>
 					<TooltipProvider>
 						<SidebarProvider className="h-svh max-h-svh overflow-hidden bg-background">
@@ -95,7 +95,7 @@ function RootDocument() {
 
 							<SidebarInset
 								id="main-content"
-								aria-label={m["components.layout.appShell.mainLabel"]()}
+								aria-label={m.components_layout_appShell_mainLabel()}
 								className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
 							>
 								<MainOutletShell>

@@ -31,12 +31,12 @@ function CultivarDetailPage() {
 	});
 
 	if (isPending) {
-		return <div className="text-muted-foreground text-sm">{m["common.loading"]()}</div>;
+		return <div className="text-muted-foreground text-sm">{m.common_loading()}</div>;
 	}
 	if (isError || !data) {
 		return (
 			<div className="text-destructive text-sm">
-				{`${m["collections.cultivar.title"]()} ${m["common.notFound"]()}`}
+				{`${m.collections_cultivar_title()} ${m.common_notFound()}`}
 			</div>
 		);
 	}
@@ -51,23 +51,23 @@ function CultivarDetailPage() {
 					<h1 className="font-heading font-medium text-lg">{data.characteristics.name}</h1>
 				</div>
 				<div className="flex shrink-0 items-center gap-1">
-					<ButtonTooltip label={m["common.edit"]()}>
+					<ButtonTooltip label={m.common_edit()}>
 						<Button
 							type="button"
 							variant="outline"
 							size="icon"
-							aria-label={m["common.edit"]()}
+							aria-label={m.common_edit()}
 							onClick={() => setEditOpen(true)}
 						>
 							<PencilIcon />
 						</Button>
 					</ButtonTooltip>
-					<ButtonTooltip label={m["common.delete"]()}>
+					<ButtonTooltip label={m.common_delete()}>
 						<Button
 							type="button"
 							variant="destructive"
 							size="icon"
-							aria-label={m["common.delete"]()}
+							aria-label={m.common_delete()}
 							onClick={() => setDeleteOpen(true)}
 						>
 							<Trash2Icon />
@@ -77,7 +77,7 @@ function CultivarDetailPage() {
 					<DeleteConfirmDialog
 						open={deleteOpen}
 						onOpenChange={setDeleteOpen}
-						title={m["collections.cultivar.delete"]()}
+						title={m.collections_cultivar_delete()}
 						description={data.characteristics.name}
 						isPending={del.isPending}
 						onConfirm={async () => {
@@ -101,17 +101,17 @@ function CultivarDetailPage() {
 					</p>
 				) : (
 					<p className="text-muted-foreground text-sm italic">
-						{m["components.detail.field.noDescription"]()}
+						{m.components_detail_field_noDescription()}
 					</p>
 				)}
 
 				<section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm">
 					<h2 className="mb-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
-						{m["components.detail.metaHeading"]()}
+						{m.components_detail_metaHeading()}
 					</h2>
 					<dl className="grid gap-x-4 gap-y-3 text-sm sm:grid-cols-[minmax(9rem,auto)_1fr]">
 						<div className="contents">
-							<dt className="text-muted-foreground">{m["collections.species.title"]()}</dt>
+							<dt className="text-muted-foreground">{m.collections_species_title()}</dt>
 							<dd className="wrap-break-word min-w-0">
 								<Link
 									to="/catalog/species-detail/$speciesId"
@@ -125,7 +125,7 @@ function CultivarDetailPage() {
 						</div>
 
 						<div className="contents">
-							<dt className="text-muted-foreground">{m["fields.createdAt"]()}</dt>
+							<dt className="text-muted-foreground">{m.fields_createdAt()}</dt>
 							<dd className="wrap-break-word min-w-0">
 								{data.createdAt.toLocaleString(getLocale(), {
 									dateStyle: "medium",
@@ -134,7 +134,7 @@ function CultivarDetailPage() {
 							</dd>
 						</div>
 						<div className="contents">
-							<dt className="text-muted-foreground">{m["fields.updatedAt"]()}</dt>
+							<dt className="text-muted-foreground">{m.fields_updatedAt()}</dt>
 							<dd className="wrap-break-word min-w-0">
 								{data.updatedAt.toLocaleString(getLocale(), {
 									dateStyle: "medium",
@@ -143,14 +143,14 @@ function CultivarDetailPage() {
 							</dd>
 						</div>
 						<div className="contents">
-							<dt className="text-muted-foreground">{m["components.detail.field.relatedLists"]()}</dt>
+							<dt className="text-muted-foreground">{m.components_detail_field_relatedLists()}</dt>
 							<dd className="wrap-break-word min-w-0">
 								<Link
 									to="/plants"
 									search={{ category: "", species: "", cultivar: String(data.id) }}
 									className="text-primary underline-offset-4 hover:underline"
 								>
-									{m["components.detail.link.plantsWithCultivar"]()}
+									{m.components_detail_link_plantsWithCultivar()}
 								</Link>
 							</dd>
 						</div>

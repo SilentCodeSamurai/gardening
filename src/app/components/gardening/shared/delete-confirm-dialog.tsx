@@ -37,10 +37,10 @@ export function DeleteConfirmDialog({
 				</DialogHeader>
 				<DialogFooter>
 					<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-						{m["common.cancel"]()}
+						{m.common_cancel()}
 					</Button>
 					<Button type="button" variant="destructive" disabled={isPending} onClick={() => void onConfirm()}>
-						{confirmLabel ?? m["common.delete"]()}
+						{confirmLabel ?? m.common_delete()}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

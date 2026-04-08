@@ -38,7 +38,7 @@ function resolveSpeciesDisplayName(rawSpeciesName: string): string {
 export function getPlantDisplayTitle(plant: HydratedPlantEntity): string {
 	if (plant.title?.trim()) return plant.title.trim();
 
-	return plant.cultivar.characteristics.name || m["items.untitled"]();
+	return plant.cultivar.characteristics.name || m.items_untitled();
 }
 
 type Props = {
@@ -60,7 +60,7 @@ export function PlantListCard({ plant, isPlaced = false }: Props) {
 					to="/plant/$plantId"
 					params={{ plantId: String(plant.id) }}
 					className="absolute inset-0 z-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-					aria-label={`${title} — ${m["common.open"]()} ${m["common.details"]().toLowerCase()}`}
+					aria-label={`${title} — ${m.common_open()} ${m.common_details().toLowerCase()}`}
 				/>
 				<div className="pointer-events-none relative z-10 flex min-w-0 flex-1 flex-row items-center gap-2">
 					<ItemPresentationIcon presentation={plant.cultivar.presentation} />
@@ -75,12 +75,12 @@ export function PlantListCard({ plant, isPlaced = false }: Props) {
 					) : null}
 				</div>
 				<div className="relative z-20 flex shrink-0 items-center gap-1">
-					<ButtonTooltip label={m["common.edit"]()}>
+					<ButtonTooltip label={m.common_edit()}>
 						<Button
 							type="button"
 							variant="outline"
 							size="icon-sm"
-							aria-label={m["common.edit"]()}
+							aria-label={m.common_edit()}
 							onClick={() => setEditOpen(true)}
 						>
 							<PencilIcon className="size-4" />
@@ -89,14 +89,14 @@ export function PlantListCard({ plant, isPlaced = false }: Props) {
 					<PlantUpdateDialog plant={plant} open={editOpen} onOpenChange={setEditOpen} />
 					<ButtonTooltip
 						disabled={!isPlaced}
-						label={isPlaced ? m["common.deleteDisabledWhilePlaced"]() : m["common.delete"]()}
+						label={isPlaced ? m.common_deleteDisabledWhilePlaced() : m.common_delete()}
 					>
 						<Button
 							type="button"
 							variant="outline"
 							size="icon-sm"
 							disabled={isPlaced}
-							aria-label={isPlaced ? m["common.deleteDisabledWhilePlaced"]() : m["common.delete"]()}
+							aria-label={isPlaced ? m.common_deleteDisabledWhilePlaced() : m.common_delete()}
 							onClick={() => {
 								if (isPlaced) return;
 								setDeleteOpen(true);
@@ -108,7 +108,7 @@ export function PlantListCard({ plant, isPlaced = false }: Props) {
 					<DeleteConfirmDialog
 						open={deleteOpen}
 						onOpenChange={setDeleteOpen}
-						title={m["collections.plant.delete"]()}
+						title={m.collections_plant_delete()}
 						description={title}
 						isPending={del.isPending}
 						onConfirm={async () => {

@@ -63,9 +63,9 @@ export function SpeciesCategoryCreateDialog({ open, onOpenChange }: Props) {
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
-					<DialogTitle>{m["collections.speciesCategory.create"]()}</DialogTitle>
+					<DialogTitle>{m.collections_speciesCategory_create()}</DialogTitle>
 					<DialogDescription className="sr-only">
-						{m["collections.speciesCategory.create"]()}
+						{m.collections_speciesCategory_create()}
 					</DialogDescription>
 				</DialogHeader>
 				<form.AppForm>
@@ -82,38 +82,38 @@ export function SpeciesCategoryCreateDialog({ open, onOpenChange }: Props) {
 						<form.AppField
 							name="title"
 							validators={{
-								onSubmit: ({ value }) => (!value?.trim() ? m["fields.required"]() : undefined),
+								onSubmit: ({ value }) => (!value?.trim() ? m.fields_required() : undefined),
 							}}
 						>
 							{(field) => (
-								<field.TextField label={m["fields.title"]()} placeholder={m["fields.title"]()} />
+								<field.TextField label={m.fields_title()} placeholder={m.fields_title()} />
 							)}
 						</form.AppField>
 						<div className="grid grid-cols-3 gap-2">
 							<form.AppField name="iconKey">
 								{(field) => (
 									<field.IconPicker
-										label={m["fields.icon"]()}
-										noneLabel={m["fields.iconNone"]()}
+										label={m.fields_icon()}
+										noneLabel={m.fields_iconNone()}
 										iconColor={iconColor}
 										backgroundColor={backgroundColor}
 									/>
 								)}
 							</form.AppField>
 							<form.AppField name="iconColor">
-								{(field) => <field.ColorPicker label={m["fields.iconColor"]()} placeholder="#2f855a" />}
+								{(field) => <field.ColorPicker label={m.fields_iconColor()} placeholder="#2f855a" />}
 							</form.AppField>
 							<form.AppField name="backgroundColor">
 								{(field) => (
-									<field.ColorPicker label={m["fields.backgroundColor"]()} placeholder="#e6ffed" />
+									<field.ColorPicker label={m.fields_backgroundColor()} placeholder="#e6ffed" />
 								)}
 							</form.AppField>
 						</div>
 						<DialogFooter>
 							<Button type="button" variant="outline" onClick={close}>
-								{m["common.cancel"]()}
+								{m.common_cancel()}
 							</Button>
-							<form.SubscribeButton label={m["common.save"]()} />
+							<form.SubscribeButton label={m.common_save()} />
 						</DialogFooter>
 					</form>
 				</form.AppForm>

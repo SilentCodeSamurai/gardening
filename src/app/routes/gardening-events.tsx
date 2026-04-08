@@ -39,6 +39,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { gardeningActionMessage } from "@/lib/gardening-action-messages";
 import { tableSelectionBulkTooltip } from "@/lib/table-selection-tooltips";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
@@ -93,7 +94,7 @@ function GardeningEventsPage() {
 			}),
 			columnHelper.accessor(
 				(event) =>
-					`${event.action.type} ${m[`gardeningActions.${event.action.type}` as keyof typeof m]()} ${event.action.content ?? ""}`,
+					`${event.action.type} ${gardeningActionMessage(event.action.type)} ${event.action.content ?? ""}`,
 				{
 					id: "globalSearch",
 					enableColumnFilter: false,
@@ -106,11 +107,11 @@ function GardeningEventsPage() {
 			columnHelper.accessor((event) => event.action.type, {
 				id: "actionType",
 				...tableListColumnSizes.primaryLink,
-				header: ({ column }) => <DataTableColumnHeader column={column} title={m["fields.title"]()} />,
+				header: ({ column }) => <DataTableColumnHeader column={column} title={m.fields_title()} />,
 				filterFn: "includesString",
 				enableGlobalFilter: false,
 				cell: ({ row }) => {
-					const actionLabel = m[`gardeningActions.${row.original.action.type}` as keyof typeof m]();
+					const actionLabel = gardeningActionMessage(row.original.action.type);
 					return (
 						<Link
 							to="/gardening-event/$gardeningEventId"
@@ -125,7 +126,7 @@ function GardeningEventsPage() {
 			}),
 			columnHelper.accessor((event) => event.action.content ?? "", {
 				id: "content",
-				header: ({ column }) => <DataTableColumnHeader column={column} title={m["fields.description"]()} />,
+				header: ({ column }) => <DataTableColumnHeader column={column} title={m.fields_description()} />,
 				filterFn: "includesString",
 				enableGlobalFilter: false,
 				cell: ({ row }) => (
@@ -136,7 +137,7 @@ function GardeningEventsPage() {
 			}),
 			columnHelper.accessor((event) => event.createdAt.getTime(), {
 				id: "createdAt",
-				header: ({ column }) => <DataTableColumnHeader column={column} title={m["sorting.newestFirst"]()} />,
+				header: ({ column }) => <DataTableColumnHeader column={column} title={m.sorting_newestFirst()} />,
 				sortingFn: "basic",
 				enableColumnFilter: false,
 				enableGlobalFilter: false,
@@ -154,7 +155,7 @@ function GardeningEventsPage() {
 				...tableListColumnSizes.rowActions,
 				header: () => (
 					<div className={tableListCompactHeaderInnerClassMuted}>
-						<span className="text-center leading-tight">{m["common.actions"]()}</span>
+						<span className="text-center leading-tight">{m.common_actions()}</span>
 					</div>
 				),
 				enableColumnFilter: false,
@@ -167,7 +168,7 @@ function GardeningEventsPage() {
 				cell: ({ row }) => <GardeningEventRowActions event={row.original} />,
 			}),
 		],
-		[columnHelper, t],
+		[columnHelper],
 	);
 	const table = useMemo(
 		() =>
@@ -204,16 +205,16 @@ function GardeningEventsPage() {
 	const bulkDeleteManyTooltip = tableSelectionBulkTooltip({
 		selectedCount: selectedEventIds.length,
 		hasPlacedInSelection: false,
-		enabledTooltip: m["collections.gardeningEvent.deleteManyTooltip"](),
+		enabledTooltip: m.collections_gardeningEvent_deleteManyTooltip(),
 	});
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
 			<PageHeading collection="gardeningEvent">
-				<h1 className="font-heading font-medium text-lg">{m["collections.gardeningEvent.titlePlural"]()}</h1>
-				<ButtonTooltip label={m["collections.gardeningEvent.create"]()}>
+				<h1 className="font-heading font-medium text-lg">{m.collections_gardeningEvent_titlePlural()}</h1>
+				<ButtonTooltip label={m.collections_gardeningEvent_create()}>
 					<Button type="button" size="icon" variant="outline" onClick={() => setCreateOpen(true)}>
-						<span className="sr-only">{m["collections.gardeningEvent.create"]()}</span>
+						<span className="sr-only">{m.collections_gardeningEvent_create()}</span>
 						<PlusIcon />
 					</Button>
 				</ButtonTooltip>
@@ -222,11 +223,11 @@ function GardeningEventsPage() {
 				<div className="flex flex-wrap items-end gap-2">
 					<Input
 						className="w-full min-w-40 sm:w-56"
-						placeholder={m["filtering.searchPlaceholder"]()}
+						placeholder={m.filtering_searchPlaceholder()}
 						value={globalFilter}
 						onChange={(event) => setGlobalFilter(event.target.value)}
 					/>
-					<ButtonTooltip label={m["filtering.clearFilters"]()}>
+					<ButtonTooltip label={m.filtering_clearFilters()}>
 						<Button
 							type="button"
 							variant="outline"
@@ -236,7 +237,7 @@ function GardeningEventsPage() {
 								table.resetColumnFilters();
 								setRowSelection({});
 							}}
-							aria-label={m["filtering.clearFilters"]()}
+							aria-label={m.filtering_clearFilters()}
 						>
 							<XIcon />
 						</Button>
@@ -247,8 +248,8 @@ function GardeningEventsPage() {
 						table={table}
 						isPending={isPending}
 						isError={isError}
-						errorMessage={m["common.loadError"]()}
-						emptyMessage={m["items.noElements"]()}
+						errorMessage={m.common_loadError()}
+						emptyMessage={m.items_noElements()}
 						selectedActions={
 							<div className="flex flex-wrap items-center gap-2">
 								<ButtonTooltip label={bulkDeleteManyTooltip} disabled={bulkDeleteEventsDisabled}>
@@ -258,7 +259,7 @@ function GardeningEventsPage() {
 										disabled={bulkDeleteEventsDisabled}
 										onClick={() => setBulkDeleteOpen(true)}
 									>
-										{m["collections.gardeningEvent.deleteMany"]()}
+										{m.collections_gardeningEvent_deleteMany()}
 									</Button>
 								</ButtonTooltip>
 							</div>
@@ -270,8 +271,8 @@ function GardeningEventsPage() {
 			<DeleteConfirmDialog
 				open={bulkDeleteOpen}
 				onOpenChange={setBulkDeleteOpen}
-				title={m["collections.gardeningEvent.deleteMany"]()}
-				description={m["collections.gardeningEvent.deleteManyConfirmDescription"]({
+				title={m.collections_gardeningEvent_deleteMany()}
+				description={m.collections_gardeningEvent_deleteManyConfirmDescription({
 					count: selectedEventIds.length,
 				})}
 				isPending={bulkDeleteMany.isPending}
@@ -294,18 +295,18 @@ function GardeningEventRowActions({ event }: { event: GardeningEventEntity }) {
 		<div className="flex w-full items-center justify-center">
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
-					<Button type="button" variant="outline" size="icon" aria-label={m["common.actions"]()}>
+					<Button type="button" variant="outline" size="icon" aria-label={m.common_actions()}>
 						<EllipsisVerticalIcon />
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent className="flex flex-col gap-1" align="end">
-					<DropdownMenuItem onSelect={() => setEditOpen(true)} title={m["common.edit"]()}>
+					<DropdownMenuItem onSelect={() => setEditOpen(true)} title={m.common_edit()}>
 						<PencilIcon />
-						{m["common.edit"]()}
+						{m.common_edit()}
 					</DropdownMenuItem>
-					<DropdownMenuItem onSelect={() => setDeleteOpen(true)} title={m["common.delete"]()}>
+					<DropdownMenuItem onSelect={() => setDeleteOpen(true)} title={m.common_delete()}>
 						<Trash2Icon />
-						{m["common.delete"]()}
+						{m.common_delete()}
 					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
@@ -313,8 +314,8 @@ function GardeningEventRowActions({ event }: { event: GardeningEventEntity }) {
 			<DeleteConfirmDialog
 				open={deleteOpen}
 				onOpenChange={setDeleteOpen}
-				title={m["collections.gardeningEvent.delete"]()}
-				description={m[`gardeningActions.${event.action.type}` as keyof typeof m]()}
+				title={m.collections_gardeningEvent_delete()}
+				description={gardeningActionMessage(event.action.type)}
 				isPending={del.isPending}
 				onConfirm={async () => {
 					await del.mutateAsync({ id: event.id });

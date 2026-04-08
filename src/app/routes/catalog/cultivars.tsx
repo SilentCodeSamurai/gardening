@@ -272,7 +272,7 @@ function CultivarsPage() {
 			columnHelper.accessor((cultivar) => cultivar.characteristics.name, {
 				id: "title",
 				...tableListColumnSizes.primaryLink,
-				header: ({ column }) => <DataTableColumnHeader column={column} title={m["fields.title"]()} />,
+				header: ({ column }) => <DataTableColumnHeader column={column} title={m.fields_title()} />,
 				filterFn: "includesString",
 				enableGlobalFilter: false,
 				cell: ({ row }) => (
@@ -294,7 +294,7 @@ function CultivarsPage() {
 				{
 					id: "category",
 					header: ({ column }) => (
-						<DataTableColumnHeader column={column} title={m["collections.speciesCategory.title"]()} />
+						<DataTableColumnHeader column={column} title={m.collections_speciesCategory_title()} />
 					),
 					filterFn: (row, _columnId, filterValue) => {
 						if (filterValue == null || filterValue === "") return true;
@@ -328,9 +328,9 @@ function CultivarsPage() {
 								>
 									<ComboboxInput
 										className="w-full min-w-0"
-										placeholder={`${m["common.all"]()} ${m["collections.speciesCategory.titlePlural"]().toLowerCase()}`}
-										aria-label={m["filtering.filterBy"]({
-											label: m["collections.speciesCategory.title"]().toLowerCase(),
+										placeholder={`${m.common_all()} ${m.collections_speciesCategory_titlePlural().toLowerCase()}`}
+										aria-label={m.filtering_filterBy({
+											label: m.collections_speciesCategory_title().toLowerCase(),
 										})}
 										showClear
 										startAdornment={
@@ -340,7 +340,7 @@ function CultivarsPage() {
 										}
 									/>
 									<ComboboxContent className="z-100">
-										<ComboboxEmpty>{m["filtering.comboboxEmpty"]()}</ComboboxEmpty>
+										<ComboboxEmpty>{m.filtering_comboboxEmpty()}</ComboboxEmpty>
 										<ComboboxList>
 											{(item) => (
 												<ComboboxItem key={item.value} value={item}>
@@ -361,7 +361,7 @@ function CultivarsPage() {
 			columnHelper.accessor((cultivar) => String(cultivar.speciesId), {
 				id: "species",
 				header: ({ column }) => (
-					<DataTableColumnHeader column={column} title={m["collections.species.title"]()} />
+					<DataTableColumnHeader column={column} title={m.collections_species_title()} />
 				),
 				filterFn: (row, _columnId, filterValue) => {
 					if (filterValue == null || filterValue === "") return true;
@@ -403,9 +403,9 @@ function CultivarsPage() {
 							>
 								<ComboboxInput
 									className="w-full min-w-0"
-									placeholder={`${m["common.all"]()} ${m["collections.species.titlePlural"]().toLowerCase()}`}
-									aria-label={m["filtering.filterBy"]({
-										label: m["collections.species.title"]().toLowerCase(),
+									placeholder={`${m.common_all()} ${m.collections_species_titlePlural().toLowerCase()}`}
+									aria-label={m.filtering_filterBy({
+										label: m.collections_species_title().toLowerCase(),
 									})}
 									showClear
 									startAdornment={
@@ -415,7 +415,7 @@ function CultivarsPage() {
 									}
 								/>
 								<ComboboxContent className="z-100">
-									<ComboboxEmpty>{m["filtering.comboboxEmpty"]()}</ComboboxEmpty>
+									<ComboboxEmpty>{m.filtering_comboboxEmpty()}</ComboboxEmpty>
 									<ComboboxList>
 										{(item) => (
 											<ComboboxItem key={item.value} value={item}>
@@ -434,7 +434,7 @@ function CultivarsPage() {
 			}),
 			columnHelper.accessor((cultivar) => cultivar.updatedAt.getTime(), {
 				id: "updatedAt",
-				header: ({ column }) => <DataTableColumnHeader column={column} title={m["fields.updatedAt"]()} />,
+				header: ({ column }) => <DataTableColumnHeader column={column} title={m.fields_updatedAt()} />,
 				sortingFn: "datetime",
 				enableColumnFilter: false,
 				enableGlobalFilter: false,
@@ -452,7 +452,7 @@ function CultivarsPage() {
 				...tableListColumnSizes.rowActions,
 				header: () => (
 					<div className={tableListCompactHeaderInnerClassMuted}>
-						<span className="text-center leading-tight">{m["common.actions"]()}</span>
+						<span className="text-center leading-tight">{m.common_actions()}</span>
 					</div>
 				),
 				enableColumnFilter: false,
@@ -499,18 +499,18 @@ function CultivarsPage() {
 	const filteredRowCount = table.getFilteredRowModel().rows.length;
 	const emptyMessage =
 		items.length === 0
-			? m["items.noElements"]()
+			? m.items_noElements()
 			: filteredRowCount === 0
-				? m["filtering.noFilteredElements"]()
-				: m["items.noElements"]();
+				? m.filtering_noFilteredElements()
+				: m.items_noElements();
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
 			<PageHeading collection="cultivar">
-				<h1 className="font-heading font-medium text-lg">{m["collections.cultivar.titlePlural"]()}</h1>
-				<ButtonTooltip label={m["collections.cultivar.create"]()}>
+				<h1 className="font-heading font-medium text-lg">{m.collections_cultivar_titlePlural()}</h1>
+				<ButtonTooltip label={m.collections_cultivar_create()}>
 					<Button type="button" size="icon" variant="outline" onClick={() => setCreateOpen(true)}>
-						<span className="sr-only">{m["collections.cultivar.create"]()}</span>
+						<span className="sr-only">{m.collections_cultivar_create()}</span>
 						<PlusIcon />
 					</Button>
 				</ButtonTooltip>
@@ -519,12 +519,12 @@ function CultivarsPage() {
 				<div className="flex flex-wrap items-end gap-2">
 					<Input
 						className="w-full min-w-40 sm:w-56"
-						placeholder={m["filtering.searchPlaceholder"]()}
+						placeholder={m.filtering_searchPlaceholder()}
 						value={globalFilter}
 						onChange={(event) => setGlobalFilter(event.target.value)}
-						aria-label={m["filtering.searchPlaceholder"]()}
+						aria-label={m.filtering_searchPlaceholder()}
 					/>
-					<ButtonTooltip label={m["filtering.clearFilters"]()}>
+					<ButtonTooltip label={m.filtering_clearFilters()}>
 						<Button
 							type="button"
 							variant="outline"
@@ -534,7 +534,7 @@ function CultivarsPage() {
 								table.resetColumnFilters();
 								setRowSelection({});
 							}}
-							aria-label={m["filtering.clearFilters"]()}
+							aria-label={m.filtering_clearFilters()}
 						>
 							<XIcon />
 						</Button>
@@ -545,7 +545,7 @@ function CultivarsPage() {
 						table={table}
 						isPending={isPending}
 						isError={isError}
-						errorMessage={m["common.loadError"]()}
+						errorMessage={m.common_loadError()}
 						emptyMessage={emptyMessage}
 					/>
 				</div>
@@ -559,24 +559,24 @@ function CultivarRowActions({ cultivar }: { cultivar: CultivarEntity }) {
 	const [editOpen, setEditOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const del = useCultivarDeleteMutation();
-	const linkedTitle = m["common.related"]();
+	const linkedTitle = m.common_related();
 
 	return (
 		<div className="flex w-full items-center justify-center">
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
-					<Button type="button" variant="outline" size="icon" aria-label={m["common.actions"]()}>
+					<Button type="button" variant="outline" size="icon" aria-label={m.common_actions()}>
 						<EllipsisVerticalIcon />
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent className="flex flex-col gap-1" align="end">
-					<DropdownMenuItem onSelect={() => setEditOpen(true)} title={m["common.edit"]()}>
+					<DropdownMenuItem onSelect={() => setEditOpen(true)} title={m.common_edit()}>
 						<PencilIcon />
-						{m["common.edit"]()}
+						{m.common_edit()}
 					</DropdownMenuItem>
-					<DropdownMenuItem onSelect={() => setDeleteOpen(true)} title={m["common.delete"]()}>
+					<DropdownMenuItem onSelect={() => setDeleteOpen(true)} title={m.common_delete()}>
 						<Trash2Icon />
-						{m["common.delete"]()}
+						{m.common_delete()}
 					</DropdownMenuItem>
 					<DropdownMenuSub>
 						<DropdownMenuSubTrigger title={linkedTitle} aria-label={linkedTitle}>
@@ -592,7 +592,7 @@ function CultivarRowActions({ cultivar }: { cultivar: CultivarEntity }) {
 										aria-label={linkedTitle}
 									>
 										<ExternalLinkIcon />
-										{m["collections.plant.titlePlural"]()}
+										{m.collections_plant_titlePlural()}
 									</Link>
 								</Button>
 							</DropdownMenuItem>
@@ -604,7 +604,7 @@ function CultivarRowActions({ cultivar }: { cultivar: CultivarEntity }) {
 			<DeleteConfirmDialog
 				open={deleteOpen}
 				onOpenChange={setDeleteOpen}
-				title={m["collections.cultivar.delete"]()}
+				title={m.collections_cultivar_delete()}
 				description={cultivar.characteristics.name}
 				isPending={del.isPending}
 				onConfirm={async () => {

@@ -45,12 +45,12 @@ function LocationLayoutPage() {
 		openedQuery.isError || !openedQuery.data || (rootDiffersFromOpened && (rootQuery.isError || !rootQuery.data));
 
 	if (isPending) {
-		return <div className="text-muted-foreground text-sm">{m["common.loading"]()}</div>;
+		return <div className="text-muted-foreground text-sm">{m.common_loading()}</div>;
 	}
 	if (isError || !editorRootLocation) {
 		return (
 			<div className="text-destructive text-sm">
-				{`${m["collections.location.title"]()} ${m["common.notFound"]()}`}
+				{`${m.collections_location_title()} ${m.common_notFound()}`}
 			</div>
 		);
 	}
@@ -66,7 +66,7 @@ function LocationLayoutPage() {
 					params={{ locationId: String(openedLocationId) }}
 					className="text-primary text-sm underline-offset-4 hover:underline"
 				>
-					{m["components.locationLayoutEditor.backToLocation"]()}
+					{m.components_locationLayoutEditor_backToLocation()}
 				</Link>
 			</div>
 			<LocationLayoutEditor

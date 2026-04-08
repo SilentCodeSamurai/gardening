@@ -57,7 +57,7 @@ export function useLocationCreateMutation() {
 					);
 				}
 				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m["collections.location.actionError"]());
+				toast.error(m.collections_location_actionError());
 			},
 			onSuccess: (entity, _vars, ctx) => {
 				if (ctx?.pendingId) {
@@ -74,7 +74,7 @@ export function useLocationCreateMutation() {
 					);
 				}
 				queryClient.setQueryData(queryKeys.location.detail(entity.id).queryKey, entity);
-				toast.success(m["collections.location.createSuccess"]());
+				toast.success(m.collections_location_createSuccess());
 			},
 		}),
 	);
@@ -116,14 +116,14 @@ export function useLocationUpdateMutation() {
 				void variables;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
 				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m["collections.location.actionError"]());
+				toast.error(m.collections_location_actionError());
 			},
 			onSuccess: (entity) => {
 				queryClient.setQueryData<ItemsContainer<LocationEntity>>(queryKeys.location.all.queryKey, (prev) =>
 					upsertInItemsContainer(prev, entity),
 				);
 				queryClient.setQueryData(queryKeys.location.detail(entity.id).queryKey, entity);
-				toast.success(m["collections.location.updateSuccess"]());
+				toast.success(m.collections_location_updateSuccess());
 			},
 		}),
 	);
@@ -175,14 +175,14 @@ export function useLocationDeleteMutation() {
 					}
 				}
 				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m["collections.location.actionError"]());
+				toast.error(m.collections_location_actionError());
 			},
 			onSuccess: (deletedId) => {
 				queryClient.setQueryData<ItemsContainer<LocationEntity>>(queryKeys.location.all.queryKey, (prev) =>
 					dropPendingInItemsContainer(prev, deletedId),
 				);
 				queryClient.setQueryData(queryKeys.location.detail(deletedId).queryKey, undefined);
-				toast.success(m["collections.location.deleteSuccess"]());
+				toast.success(m.collections_location_deleteSuccess());
 			},
 		}),
 	);
@@ -241,7 +241,7 @@ export function useLocationDeleteManyMutation() {
 					}
 				}
 				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m["collections.location.actionError"]());
+				toast.error(m.collections_location_actionError());
 			},
 			onSuccess: (result) => {
 				queryClient.setQueryData<ItemsContainer<LocationEntity>>(queryKeys.location.all.queryKey, (prev) =>
@@ -253,7 +253,7 @@ export function useLocationDeleteManyMutation() {
 					});
 					queryClient.setQueryData(queryKeys.location.detail(deletedId).queryKey, undefined);
 				}
-				toast.success(m["collections.location.deleteManySuccess"]());
+				toast.success(m.collections_location_deleteManySuccess());
 			},
 		}),
 	);

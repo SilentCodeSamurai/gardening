@@ -11,6 +11,7 @@ import { PageContent } from "@/components/layout/page-content";
 import { PageHeading } from "@/components/layout/page-heading";
 import { Button } from "@/components/ui/button";
 import { ButtonTooltip } from "@/components/ui/button-tooltip";
+import { gardeningActionMessage } from "@/lib/gardening-action-messages";
 import * as m from "@/paraglide/messages.js";
 import { getLocale } from "@/paraglide/runtime";
 import { queryKeys } from "@/store/keys";
@@ -53,12 +54,12 @@ function GardeningEventDetailPage() {
 	});
 
 	if (detailQuery.isPending) {
-		return <div className="text-muted-foreground text-sm">{m["common.loading"]()}</div>;
+		return <div className="text-muted-foreground text-sm">{m.common_loading()}</div>;
 	}
 	if (detailQuery.isError || !detailQuery.data) {
 		return (
 			<div className="text-destructive text-sm">
-				{`${m["collections.gardeningEvent.title"]()} ${m["common.notFound"]()}`}
+				{`${m.collections_gardeningEvent_title()} ${m.common_notFound()}`}
 			</div>
 		);
 	}
@@ -71,27 +72,27 @@ function GardeningEventDetailPage() {
 				<div className="flex min-w-0 flex-wrap items-center gap-3">
 					<GardeningActionPresentationIcon action={data.action} />
 					<h1 className="font-heading font-medium text-lg capitalize">
-						{m[`gardeningActions.${data.action.type}` as keyof typeof m]()}
+						{gardeningActionMessage(data.action.type)}
 					</h1>
 				</div>
 				<div className="auto flex shrink-0 items-center gap-1">
-					<ButtonTooltip label={m["common.edit"]()}>
+					<ButtonTooltip label={m.common_edit()}>
 						<Button
 							type="button"
 							variant="outline"
 							size="icon"
-							aria-label={m["common.edit"]()}
+							aria-label={m.common_edit()}
 							onClick={() => setEditOpen(true)}
 						>
 							<PencilIcon />
 						</Button>
 					</ButtonTooltip>
-					<ButtonTooltip label={m["common.delete"]()}>
+					<ButtonTooltip label={m.common_delete()}>
 						<Button
 							type="button"
 							variant="destructive"
 							size="icon"
-							aria-label={m["common.delete"]()}
+							aria-label={m.common_delete()}
 							onClick={() => setDeleteOpen(true)}
 						>
 							<Trash2Icon />
@@ -101,8 +102,8 @@ function GardeningEventDetailPage() {
 					<DeleteConfirmDialog
 						open={deleteOpen}
 						onOpenChange={setDeleteOpen}
-						title={m["collections.gardeningEvent.delete"]()}
-						description={m[`gardeningActions.${data.action.type}` as keyof typeof m]()}
+						title={m.collections_gardeningEvent_delete()}
+						description={gardeningActionMessage(data.action.type)}
 						isPending={del.isPending}
 						onConfirm={async () => {
 							await del.mutateAsync({ id: data.id });
@@ -116,21 +117,21 @@ function GardeningEventDetailPage() {
 					{data.action.content.trim() ? (
 						data.action.content
 					) : (
-						<span className="italic">{m["components.detail.field.noNoteBody"]()}</span>
+						<span className="italic">{m.components_detail_field_noNoteBody()}</span>
 					)}
 				</p>
 
 				<section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm">
 					<h2 className="mb-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
-						{m["components.detail.metaHeading"]()}
+						{m.components_detail_metaHeading()}
 					</h2>
 					<dl className="grid gap-x-4 gap-y-3 text-sm sm:grid-cols-[minmax(9rem,auto)_1fr]">
 						<div className="contents">
-							<dt className="text-muted-foreground">{m["components.detail.field.actionType"]()}</dt>
+							<dt className="text-muted-foreground">{m.components_detail_field_actionType()}</dt>
 							<dd className="wrap-break-word min-w-0 font-mono text-xs">{data.action.type}</dd>
 						</div>
 						<div className="contents">
-							<dt className="text-muted-foreground">{m["components.detail.field.loggedAt"]()}</dt>
+							<dt className="text-muted-foreground">{m.components_detail_field_loggedAt()}</dt>
 							<dd className="wrap-break-word min-w-0">
 								{data.createdAt.toLocaleString(getLocale(), {
 									dateStyle: "medium",
@@ -139,7 +140,7 @@ function GardeningEventDetailPage() {
 							</dd>
 						</div>
 						<div className="contents">
-							<dt className="text-muted-foreground">{m["fields.updatedAt"]()}</dt>
+							<dt className="text-muted-foreground">{m.fields_updatedAt()}</dt>
 							<dd className="wrap-break-word min-w-0">
 								{data.updatedAt.toLocaleString(getLocale(), {
 									dateStyle: "medium",
@@ -153,13 +154,13 @@ function GardeningEventDetailPage() {
 				<div className="grid gap-6 lg:grid-cols-2">
 					<section className="space-y-2">
 						<h2 className="font-semibold text-sm">
-							{`${m["common.linked"]()} ${m["collections.plant.titlePlural"]().toLowerCase()}`}
+							{`${m.common_linked()} ${m.collections_plant_titlePlural().toLowerCase()}`}
 						</h2>
 						{bindingsQuery.isPending ? (
-							<p className="text-muted-foreground text-sm">{m["common.loading"]()}</p>
+							<p className="text-muted-foreground text-sm">{m.common_loading()}</p>
 						) : plantIds.length === 0 ? (
 							<p className="rounded-lg border border-border/70 border-dashed bg-muted/10 px-3 py-4 text-muted-foreground text-sm">
-								{m["components.detail.eventBindings.nonePlants"]()}
+								{m.components_detail_eventBindings_nonePlants()}
 							</p>
 						) : (
 							<ul className="space-y-2">
@@ -170,7 +171,7 @@ function GardeningEventDetailPage() {
 											? getPlantDisplayTitle(q.data)
 											: q?.isError
 												? String(plantId)
-												: m["common.loading"]();
+												: m.common_loading();
 									return (
 										<li key={String(plantId)}>
 											{q?.data != null ? (
@@ -195,13 +196,13 @@ function GardeningEventDetailPage() {
 
 					<section className="space-y-2">
 						<h2 className="font-semibold text-sm">
-							{`${m["common.linked"]()} ${m["collections.location.titlePlural"]().toLowerCase()}`}
+							{`${m.common_linked()} ${m.collections_location_titlePlural().toLowerCase()}`}
 						</h2>
 						{bindingsQuery.isPending ? (
-							<p className="text-muted-foreground text-sm">{m["common.loading"]()}</p>
+							<p className="text-muted-foreground text-sm">{m.common_loading()}</p>
 						) : locationIds.length === 0 ? (
 							<p className="rounded-lg border border-border/70 border-dashed bg-muted/10 px-3 py-4 text-muted-foreground text-sm">
-								{m["components.detail.eventBindings.noneLocations"]()}
+								{m.components_detail_eventBindings_noneLocations()}
 							</p>
 						) : (
 							<ul className="space-y-2">
@@ -212,7 +213,7 @@ function GardeningEventDetailPage() {
 											? q.data.name
 											: q?.isError
 												? String(locationId)
-												: m["common.loading"]();
+												: m.common_loading();
 									return (
 										<li key={String(locationId)}>
 											{q?.data != null ? (

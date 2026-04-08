@@ -61,7 +61,7 @@ export function useGardeningEventUpdateMutation() {
 			},
 			onError: (error, variables, ctx) => {
 				if (ctx) restoreQuerySnapshots(qc, ctx.snapshots);
-				toast.error(m["collections.gardeningEvent.actionError"]());
+				toast.error(m.collections_gardeningEvent_actionError());
 				void error;
 				void variables;
 			},
@@ -73,7 +73,7 @@ export function useGardeningEventUpdateMutation() {
 				void qc.invalidateQueries({ queryKey: queryKeys.gardeningEvent.bindings(entity.id).queryKey });
 				void qc.invalidateQueries({ queryKey: queryKeys.gardeningEvent.forPlant._def });
 				void qc.invalidateQueries({ queryKey: queryKeys.gardeningEvent.forLocation._def });
-				toast.success(m["collections.gardeningEvent.updateSuccess"]());
+				toast.success(m.collections_gardeningEvent_updateSuccess());
 				void variables;
 				void ctx;
 			},
@@ -101,7 +101,7 @@ export function useGardeningEventDeleteMutation() {
 			},
 			onError: (error, variables, ctx) => {
 				if (ctx) restoreQuerySnapshots(qc, ctx.snapshots);
-				toast.error(m["collections.gardeningEvent.actionError"]());
+				toast.error(m.collections_gardeningEvent_actionError());
 				void error;
 				void variables;
 			},
@@ -112,7 +112,7 @@ export function useGardeningEventDeleteMutation() {
 				qc.setQueryData(queryKeys.gardeningEvent.detail(deletedId).queryKey, undefined);
 				qc.setQueryData(queryKeys.gardeningEvent.bindings(deletedId).queryKey, undefined);
 				removeFromGardeningEventScopedLists(qc, deletedId);
-				toast.success(m["collections.gardeningEvent.deleteSuccess"]());
+				toast.success(m.collections_gardeningEvent_deleteSuccess());
 				void variables;
 				void ctx;
 			},
@@ -147,7 +147,7 @@ export function useGardeningEventDeleteManyMutation() {
 		onError: (_e, _variables, ctx) => {
 			if (!ctx) return;
 			restoreQuerySnapshots(qc, ctx.snapshots);
-			toast.error(m["collections.gardeningEvent.actionError"]());
+			toast.error(m.collections_gardeningEvent_actionError());
 		},
 		onSuccess: (result) => {
 			qc.setQueryData<ItemsContainer<GardeningEventEntity>>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
@@ -158,7 +158,7 @@ export function useGardeningEventDeleteManyMutation() {
 				qc.setQueryData(queryKeys.gardeningEvent.bindings(deletedId).queryKey, undefined);
 				removeFromGardeningEventScopedLists(qc, deletedId);
 			}
-			toast.success(m["collections.gardeningEvent.deleteManySuccess"]());
+			toast.success(m.collections_gardeningEvent_deleteManySuccess());
 		},
 	});
 }
@@ -186,7 +186,7 @@ export function useGardeningEventCreateForLocationMutation() {
 			},
 			onError: (error, variables, ctx) => {
 				if (ctx) restoreQuerySnapshots(qc, ctx.snapshots);
-				toast.error(m["collections.gardeningEvent.actionError"]());
+				toast.error(m.collections_gardeningEvent_actionError());
 				void error;
 				void variables;
 			},
@@ -199,7 +199,7 @@ export function useGardeningEventCreateForLocationMutation() {
 				void qc.invalidateQueries({ queryKey: queryKeys.gardeningEvent.bindings(entity.id).queryKey });
 				appendToScopedList(qc, queryKeys.gardeningEvent.forLocation(variables.locationId).queryKey, entity);
 				void qc.invalidateQueries({ queryKey: queryKeys.gardeningEvent.forPlant._def });
-				toast.success(m["collections.gardeningEvent.createSuccess"]());
+				toast.success(m.collections_gardeningEvent_createSuccess());
 			},
 		}),
 	);
@@ -227,7 +227,7 @@ export function useGardeningEventCreateMutation() {
 			},
 			onError: (error, variables, ctx) => {
 				if (ctx) restoreQuerySnapshots(qc, ctx.snapshots);
-				toast.error(m["collections.gardeningEvent.actionError"]());
+				toast.error(m.collections_gardeningEvent_actionError());
 				void error;
 				void variables;
 			},
@@ -238,7 +238,7 @@ export function useGardeningEventCreateMutation() {
 				if (ctx?.pendingId) removeFromGardeningEventScopedLists(qc, ctx.pendingId);
 				qc.setQueryData(queryKeys.gardeningEvent.detail(entity.id).queryKey, entity);
 				void qc.invalidateQueries({ queryKey: queryKeys.gardeningEvent.bindings(entity.id).queryKey });
-				toast.success(m["collections.gardeningEvent.createSuccess"]());
+				toast.success(m.collections_gardeningEvent_createSuccess());
 				void variables;
 			},
 		}),
@@ -270,7 +270,7 @@ export function useGardeningEventCreateForPlantListMutation() {
 			},
 			onError: (error, variables, ctx) => {
 				if (ctx) restoreQuerySnapshots(qc, ctx.snapshots);
-				toast.error(m["collections.gardeningEvent.actionError"]());
+				toast.error(m.collections_gardeningEvent_actionError());
 				void error;
 				void variables;
 			},
@@ -284,7 +284,7 @@ export function useGardeningEventCreateForPlantListMutation() {
 				for (const plantId of variables.plantIds) {
 					appendToScopedList(qc, queryKeys.gardeningEvent.forPlant(plantId).queryKey, entity);
 				}
-				toast.success(m["collections.gardeningEvent.createSuccess"]());
+				toast.success(m.collections_gardeningEvent_createSuccess());
 			},
 		}),
 	);
