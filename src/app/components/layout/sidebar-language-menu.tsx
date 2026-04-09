@@ -13,7 +13,7 @@ import * as m from "@/paraglide/messages.js";
 import { getLocale, type Locale, setLocale } from "@/paraglide/runtime";
 
 export function SidebarLanguageMenu() {
-	const current = getLocale().startsWith("de") ? "de" : getLocale().startsWith("ru") ? "ru" : "en";
+	const current = getLocale();
 
 	return (
 		<DropdownMenu>
