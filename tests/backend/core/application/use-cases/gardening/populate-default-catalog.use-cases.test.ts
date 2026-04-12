@@ -9,8 +9,8 @@ import { createTestUseCaseContext } from "../create-test-use-case-context";
 import {
   SpeciesCategoryCreateUseCase,
   SpeciesCategoryGetAllUseCase,
-} from "@backend/core/application/use-cases/gardening/species-category.crud-use-cases";
-import { SpeciesGetAllUseCase } from "@backend/core/application/use-cases/gardening/species.crud-use-cases";
+} from "#/backend/core/application/use-cases/gardening/species-category.use-cases";
+import { SpeciesGetAllUseCase } from "#/backend/core/application/use-cases/gardening/species.use-cases";
 import { describe, expect, it } from "vitest";
 
 import { createUseCaseTestContainer } from "./create-use-case-test-container";

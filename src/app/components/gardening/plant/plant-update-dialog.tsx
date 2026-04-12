@@ -1,9 +1,8 @@
-import { useEffect, useMemo } from "react";
+import type { CultivarEntityId } from "@backend/core/domain/gardening/entities";
 import { useQuery } from "@tanstack/react-query";
-
+import { useEffect, useMemo } from "react";
 import { SELECT_NONE } from "@/components/form/select-sentinel";
 import { Button } from "@/components/ui/button";
-import * as m from "@/paraglide/messages.js";
 import {
 	Dialog,
 	DialogContent,
@@ -12,13 +11,14 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import type { CultivarEntityId, HydratedPlantEntity } from "@backend/core/domain/gardening/entities";
 import { useAppForm } from "@/hooks/form";
+import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import { usePlantUpdateMutation } from "@/store/mutations";
+import type { CachedHydratedPlant } from "@/store/query-cache-types";
 
 type Props = {
-	plant: HydratedPlantEntity;
+	plant: CachedHydratedPlant;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 };
@@ -50,13 +50,13 @@ export function PlantUpdateDialog({ plant, open, onOpenChange }: Props) {
 		} satisfies FormValues as FormValues,
 		onSubmit: async ({ value }) => {
 			if (value.cultivarId === SELECT_NONE) return;
+			onOpenChange(false);
 			await mut.mutateAsync({
 				id: plant.id,
 				cultivarId: value.cultivarId as CultivarEntityId,
 				title: value.title.trim() || null,
 				description: value.description.trim() || null,
 			});
-			onOpenChange(false);
 		},
 	});
 
@@ -106,16 +106,11 @@ export function PlantUpdateDialog({ plant, open, onOpenChange }: Props) {
 							)}
 						</form.AppField>
 						<form.AppField name="title">
-							{(field) => (
-								<field.TextField label={m.fields_title()} placeholder={m.fields_title()} />
-							)}
+							{(field) => <field.TextField label={m.fields_title()} placeholder={m.fields_title()} />}
 						</form.AppField>
 						<form.AppField name="description">
 							{(field) => (
-								<field.TextField
-									label={m.fields_description()}
-									placeholder={m.fields_description()}
-								/>
+								<field.TextField label={m.fields_description()} placeholder={m.fields_description()} />
 							)}
 						</form.AppField>
 						<DialogFooter>

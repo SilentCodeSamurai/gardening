@@ -1,6 +1,6 @@
-import type { AccessRole } from "@backend/core/domain/access/access-role";
 import type { SubjectKey } from "@backend/core/domain/access/subject.vo";
 import type { WorkspaceKey } from "@backend/core/domain/access/workspace.vo";
+import type { AccessRole } from "#/backend/core/domain/access/types";
 
 export type WorkspaceAccessRoleAssignedAuditEvent = {
 	readonly actorSubjectKey: SubjectKey;

@@ -1,9 +1,4 @@
-import type {
-	HydratedPlantEntity,
-	LocationEntity,
-	LocationEntityId,
-	PlantEntityId,
-} from "@backend/core/domain/gardening/entities";
+import type { LocationEntityId, PlantEntityId } from "@backend/core/domain/gardening/entities";
 import type { ItemPresentationValueObject } from "@backend/core/domain/gardening/value-objects";
 import type {
 	SpatialNodeEntity,
@@ -56,10 +51,12 @@ import {
 	ContextMenuSubTrigger,
 } from "@/components/ui/context-menu";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import { useSpatialLayoutApplyOperationsMutation, useSpatialNodeCreateMutation } from "@/store/mutations";
 import { flattenSpatialLayoutOperations } from "@/store/mutations/spatial-layout-flatten-ops";
+import type { CachedHydratedPlant, CachedLocation } from "@/store/query-cache-types";
 import { getSpatialPlacementStatusByRef, spatialNodeHasParent } from "@/store/spatial-placement";
 
 const locationLayoutRouteApi = getRouteApi("/_authenticated/location/$locationId/layout");
@@ -111,7 +108,7 @@ type AddExistingState = {
 };
 
 type Props = {
-	rootLocation: LocationEntity | null;
+	rootLocation: CachedLocation | null;
 	className?: HTMLAttributes<HTMLDivElement>["className"];
 	highlightLocationEntityId?: string | null;
 };
@@ -138,7 +135,7 @@ type AddExistingOption = {
 
 function spatialToLayoutNode(args: {
 	spatial: SpatialNodeEntity;
-	entity: { type: "location"; value: LocationEntity } | { type: "plant"; value: HydratedPlantEntity } | null;
+	entity: { type: "location"; value: CachedLocation } | { type: "plant"; value: CachedHydratedPlant } | null;
 }): LayoutNode {
 	const base = {
 		id: String(args.spatial.id),
@@ -176,8 +173,8 @@ function spatialToLayoutNode(args: {
 function collectDescendantLayoutNodesForSpatialRoot(args: {
 	spatialItems: readonly SpatialNodeEntity[];
 	rootSpatialId: string;
-	locationItems: readonly LocationEntity[];
-	plantItems: readonly HydratedPlantEntity[];
+	locationItems: readonly CachedLocation[];
+	plantItems: readonly CachedHydratedPlant[];
 }): LayoutNode[] {
 	const { spatialItems, rootSpatialId, locationItems, plantItems } = args;
 	const locById = new Map(locationItems.map((l) => [String(l.id), l]));
@@ -239,6 +236,8 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 			zoomIn: m.components_spatialLayoutEditor_zoomIn(),
 			lockLayoutToggleUnlockHint: m.components_spatialLayoutEditor_lockLayoutToggleUnlockHint(),
 			lockLayoutToggleLockHint: m.components_spatialLayoutEditor_lockLayoutToggleLockHint(),
+			gridDisplayToggleShowHint: m.components_spatialLayoutEditor_gridDisplayToggleShowHint(),
+			gridDisplayToggleHideHint: m.components_spatialLayoutEditor_gridDisplayToggleHideHint(),
 			canvasMenu: m.components_spatialLayoutEditor_canvas(),
 			detach: m.components_spatialLayoutEditor_detach(),
 			remove: m.components_spatialLayoutEditor_remove(),
@@ -361,11 +360,11 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 	const [pendingExistingPlacement, setPendingExistingPlacement] = useState<PendingExistingPlacement | null>(null);
 	const [duplicateLocationContext, setDuplicateLocationContext] = useState<{
 		duplicate: LayoutNode;
-		source: LocationEntity;
+		source: CachedLocation;
 	} | null>(null);
 	const [duplicatePlantContext, setDuplicatePlantContext] = useState<{
 		duplicate: LayoutNode;
-		source: HydratedPlantEntity;
+		source: CachedHydratedPlant;
 	} | null>(null);
 	const [createManyLocationsForm, setCreateManyLocationsForm] = useState<{
 		parent: LayoutNode;
@@ -555,8 +554,8 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 
 	const layoutEditorClassNames = useMemo(
 		() => ({
-			root: className,
-			viewport: "min-h-full",
+			root: cn("flex min-h-0 min-w-0 flex-1 flex-col", className),
+			viewport: "min-h-0 flex-1",
 			nodeHighlight: "ring-4 ring-amber-400/80 animate-pulse",
 		}),
 		[className],
@@ -858,15 +857,20 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 						style={{ backgroundColor: node.presentation.backgroundColor }}
 					/>
 				) : null}
-				<span className="pointer-events-none absolute -top-5 left-1/2 max-w-[calc(140%-8px)] -translate-x-1/2 truncate rounded bg-background/80 px-[2px] py-0.5 text-[10px] leading-tight">
-					{node.label}
-				</span>
 				{node.nodeType === "plant" ? (
 					<div className="pointer-events-none absolute inset-0 grid place-items-center">
 						<ItemPresentationIcon presentation={node.presentation} className="size-6 border-none" />
 					</div>
 				) : null}
 			</>
+		);
+	}, []);
+
+	const renderNodeLabel = useCallback((node: LayoutNode) => {
+		return (
+			<span className="pointer-events-none block w-full truncate rounded bg-accent/80 px-[2px] py-0.5 text-center text-[10px] text-accent-foreground leading-tight">
+				{node.label}
+			</span>
 		);
 	}, []);
 
@@ -983,6 +987,7 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 				nodes={layoutNodes}
 				onApplyOperations={onApplyOperations}
 				renderNodeContent={renderNodeContent}
+				renderNodeLabel={renderNodeLabel}
 				renderNodeContextActions={renderNodeContextActions}
 				getCreateOptions={getCreateOptions}
 				onCreatePlacementConfirm={onCreatePlacementConfirm}

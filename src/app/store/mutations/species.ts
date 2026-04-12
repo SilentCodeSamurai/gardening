@@ -1,13 +1,18 @@
-import type { PlantHydratedWithCatalogSpecies } from "@backend/core/application/use-cases/gardening/plant.use-cases";
-import type { SpeciesWithSystemCatalog } from "@backend/core/application/use-cases/gardening/species.crud-use-cases";
-import type { ItemsContainer } from "@backend/shared/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import type { SpeciesWithSystemCatalog } from "#/backend/core/application/use-cases/gardening/species.use-cases";
 import { orpc } from "@/orpc/client";
 import * as m from "@/paraglide/messages.js";
 
+import { useActiveWorkspaceKey } from "@/store/active-workspace-key";
 import { appendToItemsContainer, removeFromItemsContainer, upsertInItemsContainer } from "@/store/cache-utils";
 import { queryKeys } from "@/store/keys";
+import type {
+	CachedPlantHydratedWithCatalogSpeciesList,
+	CachedSpeciesList,
+	CachedSpeciesWithSystemCatalog,
+} from "@/store/query-cache-types";
+import { isQueryObjectPending, markQueryObjectPending, QUERY_OBJECT_PENDING } from "@/store/query-object-status";
 import {
 	cancelQueriesByKeys,
 	dropPendingInItemsContainer,
@@ -19,14 +24,17 @@ import {
 
 export function useSpeciesCreateMutation() {
 	const queryClient = useQueryClient();
+	const workspaceKey = useActiveWorkspaceKey();
 
 	return useMutation(
 		orpc.species.create.mutationOptions({
 			onMutate: async (variables) => {
 				await cancelQueriesByKeys(queryClient, [queryKeys.species.all.queryKey]);
 				const snapshots = snapshotQueries(queryClient, [queryKeys.species.all.queryKey]);
+				if (!workspaceKey) return { snapshots, pendingId: undefined as string | undefined };
 				const pendingId = makePendingId("species") as SpeciesWithSystemCatalog["id"];
-				const pending: SpeciesWithSystemCatalog = {
+				const pending: CachedSpeciesWithSystemCatalog = {
+					workspaceKey,
 					id: pendingId,
 					categoryId: variables.categoryId as SpeciesWithSystemCatalog["categoryId"],
 					characteristics: variables.characteristics,
@@ -34,8 +42,9 @@ export function useSpeciesCreateMutation() {
 					presentation: variables.presentation,
 					createdAt: new Date(),
 					updatedAt: new Date(),
+					objectStatus: QUERY_OBJECT_PENDING,
 				};
-				queryClient.setQueryData<ItemsContainer<SpeciesWithSystemCatalog>>(
+				queryClient.setQueryData<CachedSpeciesList>(
 					queryKeys.species.all.queryKey,
 					(prev) => appendToItemsContainer(prev, pending),
 				);
@@ -51,13 +60,13 @@ export function useSpeciesCreateMutation() {
 			onSuccess: (entity, _vars, ctx) => {
 				if (ctx?.pendingId) {
 					const pendingId = ctx.pendingId as SpeciesWithSystemCatalog["id"];
-					queryClient.setQueryData<ItemsContainer<SpeciesWithSystemCatalog>>(
+					queryClient.setQueryData<CachedSpeciesList>(
 						queryKeys.species.all.queryKey,
 						(prev) => replacePendingInItemsContainer(prev, pendingId, entity),
 					);
 					queryClient.setQueryData(queryKeys.species.detail(pendingId).queryKey, undefined);
 				} else {
-					queryClient.setQueryData<ItemsContainer<SpeciesWithSystemCatalog>>(
+					queryClient.setQueryData<CachedSpeciesList>(
 						queryKeys.species.all.queryKey,
 						(prev) => replacePendingInItemsContainer(prev, entity.id, entity),
 					);
@@ -80,21 +89,23 @@ export function useSpeciesUpdateMutation() {
 					queryKeys.species.all.queryKey,
 					queryKeys.species.detail(variables.id).queryKey,
 				]);
-				const previousAll = snapshots[0]?.data as ItemsContainer<SpeciesWithSystemCatalog> | undefined;
-				const previousDetail = snapshots[1]?.data as SpeciesWithSystemCatalog | undefined;
+				const previousAll = snapshots[0]?.data as
+					| CachedSpeciesList
+					| undefined;
+				const previousDetail = snapshots[1]?.data as CachedSpeciesWithSystemCatalog | undefined;
 				const base =
 					previousDetail ??
 					previousAll?.items.find((item) => String(item.id) === String(variables.id)) ??
 					null;
-				if (base) {
-					const optimistic: SpeciesWithSystemCatalog = {
+				if (base && !isQueryObjectPending(base)) {
+					const optimistic = markQueryObjectPending({
 						...base,
 						...variables,
 						id: base.id,
 						categoryId: (variables.categoryId ?? base.categoryId) as SpeciesWithSystemCatalog["categoryId"],
 						updatedAt: new Date(),
-					};
-					queryClient.setQueryData<ItemsContainer<SpeciesWithSystemCatalog>>(
+					});
+					queryClient.setQueryData<CachedSpeciesList>(
 						queryKeys.species.all.queryKey,
 						(prev) => upsertInItemsContainer(prev, optimistic),
 					);
@@ -110,12 +121,12 @@ export function useSpeciesUpdateMutation() {
 				toast.error(m.collections_species_actionError());
 			},
 			onSuccess: (entity) => {
-				queryClient.setQueryData<ItemsContainer<SpeciesWithSystemCatalog>>(
+				queryClient.setQueryData<CachedSpeciesList>(
 					queryKeys.species.all.queryKey,
 					(prev) => upsertInItemsContainer(prev, entity),
 				);
 				queryClient.setQueryData(queryKeys.species.detail(entity.id).queryKey, entity);
-				queryClient.setQueryData<ItemsContainer<PlantHydratedWithCatalogSpecies>>(
+				queryClient.setQueryData<CachedPlantHydratedWithCatalogSpeciesList>(
 					queryKeys.plant.all.queryKey,
 					(prev) => {
 						if (!prev) return prev;
@@ -152,7 +163,12 @@ export function useSpeciesDeleteMutation() {
 					queryKeys.species.all.queryKey,
 					queryKeys.species.detail(variables.id).queryKey,
 				]);
-				queryClient.setQueryData<ItemsContainer<SpeciesWithSystemCatalog>>(
+				const previousAll = snapshots[0]?.data as
+					| CachedSpeciesList
+					| undefined;
+				const row = previousAll?.items.find((item) => String(item.id) === String(variables.id));
+				if (isQueryObjectPending(row)) return { snapshots };
+				queryClient.setQueryData<CachedSpeciesList>(
 					queryKeys.species.all.queryKey,
 					(prev) => removeFromItemsContainer(prev, variables.id),
 				);
@@ -167,7 +183,7 @@ export function useSpeciesDeleteMutation() {
 				toast.error(m.collections_species_actionError());
 			},
 			onSuccess: (deletedId) => {
-				queryClient.setQueryData<ItemsContainer<SpeciesWithSystemCatalog>>(
+				queryClient.setQueryData<CachedSpeciesList>(
 					queryKeys.species.all.queryKey,
 					(prev) => dropPendingInItemsContainer(prev, deletedId),
 				);

@@ -1,4 +1,3 @@
-﻿import type { SpeciesWithSystemCatalog } from "@backend/core/application/use-cases/gardening/species.crud-use-cases";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
@@ -23,12 +22,13 @@ import {
 	XIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
+import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
+import type { SpeciesWithSystemCatalog } from "#/backend/core/application/use-cases/gardening/species.use-cases";
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
 import { SpeciesCreateDialog } from "@/components/gardening/species/species-create-dialog";
 import { SpeciesUpdateDialog } from "@/components/gardening/species/species-update-dialog";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
-import { PageContent } from "@/components/layout/page-content";
-import { PageHeading } from "@/components/layout/page-heading";
 import { DataTable } from "@/components/table/data-table";
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
 import { fuzzyFilter } from "@/components/table/fuzzy-filter";
@@ -97,7 +97,7 @@ function SpeciesPage() {
 	const [sorting, setSorting] = useState<SortingState>([{ id: "name", desc: false }]);
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() =>
 		categoryFromSearch ? [{ id: "category", value: categoryFromSearch }] : [],
-	)
+	);
 	const [globalFilter, setGlobalFilter] = useState("");
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [createOpen, setCreateOpen] = useState(false);
@@ -108,7 +108,7 @@ function SpeciesPage() {
 			value: String(c.id),
 			label: translateCatalogField(c.title, c.systemCatalog) ?? String(c.id),
 			presentation: c.presentation,
-		}))
+		}));
 	}, [catData?.items]);
 
 	const columnHelper = useMemo(() => createColumnHelper<SpeciesWithSystemCatalog>(), []);
@@ -178,7 +178,7 @@ function SpeciesPage() {
 							<ItemPresentationIcon presentation={species.presentation} />
 							<p className="truncate font-medium">{name}</p>
 						</Link>
-					)
+					);
 				},
 			}),
 
@@ -235,7 +235,7 @@ function SpeciesPage() {
 									</ComboboxList>
 								</ComboboxContent>
 							</Combobox>
-						)
+						);
 					},
 				},
 				cell: ({ row }) => (
@@ -254,12 +254,12 @@ function SpeciesPage() {
 					const description = translateCatalogField(
 						row.original.characteristics.description,
 						row.original.systemCatalog,
-					)
+					);
 					return (
 						<span className="line-clamp-2 max-w-md whitespace-normal text-muted-foreground text-xs">
 							{description || "-"}
 						</span>
-					)
+					);
 				},
 			}),
 
@@ -322,7 +322,7 @@ function SpeciesPage() {
 								<XIcon aria-label={m.common_default()} className="size-3.5 text-muted-foreground" />
 							)}
 						</div>
-					)
+					);
 				},
 			}),
 			columnHelper.display({
@@ -346,7 +346,7 @@ function SpeciesPage() {
 			}),
 		],
 		[categoryComboboxOptions, categoryTitle, columnHelper],
-	)
+	);
 
 	const table = useMemo(
 		() =>
@@ -374,7 +374,7 @@ function SpeciesPage() {
 				},
 			}),
 		[columnFilters, columns, globalFilter, items, rowSelection, sorting],
-	)
+	);
 
 	const filteredRowCount = table.getFilteredRowModel().rows.length;
 	const emptyMessage =
@@ -386,7 +386,7 @@ function SpeciesPage() {
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-			<PageHeading collection="species">
+			<DashboardPageHeading collection="species">
 				<h1 className="font-heading font-medium text-lg">{m.collections_species_titlePlural()}</h1>
 				<ButtonTooltip label={m.collections_species_create()}>
 					<Button type="button" size="icon" variant="outline" onClick={() => setCreateOpen(true)}>
@@ -394,8 +394,8 @@ function SpeciesPage() {
 						<PlusIcon />
 					</Button>
 				</ButtonTooltip>
-			</PageHeading>
-			<PageContent className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
+			</DashboardPageHeading>
+			<DashboardPageContent className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
 				<div className="flex flex-wrap items-end gap-2">
 					<Input
 						className="w-full min-w-40 sm:w-56"
@@ -412,7 +412,7 @@ function SpeciesPage() {
 							onClick={() => {
 								table.resetGlobalFilter();
 								table.resetColumnFilters();
-								setRowSelection({})
+								setRowSelection({});
 							}}
 							aria-label={m.filtering_clearFilters()}
 						>
@@ -427,12 +427,13 @@ function SpeciesPage() {
 						isError={spError}
 						errorMessage={m.common_loadError()}
 						emptyMessage={emptyMessage}
+						highlightPendingRows
 					/>
 				</div>
-			</PageContent>
+			</DashboardPageContent>
 			<SpeciesCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
 		</div>
-	)
+	);
 }
 
 function SpeciesRowActions({ species, categoryId }: { species: SpeciesWithSystemCatalog; categoryId: string }) {
@@ -530,10 +531,10 @@ function SpeciesRowActions({ species, categoryId }: { species: SpeciesWithSystem
 				description={name ?? ""}
 				isPending={del.isPending}
 				onConfirm={async () => {
-					await del.mutateAsync({ id: species.id });
 					setDeleteOpen(false);
+					await del.mutateAsync({ id: species.id });
 				}}
 			/>
 		</div>
-	)
+	);
 }

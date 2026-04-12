@@ -1,4 +1,4 @@
-﻿import type { CultivarEntity, SpeciesEntity } from "@backend/core/domain/gardening/entities";
+import type { SpeciesEntity } from "@backend/core/domain/gardening/entities";
 import type { ItemPresentationValueObject } from "@backend/core/domain/gardening/value-objects";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -16,12 +16,12 @@ import {
 } from "@tanstack/react-table";
 import { EllipsisVerticalIcon, ExternalLinkIcon, PencilIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
+import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
 import { CultivarCreateDialog } from "@/components/gardening/cultivar/cultivar-create-dialog";
 import { CultivarUpdateDialog } from "@/components/gardening/cultivar/cultivar-update-dialog";
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
-import { PageContent } from "@/components/layout/page-content";
-import { PageHeading } from "@/components/layout/page-heading";
 import { DataTable } from "@/components/table/data-table";
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
 import { fuzzyFilter } from "@/components/table/fuzzy-filter";
@@ -57,6 +57,8 @@ import { translateCatalogField } from "@/lib/translate-catalog-field";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import { useCultivarDeleteMutation } from "@/store/mutations";
+import type { CachedCultivar } from "@/store/query-cache-types";
+import { isQueryObjectPending } from "@/store/query-object-status";
 
 type CultivarCategoryFilterOption = {
 	value: string;
@@ -140,14 +142,14 @@ function CultivarsPage() {
 	const speciesById = useMemo(
 		() => new Map((speciesData?.items ?? []).map((s) => [String(s.id), s] as const)),
 		[speciesData?.items],
-	)
+	);
 	const categoryLabelById = useMemo(() => {
 		const map = new Map<string, string>();
 		for (const category of categoriesData?.items ?? []) {
 			map.set(
 				String(category.id),
 				translateCatalogField(category.title, category.systemCatalog) ?? String(category.id),
-			)
+			);
 		}
 		return map;
 	}, [categoriesData?.items]);
@@ -165,7 +167,7 @@ function CultivarsPage() {
 				value: categoryId,
 				label: categoryLabelById.get(categoryId) ?? categoryId,
 				presentation: categoriesData?.items.find((c) => String(c.id) === categoryId)?.presentation ?? undefined,
-			})
+			});
 		}
 		return options.sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: "base" }));
 	}, [categoriesData?.items, categoryLabelById, items, speciesById]);
@@ -184,7 +186,7 @@ function CultivarsPage() {
 				label: translateCatalogField(species.characteristics.name, species.systemCatalog) ?? String(species.id),
 				categoryId: String(species.categoryId),
 				presentation: species.presentation,
-			})
+			});
 		}
 		return options.sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: "base" }));
 	}, [items, speciesById]);
@@ -203,7 +205,7 @@ function CultivarsPage() {
 	const effectiveColumnFilters = useMemo(
 		() => reconcileCultivarColumnFilters(columnFilters, columnFilters, speciesById),
 		[columnFilters, speciesById],
-	)
+	);
 
 	const onColumnFiltersChange = useCallback(
 		(updater: Updater<ColumnFiltersState>) => {
@@ -211,12 +213,12 @@ function CultivarsPage() {
 				const prevEffective = reconcileCultivarColumnFilters(prev, prev, speciesById);
 				const next = applyUpdater(updater, prevEffective);
 				return reconcileCultivarColumnFilters(prevEffective, next, speciesById);
-			})
+			});
 		},
 		[speciesById],
-	)
+	);
 
-	const columnHelper = useMemo(() => createColumnHelper<CultivarEntity>(), []);
+	const columnHelper = useMemo(() => createColumnHelper<CachedCultivar>(), []);
 	const columns = useMemo(
 		() => [
 			columnHelper.display({
@@ -255,7 +257,7 @@ function CultivarsPage() {
 						species == null
 							? String(cultivar.speciesId)
 							: (translateCatalogField(species.characteristics.name, species.systemCatalog) ??
-								String(species.id))
+								String(species.id));
 					const categoryLabel =
 						species == null ? "" : (categoryLabelById.get(String(species.categoryId)) ?? "");
 					return `${cultivar.characteristics.name} ${cultivar.characteristics.description ?? ``} ${speciesLabel} ${categoryLabel}`;
@@ -311,10 +313,10 @@ function CultivarsPage() {
 							<span className="text-muted-foreground text-xs">
 								{categoryLabelById.get(categoryId) ?? "-"}
 							</span>
-						)
+						);
 					},
 					meta: {
-						filter: ({ column }: { column: Column<CultivarEntity, unknown> }) => {
+						filter: ({ column }: { column: Column<CachedCultivar, unknown> }) => {
 							const value = String(column.getFilterValue() ?? "");
 							const selected = categoryFilterOptions.find((opt) => opt.value === value) ?? null;
 							return (
@@ -353,16 +355,14 @@ function CultivarsPage() {
 										</ComboboxList>
 									</ComboboxContent>
 								</Combobox>
-							)
+							);
 						},
 					},
 				},
 			),
 			columnHelper.accessor((cultivar) => String(cultivar.speciesId), {
 				id: "species",
-				header: ({ column }) => (
-					<DataTableColumnHeader column={column} title={m.collections_species_title()} />
-				),
+				header: ({ column }) => <DataTableColumnHeader column={column} title={m.collections_species_title()} />,
 				filterFn: (row, _columnId, filterValue) => {
 					if (filterValue == null || filterValue === "") return true;
 					return String(row.original.speciesId) === String(filterValue);
@@ -376,14 +376,14 @@ function CultivarsPage() {
 							{translateCatalogField(species.characteristics.name, species.systemCatalog) ??
 								String(species.id)}
 						</span>
-					)
+					);
 				},
 				meta: {
 					filter: ({
 						column,
 						table,
 					}: {
-						column: Column<CultivarEntity, unknown>;
+						column: Column<CachedCultivar, unknown>;
 						table: { getColumn: (id: string) => { getFilterValue: () => unknown } | undefined };
 					}) => {
 						const categoryFilter = String(table.getColumn("category")?.getFilterValue() ?? "");
@@ -428,7 +428,7 @@ function CultivarsPage() {
 									</ComboboxList>
 								</ComboboxContent>
 							</Combobox>
-						)
+						);
 					},
 				},
 			}),
@@ -466,11 +466,11 @@ function CultivarsPage() {
 			}),
 		],
 		[categoryFilterOptions, categoryLabelById, columnHelper, speciesById, speciesFilterOptions],
-	)
+	);
 
 	const table = useMemo(
 		() =>
-			createTable<CultivarEntity>({
+			createTable<CachedCultivar>({
 				data: items,
 				columns,
 				globalFilterFn: fuzzyFilter,
@@ -494,7 +494,7 @@ function CultivarsPage() {
 				},
 			}),
 		[columns, effectiveColumnFilters, globalFilter, items, onColumnFiltersChange, rowSelection, sorting],
-	)
+	);
 
 	const filteredRowCount = table.getFilteredRowModel().rows.length;
 	const emptyMessage =
@@ -506,7 +506,7 @@ function CultivarsPage() {
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-			<PageHeading collection="cultivar">
+			<DashboardPageHeading collection="cultivar">
 				<h1 className="font-heading font-medium text-lg">{m.collections_cultivar_titlePlural()}</h1>
 				<ButtonTooltip label={m.collections_cultivar_create()}>
 					<Button type="button" size="icon" variant="outline" onClick={() => setCreateOpen(true)}>
@@ -514,8 +514,8 @@ function CultivarsPage() {
 						<PlusIcon />
 					</Button>
 				</ButtonTooltip>
-			</PageHeading>
-			<PageContent className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
+			</DashboardPageHeading>
+			<DashboardPageContent className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
 				<div className="flex flex-wrap items-end gap-2">
 					<Input
 						className="w-full min-w-40 sm:w-56"
@@ -532,7 +532,7 @@ function CultivarsPage() {
 							onClick={() => {
 								table.resetGlobalFilter();
 								table.resetColumnFilters();
-								setRowSelection({})
+								setRowSelection({});
 							}}
 							aria-label={m.filtering_clearFilters()}
 						>
@@ -547,19 +547,21 @@ function CultivarsPage() {
 						isError={isError}
 						errorMessage={m.common_loadError()}
 						emptyMessage={emptyMessage}
+						highlightPendingRows
 					/>
 				</div>
-			</PageContent>
+			</DashboardPageContent>
 			<CultivarCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
 		</div>
-	)
+	);
 }
 
-function CultivarRowActions({ cultivar }: { cultivar: CultivarEntity }) {
+function CultivarRowActions({ cultivar }: { cultivar: CachedCultivar }) {
 	const [editOpen, setEditOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const del = useCultivarDeleteMutation();
 	const linkedTitle = m.common_related();
+	const syncPending = isQueryObjectPending(cultivar);
 
 	return (
 		<div className="flex w-full items-center justify-center">
@@ -570,11 +572,19 @@ function CultivarRowActions({ cultivar }: { cultivar: CultivarEntity }) {
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent className="flex flex-col gap-1" align="end">
-					<DropdownMenuItem onSelect={() => setEditOpen(true)} title={m.common_edit()}>
+					<DropdownMenuItem
+						disabled={syncPending}
+						title={syncPending ? m.common_editDisabledPendingSync() : m.common_edit()}
+						onSelect={() => setEditOpen(true)}
+					>
 						<PencilIcon />
 						{m.common_edit()}
 					</DropdownMenuItem>
-					<DropdownMenuItem onSelect={() => setDeleteOpen(true)} title={m.common_delete()}>
+					<DropdownMenuItem
+						disabled={syncPending}
+						title={syncPending ? m.common_editDisabledPendingSync() : m.common_delete()}
+						onSelect={() => setDeleteOpen(true)}
+					>
 						<Trash2Icon />
 						{m.common_delete()}
 					</DropdownMenuItem>
@@ -608,10 +618,10 @@ function CultivarRowActions({ cultivar }: { cultivar: CultivarEntity }) {
 				description={cultivar.characteristics.name}
 				isPending={del.isPending}
 				onConfirm={async () => {
-					await del.mutateAsync({ id: cultivar.id });
 					setDeleteOpen(false);
+					await del.mutateAsync({ id: cultivar.id });
 				}}
 			/>
 		</div>
-	)
+	);
 }

@@ -20,7 +20,7 @@ import { BaseUseCaseError } from "../shared/errors";
 import type { IUseCase } from "../shared/use-case.interface";
 import type { UseCaseRequest } from "../use-case-context";
 
-import type { SpeciesWithSystemCatalog } from "./species.crud-use-cases";
+import type { SpeciesWithSystemCatalog } from "./species.use-cases";
 
 /** Hydrated plant as returned by use-cases: species includes `systemCatalog` for UI/i18n. */
 export type PlantHydratedWithCatalogSpecies = HydratedPlantEntity & {

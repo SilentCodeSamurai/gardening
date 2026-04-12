@@ -1,4 +1,3 @@
-import type { GardeningEventEntity } from "@backend/core/domain/gardening/entities";
 import { Link } from "@tanstack/react-router";
 import { PencilIcon } from "lucide-react";
 import { useState } from "react";
@@ -7,12 +6,16 @@ import { GardeningEventUpdateDialog } from "@/components/gardening/gardening-eve
 import { Button } from "@/components/ui/button";
 import { ButtonTooltip } from "@/components/ui/button-tooltip";
 import { Card, CardContent } from "@/components/ui/card";
+import { pendingItemSurfaceClassName } from "@/components/ui/pending-item-surface";
 import { gardeningActionMessage } from "@/lib/gardening-action-messages";
+import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages.js";
 import { getLocale } from "@/paraglide/runtime";
+import type { CachedGardeningEvent } from "@/store/query-cache-types";
+import { isQueryObjectPending } from "@/store/query-object-status";
 
 type Props = {
-	event: GardeningEventEntity;
+	event: CachedGardeningEvent;
 };
 export function GardeningEventListCard({ event }: Props) {
 	const [editOpen, setEditOpen] = useState(false);
@@ -21,9 +24,19 @@ export function GardeningEventListCard({ event }: Props) {
 		dateStyle: "short",
 		timeStyle: "short",
 	});
+	const syncPending = isQueryObjectPending(event);
 
 	return (
-		<Card type="item" className="relative h-full py-1 transition-colors hover:bg-card/80">
+		<Card
+			type="item"
+			className={cn(
+				"relative h-full py-1 transition-colors",
+				!syncPending && "hover:bg-card/80",
+				syncPending && pendingItemSurfaceClassName,
+			)}
+			data-pending={syncPending ? "true" : undefined}
+			aria-busy={syncPending || undefined}
+		>
 			<CardContent className="relative flex flex-row items-center justify-between gap-1">
 				<Link
 					to="/gardening-event/$gardeningEventId"
@@ -42,12 +55,16 @@ export function GardeningEventListCard({ event }: Props) {
 					) : null}
 				</div>
 				<div className="relative z-20 flex shrink-0 items-center">
-					<ButtonTooltip label={m.common_edit()}>
+					<ButtonTooltip
+						disabled={syncPending}
+						label={syncPending ? m.common_editDisabledPendingSync() : m.common_edit()}
+					>
 						<Button
 							type="button"
 							variant="outline"
 							size="icon-sm"
-							aria-label={m.common_edit()}
+							disabled={syncPending}
+							aria-label={syncPending ? m.common_editDisabledPendingSync() : m.common_edit()}
 							onClick={() => setEditOpen(true)}
 						>
 							<PencilIcon />

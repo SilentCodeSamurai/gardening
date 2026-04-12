@@ -6,7 +6,7 @@ import {
   SpeciesCategoryGetAllUseCase,
   SpeciesCategoryGetByIdUseCase,
   SpeciesCategoryUpdateUseCase,
-} from "@backend/core/application/use-cases/gardening/species-category.crud-use-cases";
+} from "#/backend/core/application/use-cases/gardening/species-category.use-cases";
 import {
   RepositoryConflictError,
   RepositoryNotFoundError,

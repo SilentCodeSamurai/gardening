@@ -1,4 +1,3 @@
-import type { WorkspaceRoleAssignmentEntity } from "@backend/core/domain/access/workspace-role-assignment.entity";
 import type {
 	CultivarEntity,
 	GardeningEventEntity,
@@ -11,6 +10,7 @@ import type {
 	SpeciesEntity,
 } from "@backend/core/domain/gardening/entities";
 import type { SpatialNodeEntity } from "@backend/core/domain/spatial/entities";
+import type { WorkspaceRoleAssignmentEntity } from "#/backend/core/domain/access/entities";
 import type { SubjectKey } from "#/backend/core/domain/access/subject.vo";
 import type { WorkspaceKey } from "#/backend/core/domain/access/workspace.vo";
 import { idKey, locationId, plantId } from "../shared/database-ids";

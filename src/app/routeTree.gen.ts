@@ -22,6 +22,7 @@ import { Route as AuthenticatedCatalogIndexRouteImport } from './routes/_authent
 import { Route as ApiRpcSplatRouteImport } from './routes/api/rpc.$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedPlantPlantIdRouteImport } from './routes/_authenticated/plant.$plantId'
+import { Route as AuthenticatedOrganizationOrganizationViewRouteImport } from './routes/_authenticated/organization.$organizationView'
 import { Route as AuthenticatedLocationLocationIdRouteImport } from './routes/_authenticated/location.$locationId'
 import { Route as AuthenticatedGardeningEventGardeningEventIdRouteImport } from './routes/_authenticated/gardening-event.$gardeningEventId'
 import { Route as AuthenticatedCatalogSpeciesCategoriesRouteImport } from './routes/_authenticated/catalog/species-categories'
@@ -100,6 +101,12 @@ const AuthenticatedPlantPlantIdRoute =
   AuthenticatedPlantPlantIdRouteImport.update({
     id: '/plant/$plantId',
     path: '/plant/$plantId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedOrganizationOrganizationViewRoute =
+  AuthenticatedOrganizationOrganizationViewRouteImport.update({
+    id: '/organization/$organizationView',
+    path: '/organization/$organizationView',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedLocationLocationIdRoute =
@@ -184,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/catalog/species-categories': typeof AuthenticatedCatalogSpeciesCategoriesRoute
   '/gardening-event/$gardeningEventId': typeof AuthenticatedGardeningEventGardeningEventIdRoute
   '/location/$locationId': typeof AuthenticatedLocationLocationIdRouteWithChildren
+  '/organization/$organizationView': typeof AuthenticatedOrganizationOrganizationViewRoute
   '/plant/$plantId': typeof AuthenticatedPlantPlantIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
@@ -207,6 +215,7 @@ export interface FileRoutesByTo {
   '/catalog/species': typeof AuthenticatedCatalogSpeciesRoute
   '/catalog/species-categories': typeof AuthenticatedCatalogSpeciesCategoriesRoute
   '/gardening-event/$gardeningEventId': typeof AuthenticatedGardeningEventGardeningEventIdRoute
+  '/organization/$organizationView': typeof AuthenticatedOrganizationOrganizationViewRoute
   '/plant/$plantId': typeof AuthenticatedPlantPlantIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
@@ -234,6 +243,7 @@ export interface FileRoutesById {
   '/_authenticated/catalog/species-categories': typeof AuthenticatedCatalogSpeciesCategoriesRoute
   '/_authenticated/gardening-event/$gardeningEventId': typeof AuthenticatedGardeningEventGardeningEventIdRoute
   '/_authenticated/location/$locationId': typeof AuthenticatedLocationLocationIdRouteWithChildren
+  '/_authenticated/organization/$organizationView': typeof AuthenticatedOrganizationOrganizationViewRoute
   '/_authenticated/plant/$plantId': typeof AuthenticatedPlantPlantIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/rpc/$': typeof ApiRpcSplatRoute
@@ -261,6 +271,7 @@ export interface FileRouteTypes {
     | '/catalog/species-categories'
     | '/gardening-event/$gardeningEventId'
     | '/location/$locationId'
+    | '/organization/$organizationView'
     | '/plant/$plantId'
     | '/api/auth/$'
     | '/api/rpc/$'
@@ -284,6 +295,7 @@ export interface FileRouteTypes {
     | '/catalog/species'
     | '/catalog/species-categories'
     | '/gardening-event/$gardeningEventId'
+    | '/organization/$organizationView'
     | '/plant/$plantId'
     | '/api/auth/$'
     | '/api/rpc/$'
@@ -310,6 +322,7 @@ export interface FileRouteTypes {
     | '/_authenticated/catalog/species-categories'
     | '/_authenticated/gardening-event/$gardeningEventId'
     | '/_authenticated/location/$locationId'
+    | '/_authenticated/organization/$organizationView'
     | '/_authenticated/plant/$plantId'
     | '/api/auth/$'
     | '/api/rpc/$'
@@ -421,6 +434,13 @@ declare module '@tanstack/react-router' {
       path: '/plant/$plantId'
       fullPath: '/plant/$plantId'
       preLoaderRoute: typeof AuthenticatedPlantPlantIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/organization/$organizationView': {
+      id: '/_authenticated/organization/$organizationView'
+      path: '/organization/$organizationView'
+      fullPath: '/organization/$organizationView'
+      preLoaderRoute: typeof AuthenticatedOrganizationOrganizationViewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/location/$locationId': {
@@ -560,6 +580,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountAccountViewRoute: typeof AuthenticatedAccountAccountViewRoute
   AuthenticatedGardeningEventGardeningEventIdRoute: typeof AuthenticatedGardeningEventGardeningEventIdRoute
   AuthenticatedLocationLocationIdRoute: typeof AuthenticatedLocationLocationIdRouteWithChildren
+  AuthenticatedOrganizationOrganizationViewRoute: typeof AuthenticatedOrganizationOrganizationViewRoute
   AuthenticatedPlantPlantIdRoute: typeof AuthenticatedPlantPlantIdRoute
 }
 
@@ -574,6 +595,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedGardeningEventGardeningEventIdRoute,
   AuthenticatedLocationLocationIdRoute:
     AuthenticatedLocationLocationIdRouteWithChildren,
+  AuthenticatedOrganizationOrganizationViewRoute:
+    AuthenticatedOrganizationOrganizationViewRoute,
   AuthenticatedPlantPlantIdRoute: AuthenticatedPlantPlantIdRoute,
 }
 

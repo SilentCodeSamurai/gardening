@@ -1,12 +1,12 @@
-import * as m from "@/paraglide/messages.js";
-import type { SpeciesWithSystemCatalog } from "@backend/core/application/use-cases/gardening/species.crud-use-cases";
 import type { CultivarEntity, HydratedPlantEntity } from "@backend/core/domain/gardening/entities";
 import type { SpatialNodeEntity, SpatialNodeTreeNode } from "@backend/core/domain/spatial/entities";
 import type { ItemsContainer } from "@backend/shared/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { orpc } from "@/orpc/client";
+import * as m from "@/paraglide/messages.js";
 
+import { useActiveWorkspaceKey } from "@/store/active-workspace-key";
 import {
 	appendManyToItemsContainer,
 	appendToItemsContainer,
@@ -15,6 +15,13 @@ import {
 	upsertInItemsContainer,
 } from "@/store/cache-utils";
 import { queryKeys } from "@/store/keys";
+import type {
+	CachedCultivarList,
+	CachedHydratedPlant,
+	CachedHydratedPlantList,
+	CachedSpeciesList,
+} from "@/store/query-cache-types";
+import { isQueryObjectPending, markQueryObjectPending, QUERY_OBJECT_PENDING } from "@/store/query-object-status";
 import { getSpatialPlacementStatusByRef } from "@/store/spatial-placement";
 import {
 	cancelQueriesByKeys,
@@ -32,11 +39,11 @@ function getHydratedCultivar(
 	cultivarId: string,
 ): HydratedPlantEntity["cultivar"] | null {
 	const cultivar = queryClient
-		.getQueryData<ItemsContainer<CultivarEntity>>(queryKeys.cultivar.all.queryKey)
+		.getQueryData<CachedCultivarList>(queryKeys.cultivar.all.queryKey)
 		?.items.find((c) => String(c.id) === String(cultivarId));
 	if (!cultivar) return null;
 	const species = queryClient
-		.getQueryData<ItemsContainer<SpeciesWithSystemCatalog>>(queryKeys.species.all.queryKey)
+		.getQueryData<CachedSpeciesList>(queryKeys.species.all.queryKey)
 		?.items.find((s) => String(s.id) === String(cultivar.speciesId));
 	if (!species) return null;
 	return { ...cultivar, species };
@@ -44,6 +51,7 @@ function getHydratedCultivar(
 
 export function usePlantCreateMutation() {
 	const queryClient = useQueryClient();
+	const workspaceKey = useActiveWorkspaceKey();
 
 	return useMutation(
 		orpc.plant.create.mutationOptions({
@@ -51,9 +59,10 @@ export function usePlantCreateMutation() {
 				await cancelQueriesByKeys(queryClient, [queryKeys.plant.all.queryKey]);
 				const snapshots = snapshotQueries(queryClient, [queryKeys.plant.all.queryKey]);
 				const cultivar = getHydratedCultivar(queryClient, String(variables.cultivarId));
-				if (!cultivar) return { snapshots };
+				if (!cultivar || !workspaceKey) return { snapshots };
 				const pendingId = makePendingId("plant");
-				const pending: HydratedPlantEntity = {
+				const pending: CachedHydratedPlant = {
+					workspaceKey,
 					id: pendingId as HydratedPlantEntity["id"],
 					title: variables.title ?? null,
 					description: variables.description ?? null,
@@ -61,9 +70,11 @@ export function usePlantCreateMutation() {
 					cultivar,
 					createdAt: new Date(),
 					updatedAt: new Date(),
+					objectStatus: QUERY_OBJECT_PENDING,
 				};
-				queryClient.setQueryData<ItemsContainer<HydratedPlantEntity>>(queryKeys.plant.all.queryKey, (prev) =>
-					appendToItemsContainer(prev, pending),
+				queryClient.setQueryData<CachedHydratedPlantList>(
+					queryKeys.plant.all.queryKey,
+					(prev) => appendToItemsContainer(prev, pending),
 				);
 				queryClient.setQueryData(queryKeys.plant.detail(pending.id).queryKey, pending);
 				return { snapshots, pendingIds: [pendingId] };
@@ -83,7 +94,7 @@ export function usePlantCreateMutation() {
 			onSuccess: (entity, _vars, ctx) => {
 				if (ctx?.pendingIds?.[0]) {
 					const pendingId = ctx.pendingIds[0];
-					queryClient.setQueryData<ItemsContainer<HydratedPlantEntity>>(
+					queryClient.setQueryData<CachedHydratedPlantList>(
 						queryKeys.plant.all.queryKey,
 						(prev) => replacePendingInItemsContainer(prev, pendingId as HydratedPlantEntity["id"], entity),
 					);
@@ -92,7 +103,7 @@ export function usePlantCreateMutation() {
 						undefined,
 					);
 				} else {
-					queryClient.setQueryData<ItemsContainer<HydratedPlantEntity>>(
+					queryClient.setQueryData<CachedHydratedPlantList>(
 						queryKeys.plant.all.queryKey,
 						(prev) => replacePendingInItemsContainer(prev, entity.id, entity),
 					);
@@ -106,19 +117,22 @@ export function usePlantCreateMutation() {
 
 export function usePlantCreateManyMutation() {
 	const queryClient = useQueryClient();
+	const workspaceKey = useActiveWorkspaceKey();
 
 	return useMutation(
 		orpc.plant.createMany.mutationOptions({
 			onMutate: async (variables) => {
 				await cancelQueriesByKeys(queryClient, [queryKeys.plant.all.queryKey]);
 				const snapshots = snapshotQueries(queryClient, [queryKeys.plant.all.queryKey]);
-				const pendingItems: HydratedPlantEntity[] = [];
+				const pendingItems: CachedHydratedPlant[] = [];
+				if (!workspaceKey) return { snapshots, pendingIds: [] as string[] };
 				for (let i = 0; i < variables.rows.length; i++) {
 					const row = variables.rows[i];
 					const cultivar = getHydratedCultivar(queryClient, String(row.cultivarId));
 					if (!cultivar) continue;
 					const pendingId = makePendingId(`plant-many-${i}`);
 					pendingItems.push({
+						workspaceKey,
 						id: pendingId as HydratedPlantEntity["id"],
 						title: row.title ?? null,
 						description: row.description ?? null,
@@ -126,10 +140,11 @@ export function usePlantCreateManyMutation() {
 						cultivar,
 						createdAt: new Date(),
 						updatedAt: new Date(),
+						objectStatus: QUERY_OBJECT_PENDING,
 					});
 				}
 				if (pendingItems.length > 0) {
-					queryClient.setQueryData<ItemsContainer<HydratedPlantEntity>>(
+					queryClient.setQueryData<CachedHydratedPlantList>(
 						queryKeys.plant.all.queryKey,
 						(prev) => appendManyToItemsContainer(prev, pendingItems),
 					);
@@ -144,13 +159,14 @@ export function usePlantCreateManyMutation() {
 			},
 			onSuccess: (container, _vars, ctx) => {
 				if (ctx?.pendingIds?.length) {
-					queryClient.setQueryData<ItemsContainer<HydratedPlantEntity>>(
+					queryClient.setQueryData<CachedHydratedPlantList>(
 						queryKeys.plant.all.queryKey,
 						(prev) => dropPendingManyInItemsContainer(prev, ctx.pendingIds ?? []),
 					);
 				}
-				queryClient.setQueryData<ItemsContainer<HydratedPlantEntity>>(queryKeys.plant.all.queryKey, (prev) =>
-					appendManyToItemsContainer(prev, container.items),
+				queryClient.setQueryData<CachedHydratedPlantList>(
+					queryKeys.plant.all.queryKey,
+					(prev) => appendManyToItemsContainer(prev, container.items),
 				);
 				toast.success(m.collections_plant_createManySuccess());
 			},
@@ -169,26 +185,28 @@ export function usePlantUpdateMutation() {
 					queryKeys.plant.all.queryKey,
 					queryKeys.plant.detail(variables.id).queryKey,
 				]);
-				const previousAll = snapshots[0]?.data as ItemsContainer<HydratedPlantEntity> | undefined;
-				const previousDetail = snapshots[1]?.data as HydratedPlantEntity | undefined;
+				const previousAll = snapshots[0]?.data as
+					| CachedHydratedPlantList
+					| undefined;
+				const previousDetail = snapshots[1]?.data as CachedHydratedPlant | undefined;
 				const existing =
 					previousDetail ??
 					previousAll?.items.find((item) => String(item.id) === String(variables.id)) ??
 					null;
-				if (existing) {
+				if (existing && !isQueryObjectPending(existing)) {
 					const cultivar =
 						variables.cultivarId !== undefined
 							? getHydratedCultivar(queryClient, String(variables.cultivarId))
 							: existing.cultivar;
-					const optimistic: HydratedPlantEntity = {
+					const optimistic = markQueryObjectPending({
 						...existing,
 						...variables,
 						id: existing.id,
 						cultivarId: (variables.cultivarId ?? existing.cultivarId) as HydratedPlantEntity["cultivarId"],
 						cultivar: cultivar ?? existing.cultivar,
 						updatedAt: new Date(),
-					};
-					queryClient.setQueryData<ItemsContainer<HydratedPlantEntity>>(
+					});
+					queryClient.setQueryData<CachedHydratedPlantList>(
 						queryKeys.plant.all.queryKey,
 						(prev) => upsertInItemsContainer(prev, optimistic),
 					);
@@ -204,8 +222,9 @@ export function usePlantUpdateMutation() {
 				toast.error(m.collections_plant_actionError());
 			},
 			onSuccess: (entity) => {
-				queryClient.setQueryData<ItemsContainer<HydratedPlantEntity>>(queryKeys.plant.all.queryKey, (prev) =>
-					upsertInItemsContainer(prev, entity),
+				queryClient.setQueryData<CachedHydratedPlantList>(
+					queryKeys.plant.all.queryKey,
+					(prev) => upsertInItemsContainer(prev, entity),
 				);
 				queryClient.setQueryData(queryKeys.plant.detail(entity.id).queryKey, entity);
 				toast.success(m.collections_plant_updateSuccess());
@@ -233,8 +252,14 @@ export function usePlantDeleteMutation() {
 					queryKeys.plant.detail(variables.id).queryKey,
 					queryKeys.spatial.allNodes.queryKey,
 				]);
-				queryClient.setQueryData<ItemsContainer<HydratedPlantEntity>>(queryKeys.plant.all.queryKey, (prev) =>
-					removeFromItemsContainer(prev, variables.id),
+				const previousAll = snapshots[0]?.data as
+					| CachedHydratedPlantList
+					| undefined;
+				const row = previousAll?.items.find((item) => String(item.id) === String(variables.id));
+				if (isQueryObjectPending(row)) return { snapshots, treeQueries };
+				queryClient.setQueryData<CachedHydratedPlantList>(
+					queryKeys.plant.all.queryKey,
+					(prev) => removeFromItemsContainer(prev, variables.id),
 				);
 				queryClient.setQueryData(queryKeys.plant.detail(variables.id).queryKey, undefined);
 				const previousSpatial = snapshots[2]?.data as ItemsContainer<SpatialNodeEntity> | undefined;
@@ -263,8 +288,9 @@ export function usePlantDeleteMutation() {
 				toast.error(m.collections_plant_actionError());
 			},
 			onSuccess: (deletedId) => {
-				queryClient.setQueryData<ItemsContainer<HydratedPlantEntity>>(queryKeys.plant.all.queryKey, (prev) =>
-					dropPendingInItemsContainer(prev, deletedId),
+				queryClient.setQueryData<CachedHydratedPlantList>(
+					queryKeys.plant.all.queryKey,
+					(prev) => dropPendingInItemsContainer(prev, deletedId),
 				);
 				void queryClient.invalidateQueries({
 					queryKey: queryKeys.gardeningEvent.forPlant(deletedId).queryKey,
@@ -295,7 +321,7 @@ export function usePlantDeleteManyMutation() {
 					queryKeys.spatial.allNodes.queryKey,
 					...variables.ids.map((id: string) => queryKeys.plant.detail(id).queryKey),
 				]);
-				queryClient.setQueryData<ItemsContainer<HydratedPlantEntity>>(
+				queryClient.setQueryData<CachedHydratedPlantList>(
 					queryKeys.plant.all.queryKey,
 					(prev) => removeManyFromItemsContainer(prev, variables.ids) ?? { items: [] },
 				);
@@ -332,8 +358,9 @@ export function usePlantDeleteManyMutation() {
 				toast.error(m.collections_plant_actionError());
 			},
 			onSuccess: (result) => {
-				queryClient.setQueryData<ItemsContainer<HydratedPlantEntity>>(queryKeys.plant.all.queryKey, (prev) =>
-					dropPendingManyInItemsContainer(prev, result.deletedIds),
+				queryClient.setQueryData<CachedHydratedPlantList>(
+					queryKeys.plant.all.queryKey,
+					(prev) => dropPendingManyInItemsContainer(prev, result.deletedIds),
 				);
 				for (const deletedId of result.deletedIds) {
 					void queryClient.invalidateQueries({

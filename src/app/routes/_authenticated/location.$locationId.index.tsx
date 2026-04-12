@@ -1,14 +1,14 @@
-﻿import type { LocationEntityId } from "@backend/core/domain/gardening/entities";
+import type { LocationEntityId } from "@backend/core/domain/gardening/entities";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
+import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
+import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
 import { GardeningActionPresentationIcon } from "@/components/gardening/gardening-action-icon";
 import { LocationUpdateDialog } from "@/components/gardening/location/location-update-dialog";
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
-import { PageContent } from "@/components/layout/page-content";
-import { PageHeading } from "@/components/layout/page-heading";
 import { Button } from "@/components/ui/button";
 import { ButtonTooltip } from "@/components/ui/button-tooltip";
 import { gardeningActionMessage } from "@/lib/gardening-action-messages";
@@ -46,10 +46,8 @@ function LocationDetailPage() {
 	}
 	if (isError || !data) {
 		return (
-			<div className="text-destructive text-sm">
-				{`${m.collections_location_title()} ${m.common_notFound()}`}
-			</div>
-		)
+			<div className="text-destructive text-sm">{`${m.collections_location_title()} ${m.common_notFound()}`}</div>
+		);
 	}
 
 	const events = eventsData?.items ?? [];
@@ -59,7 +57,7 @@ function LocationDetailPage() {
 	}).isPlaced;
 	return (
 		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-			<PageHeading className="min-w-0 flex-wrap" collection="location">
+			<DashboardPageHeading className="min-w-0 flex-wrap" collection="location">
 				<div className="flex min-w-0 flex-wrap items-center gap-3">
 					<ItemPresentationIcon presentation={data.presentation} />
 					<h1 className="font-heading font-medium text-lg">{data.name}</h1>
@@ -87,8 +85,8 @@ function LocationDetailPage() {
 							disabled={isPlaced}
 							aria-label={isPlaced ? m.common_deleteDisabledWhilePlaced() : m.common_delete()}
 							onClick={() => {
-								if (isPlaced) return
-								setDeleteOpen(true)
+								if (isPlaced) return;
+								setDeleteOpen(true);
 							}}
 						>
 							<Trash2Icon />
@@ -102,14 +100,14 @@ function LocationDetailPage() {
 						description={data.name}
 						isPending={del.isPending}
 						onConfirm={async () => {
-							await del.mutateAsync({ id: data.id });
 							setDeleteOpen(false);
+							await del.mutateAsync({ id: data.id });
 							await navigate({ to: "/locations" });
 						}}
 					/>
 				</div>
-			</PageHeading>
-			<PageContent className="flex flex-col gap-8 overflow-y-auto pb-6">
+			</DashboardPageHeading>
+			<DashboardPageContent className="flex flex-col gap-8 overflow-y-auto pb-6">
 				<div className="space-y-4">
 					<div className="flex flex-wrap gap-2">
 						<Link
@@ -127,9 +125,7 @@ function LocationDetailPage() {
 						</h2>
 						<dl className="grid gap-x-4 gap-y-3 text-sm sm:grid-cols-[minmax(9rem,auto)_1fr]">
 							<div className="contents">
-								<dt className="text-muted-foreground">
-									{m.components_detail_field_parentLocation()}
-								</dt>
+								<dt className="text-muted-foreground">{m.components_detail_field_parentLocation()}</dt>
 								<dd className="wrap-break-word min-w-0">
 									<span className="text-muted-foreground">
 										{m.components_detail_field_rootLocation()}
@@ -145,9 +141,7 @@ function LocationDetailPage() {
 								</dd>
 							</div>
 							<div className="contents">
-								<dt className="text-muted-foreground">
-									{m.collections_location_titlePlural()}
-								</dt>
+								<dt className="text-muted-foreground">{m.collections_location_titlePlural()}</dt>
 								<dd className="wrap-break-word min-w-0">{allLocations?.items.length ?? 0}</dd>
 							</div>
 							<div className="contents">
@@ -181,9 +175,7 @@ function LocationDetailPage() {
 				<section className="space-y-3">
 					<h2 className="font-medium text-lg">{m.components_detail_eventsSection_title()}</h2>
 					{eventsPending ? (
-						<p className="text-muted-foreground text-sm">
-							{m.components_detail_eventsSection_loading()}
-						</p>
+						<p className="text-muted-foreground text-sm">{m.components_detail_eventsSection_loading()}</p>
 					) : events.length === 0 ? (
 						<p className="rounded-lg border border-border/80 border-dashed bg-muted/10 px-4 py-6 text-center text-muted-foreground text-sm">
 							{m.components_detail_eventsSection_empty()}
@@ -223,7 +215,7 @@ function LocationDetailPage() {
 						</ul>
 					)}
 				</section>
-			</PageContent>
+			</DashboardPageContent>
 		</div>
-	)
+	);
 }

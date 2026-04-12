@@ -8,8 +8,12 @@ import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
 import { Button } from "@/components/ui/button";
 import { ButtonTooltip } from "@/components/ui/button-tooltip";
 import { Card, CardContent } from "@/components/ui/card";
+import { pendingItemSurfaceClassName } from "@/components/ui/pending-item-surface";
+import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages.js";
 import { usePlantDeleteMutation } from "@/store/mutations";
+import type { CachedHydratedPlant } from "@/store/query-cache-types";
+import { isQueryObjectPending } from "@/store/query-object-status";
 
 function humanizeToken(value: string): string {
 	return value
@@ -35,14 +39,14 @@ function resolveSpeciesDisplayName(rawSpeciesName: string): string {
 	return trimmed;
 }
 
-export function getPlantDisplayTitle(plant: HydratedPlantEntity): string {
+export function getPlantDisplayTitle(plant: HydratedPlantEntity | CachedHydratedPlant): string {
 	if (plant.title?.trim()) return plant.title.trim();
 
 	return plant.cultivar.characteristics.name || m.items_untitled();
 }
 
 type Props = {
-	plant: HydratedPlantEntity;
+	plant: CachedHydratedPlant;
 	isPlaced?: boolean;
 };
 
@@ -52,9 +56,25 @@ export function PlantListCard({ plant, isPlaced = false }: Props) {
 	const del = usePlantDeleteMutation();
 	const speciesLabel = resolveSpeciesDisplayName(plant.cultivar.species.characteristics.name);
 	const title = getPlantDisplayTitle(plant);
+	const syncPending = isQueryObjectPending(plant);
+	const deleteDisabled = isPlaced || syncPending;
+	const deleteTooltip = isPlaced
+		? m.common_deleteDisabledWhilePlaced()
+		: syncPending
+			? m.common_editDisabledPendingSync()
+			: m.common_delete();
 
 	return (
-		<Card type="item" className="relative h-full transition-colors hover:bg-card/80">
+		<Card
+			type="item"
+			className={cn(
+				"relative h-full transition-colors",
+				!syncPending && "hover:bg-card/80",
+				syncPending && pendingItemSurfaceClassName,
+			)}
+			data-pending={syncPending ? "true" : undefined}
+			aria-busy={syncPending || undefined}
+		>
 			<CardContent className="relative flex flex-row items-center justify-between gap-3">
 				<Link
 					to="/plant/$plantId"
@@ -75,28 +95,29 @@ export function PlantListCard({ plant, isPlaced = false }: Props) {
 					) : null}
 				</div>
 				<div className="relative z-20 flex shrink-0 items-center gap-1">
-					<ButtonTooltip label={m.common_edit()}>
+					<ButtonTooltip
+						disabled={syncPending}
+						label={syncPending ? m.common_editDisabledPendingSync() : m.common_edit()}
+					>
 						<Button
 							type="button"
 							variant="outline"
 							size="icon-sm"
-							aria-label={m.common_edit()}
+							disabled={syncPending}
+							aria-label={syncPending ? m.common_editDisabledPendingSync() : m.common_edit()}
 							onClick={() => setEditOpen(true)}
 						>
 							<PencilIcon className="size-4" />
 						</Button>
 					</ButtonTooltip>
 					<PlantUpdateDialog plant={plant} open={editOpen} onOpenChange={setEditOpen} />
-					<ButtonTooltip
-						disabled={!isPlaced}
-						label={isPlaced ? m.common_deleteDisabledWhilePlaced() : m.common_delete()}
-					>
+					<ButtonTooltip disabled={deleteDisabled} label={deleteTooltip}>
 						<Button
 							type="button"
 							variant="outline"
 							size="icon-sm"
-							disabled={isPlaced}
-							aria-label={isPlaced ? m.common_deleteDisabledWhilePlaced() : m.common_delete()}
+							disabled={deleteDisabled}
+							aria-label={deleteTooltip}
 							onClick={() => {
 								if (isPlaced) return;
 								setDeleteOpen(true);
@@ -112,8 +133,8 @@ export function PlantListCard({ plant, isPlaced = false }: Props) {
 						description={title}
 						isPending={del.isPending}
 						onConfirm={async () => {
-							await del.mutateAsync({ id: plant.id });
 							setDeleteOpen(false);
+							await del.mutateAsync({ id: plant.id });
 						}}
 					/>
 				</div>

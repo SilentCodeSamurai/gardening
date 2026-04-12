@@ -1,13 +1,13 @@
-﻿import type { SpeciesEntityId } from "@backend/core/domain/gardening/entities";
+import type { SpeciesEntityId } from "@backend/core/domain/gardening/entities";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
+import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
+import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
 import { SpeciesUpdateDialog } from "@/components/gardening/species/species-update-dialog";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
-import { PageContent } from "@/components/layout/page-content";
-import { PageHeading } from "@/components/layout/page-heading";
 import { Button } from "@/components/ui/button";
 import { ButtonTooltip } from "@/components/ui/button-tooltip";
 import { translateCatalogField } from "@/lib/translate-catalog-field";
@@ -44,7 +44,7 @@ function SpeciesDetailPage() {
 	if (isError || !species) {
 		return (
 			<div className="text-destructive text-sm">{"${m.collections_species_title()} ${m.common_notFound()}"}</div>
-		)
+		);
 	}
 
 	const category = categories?.items.find((c) => String(c.id) === String(species.categoryId));
@@ -57,7 +57,7 @@ function SpeciesDetailPage() {
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-			<PageHeading className="min-w-0 flex-wrap" collection="species">
+			<DashboardPageHeading className="min-w-0 flex-wrap" collection="species">
 				<div className="flex min-w-0 flex-wrap items-center gap-3">
 					<ItemPresentationIcon presentation={species.presentation} />
 					<h1 className="font-heading font-medium text-lg">{name}</h1>
@@ -95,25 +95,23 @@ function SpeciesDetailPage() {
 								description={name ?? ""}
 								isPending={del.isPending}
 								onConfirm={async () => {
+									setDeleteOpen(false);
 									await del.mutateAsync({ id: species.id });
-									setDeleteOpen(false)
 									await navigate({
 										to: "/catalog/species",
 										search: { category: String(species.categoryId) },
-									})
+									});
 								}}
 							/>
 						</>
 					) : null}
 				</div>
-			</PageHeading>
-			<PageContent className="flex flex-col gap-6 overflow-y-auto pb-6">
+			</DashboardPageHeading>
+			<DashboardPageContent className="flex flex-col gap-6 overflow-y-auto pb-6">
 				{desc ? (
 					<p className="max-w-2xl text-muted-foreground text-sm leading-relaxed">{desc}</p>
 				) : (
-					<p className="text-muted-foreground text-sm italic">
-						{m.components_detail_field_noDescription()}
-					</p>
+					<p className="text-muted-foreground text-sm italic">{m.components_detail_field_noDescription()}</p>
 				)}
 
 				<section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm">
@@ -135,9 +133,7 @@ function SpeciesDetailPage() {
 						</div>
 
 						<div className="contents">
-							<dt className="text-muted-foreground">
-								{m.components_detail_field_defaultCatalogRow()}
-							</dt>
+							<dt className="text-muted-foreground">{m.components_detail_field_defaultCatalogRow()}</dt>
 							<dd className="wrap-break-word min-w-0">
 								{species.systemCatalog ? m.common_yes() : m.common_no()}
 							</dd>
@@ -188,7 +184,7 @@ function SpeciesDetailPage() {
 						</div>
 					</dl>
 				</section>
-			</PageContent>
+			</DashboardPageContent>
 		</div>
-	)
+	);
 }

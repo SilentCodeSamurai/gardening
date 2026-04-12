@@ -101,6 +101,7 @@ export function LocationCreateManyDialog({
 							existingSiblingNames,
 							nodes.length,
 						);
+			onOpenChange(false);
 			for (let i = 0; i < nodes.length; i++) {
 				const node = nodes[i];
 				const name = (names[i] ?? "").trim();
@@ -125,7 +126,6 @@ export function LocationCreateManyDialog({
 					ref: spatialNode.ref,
 				});
 			}
-			onOpenChange(false);
 		},
 	});
 

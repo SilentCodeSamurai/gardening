@@ -1,13 +1,13 @@
-﻿import type { CultivarEntityId } from "@backend/core/domain/gardening/entities";
+import type { CultivarEntityId } from "@backend/core/domain/gardening/entities";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
+import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
+import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
 import { CultivarUpdateDialog } from "@/components/gardening/cultivar/cultivar-update-dialog";
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
-import { PageContent } from "@/components/layout/page-content";
-import { PageHeading } from "@/components/layout/page-heading";
 import { Button } from "@/components/ui/button";
 import { ButtonTooltip } from "@/components/ui/button-tooltip";
 import { translateCatalogField } from "@/lib/translate-catalog-field";
@@ -35,17 +35,15 @@ function CultivarDetailPage() {
 	}
 	if (isError || !data) {
 		return (
-			<div className="text-destructive text-sm">
-				{`${m.collections_cultivar_title()} ${m.common_notFound()}`}
-			</div>
-		)
+			<div className="text-destructive text-sm">{`${m.collections_cultivar_title()} ${m.common_notFound()}`}</div>
+		);
 	}
 
 	const { species } = data;
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-			<PageHeading className="min-w-0 flex-wrap" collection="cultivar">
+			<DashboardPageHeading className="min-w-0 flex-wrap" collection="cultivar">
 				<div className="flex min-w-0 flex-wrap items-center gap-3">
 					<ItemPresentationIcon presentation={data.presentation} />
 					<h1 className="font-heading font-medium text-lg">{data.characteristics.name}</h1>
@@ -81,28 +79,26 @@ function CultivarDetailPage() {
 						description={data.characteristics.name}
 						isPending={del.isPending}
 						onConfirm={async () => {
-							await del.mutateAsync({ id: data.id });
 							setDeleteOpen(false);
+							await del.mutateAsync({ id: data.id });
 							await navigate({
 								to: "/catalog/cultivars",
 								search: {
 									category: String(species.categoryId),
 									species: String(species.id),
 								},
-							})
+							});
 						}}
 					/>
 				</div>
-			</PageHeading>
-			<PageContent className="flex flex-col gap-6 overflow-y-auto pb-6">
+			</DashboardPageHeading>
+			<DashboardPageContent className="flex flex-col gap-6 overflow-y-auto pb-6">
 				{data.characteristics.description ? (
 					<p className="max-w-2xl text-muted-foreground text-sm leading-relaxed">
 						{data.characteristics.description}
 					</p>
 				) : (
-					<p className="text-muted-foreground text-sm italic">
-						{m.components_detail_field_noDescription()}
-					</p>
+					<p className="text-muted-foreground text-sm italic">{m.components_detail_field_noDescription()}</p>
 				)}
 
 				<section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm">
@@ -156,7 +152,7 @@ function CultivarDetailPage() {
 						</div>
 					</dl>
 				</section>
-			</PageContent>
+			</DashboardPageContent>
 		</div>
-	)
+	);
 }

@@ -1,4 +1,4 @@
-﻿import type { LocationEntity, LocationEntityId } from "@backend/core/domain/gardening/entities";
+import type { LocationEntityId } from "@backend/core/domain/gardening/entities";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
@@ -13,6 +13,8 @@ import {
 } from "@tanstack/react-table";
 import { EllipsisVerticalIcon, PencilIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useMemo, useState } from "react";
+import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
+import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
 import {
 	GardeningEventCreateDialog,
 	type GardeningEventCreateDialogInitialValues,
@@ -21,8 +23,6 @@ import { LocationCreateDialog } from "@/components/gardening/location/location-c
 import { LocationUpdateDialog } from "@/components/gardening/location/location-update-dialog";
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
-import { PageContent } from "@/components/layout/page-content";
-import { PageHeading } from "@/components/layout/page-heading";
 import { DataTable } from "@/components/table/data-table";
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
 import { fuzzyFilter } from "@/components/table/fuzzy-filter";
@@ -54,6 +54,8 @@ import { tableSelectionBulkTooltip } from "@/lib/table-selection-tooltips";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import { useLocationDeleteManyMutation, useLocationDeleteMutation } from "@/store/mutations";
+import type { CachedLocation } from "@/store/query-cache-types";
+import { isQueryObjectPending } from "@/store/query-object-status";
 import { collectPlacedEntityIds } from "@/store/spatial-placement";
 
 export const Route = createFileRoute("/_authenticated/locations")({
@@ -84,7 +86,7 @@ function LocationsPage() {
 	const placementColumnFilterRaw = useMemo(
 		() => String(columnFilters.find((f) => f.id === "placement")?.value ?? ""),
 		[columnFilters],
-	)
+	);
 
 	const locationPlacementFilterItems = useMemo((): PlacementFilterComboboxItem[] => {
 		const parentIds = new Set(locationParentIdsFromTable);
@@ -104,13 +106,13 @@ function LocationsPage() {
 				label: loc.name,
 				presentation: loc.presentation,
 			})),
-		]
+		];
 	}, [locationParentIdsFromTable, placementColumnFilterRaw, rootItems]);
 
 	const placedLocationIds = useMemo(
 		() => collectPlacedEntityIds(spatialData?.items ?? [], "location"),
 		[spatialData?.items],
-	)
+	);
 
 	const [sorting, setSorting] = useState<SortingState>([{ id: "name", desc: false }]);
 	const [globalFilter, setGlobalFilter] = useState("");
@@ -119,7 +121,7 @@ function LocationsPage() {
 	const [createEventOpen, setCreateEventOpen] = useState(false);
 	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 	const bulkDeleteMany = useLocationDeleteManyMutation();
-	const columnHelper = useMemo(() => createColumnHelper<LocationEntity>(), []);
+	const columnHelper = useMemo(() => createColumnHelper<CachedLocation>(), []);
 	const columns = useMemo(
 		() => [
 			columnHelper.display({
@@ -261,10 +263,10 @@ function LocationsPage() {
 			}),
 		],
 		[columnHelper, locationPlacementFilterItems, placedLocationIds, rootItems, spatialData?.items],
-	)
+	);
 	const table = useMemo(
 		() =>
-			createTable<LocationEntity>({
+			createTable<CachedLocation>({
 				data: rootItems,
 				columns,
 				getCoreRowModel: getCoreRowModel(),
@@ -288,17 +290,17 @@ function LocationsPage() {
 				},
 			}),
 		[columnFilters, columns, globalFilter, rootItems, rowSelection, sorting],
-	)
+	);
 
 	const filteredRowCount = table.getFilteredRowModel().rows.length;
 	const selectedLocationIds = useMemo(
 		() => table.getFilteredSelectedRowModel().rows.map((row) => row.original.id as LocationEntityId),
 		[table],
-	)
+	);
 	const selectionHasPlacedLocation = useMemo(
 		() => selectedLocationIds.some((id) => placedLocationIds.has(String(id))),
 		[placedLocationIds, selectedLocationIds],
-	)
+	);
 	const bulkLocationDeleteDisabled = selectedLocationIds.length === 0 || selectionHasPlacedLocation;
 	const bulkLocationCreateEventDisabled =
 		selectedLocationIds.length === 0 || selectionHasPlacedLocation || selectedLocationIds.length !== 1;
@@ -330,7 +332,7 @@ function LocationsPage() {
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-			<PageHeading collection="location">
+			<DashboardPageHeading collection="location">
 				<h1 className="font-heading font-medium text-lg">{m.collections_location_titlePlural()}</h1>
 				<ButtonTooltip label={m.collections_location_create()}>
 					<Button type="button" size="icon" variant="outline" onClick={() => setCreateOpen(true)}>
@@ -338,8 +340,8 @@ function LocationsPage() {
 						<PlusIcon />
 					</Button>
 				</ButtonTooltip>
-			</PageHeading>
-			<PageContent className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
+			</DashboardPageHeading>
+			<DashboardPageContent className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
 				<div className="flex flex-wrap items-end gap-2">
 					<Input
 						className="w-full min-w-40 sm:w-56"
@@ -355,7 +357,7 @@ function LocationsPage() {
 							onClick={() => {
 								table.resetGlobalFilter();
 								table.resetColumnFilters();
-								setRowSelection({})
+								setRowSelection({});
 							}}
 							aria-label={m.filtering_clearFilters()}
 						>
@@ -370,6 +372,7 @@ function LocationsPage() {
 						isError={isError}
 						errorMessage={m.common_loadError()}
 						emptyMessage={emptyMessage}
+						highlightPendingRows
 						selectedActions={
 							<div className="flex flex-wrap items-center gap-2">
 								<ButtonTooltip
@@ -399,7 +402,7 @@ function LocationsPage() {
 						}
 					/>
 				</div>
-			</PageContent>
+			</DashboardPageContent>
 			<LocationCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
 			<GardeningEventCreateDialog
 				open={createEventOpen}
@@ -415,22 +418,28 @@ function LocationsPage() {
 				})}
 				isPending={bulkDeleteMany.isPending}
 				onConfirm={async () => {
-					await bulkDeleteMany.mutateAsync({ ids: selectedLocationIds });
 					setBulkDeleteOpen(false);
 					setRowSelection({});
+					await bulkDeleteMany.mutateAsync({ ids: selectedLocationIds });
 				}}
 			/>
 		</div>
-	)
+	);
 }
 
-function LocationRowActions({ location, isPlaced }: { location: LocationEntity; isPlaced: boolean }) {
+function LocationRowActions({ location, isPlaced }: { location: CachedLocation; isPlaced: boolean }) {
 	const [editOpen, setEditOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [createEventOpen, setCreateEventOpen] = useState(false);
 	const del = useLocationDeleteMutation();
+	const syncPending = isQueryObjectPending(location);
 
-	const deleteTitle = isPlaced ? m.common_deleteDisabledWhilePlaced() : m.common_delete();
+	const deleteTitle = isPlaced
+		? m.common_deleteDisabledWhilePlaced()
+		: syncPending
+			? m.common_editDisabledPendingSync()
+			: m.common_delete();
+	const actionLocked = syncPending;
 
 	return (
 		<div className="flex w-full items-center justify-center">
@@ -442,18 +451,27 @@ function LocationRowActions({ location, isPlaced }: { location: LocationEntity; 
 				</DropdownMenuTrigger>
 				<DropdownMenuContent className="flex flex-col gap-1" align="end">
 					<DropdownMenuItem
+						disabled={actionLocked}
+						title={
+							actionLocked
+								? m.common_editDisabledPendingSync()
+								: m.collections_gardeningEvent_createForLocationRowHint()
+						}
 						onSelect={() => setCreateEventOpen(true)}
-						title={m.collections_gardeningEvent_createForLocationRowHint()}
 					>
 						<PlusIcon />
 						{m.collections_gardeningEvent_create()}
 					</DropdownMenuItem>
-					<DropdownMenuItem onSelect={() => setEditOpen(true)} title={m.common_edit()}>
+					<DropdownMenuItem
+						disabled={actionLocked}
+						title={actionLocked ? m.common_editDisabledPendingSync() : m.common_edit()}
+						onSelect={() => setEditOpen(true)}
+					>
 						<PencilIcon />
 						{m.common_edit()}
 					</DropdownMenuItem>
 
-					{isPlaced ? (
+					{isPlaced || actionLocked ? (
 						<ButtonTooltip label={deleteTitle} disabled>
 							<DropdownMenuItem disabled title={deleteTitle}>
 								<Trash2Icon />
@@ -485,10 +503,10 @@ function LocationRowActions({ location, isPlaced }: { location: LocationEntity; 
 				description={location.name}
 				isPending={del.isPending}
 				onConfirm={async () => {
-					await del.mutateAsync({ id: location.id });
 					setDeleteOpen(false);
+					await del.mutateAsync({ id: location.id });
 				}}
 			/>
 		</div>
-	)
+	);
 }

@@ -1,60 +1,29 @@
 import {
+	ChevronDown,
+	Grid2x2Check,
+	Grid2x2X,
+	Lock,
+	LockOpen,
+	Minus,
+	Plus,
+	Redo2,
+	RefreshCcw,
+	RotateCcw,
+	Undo2,
+} from "lucide-react";
+import {
+	type ReactNode,
+	type PointerEvent as ReactPointerEvent,
 	startTransition,
 	useCallback,
 	useEffect,
 	useMemo,
 	useRef,
 	useState,
-	type PointerEvent as ReactPointerEvent,
-	type ReactNode,
 } from "react";
-import type {
-	SpatialAutoLayoutMode,
-	SpatialGeometry,
-	SpatialLayoutEditorClassNames,
-	SpatialLayoutEditorHistoryOptions,
-	SpatialLayoutEditorProps,
-	SpatialLayoutNode,
-	SpatialLayoutNodeSnapshot,
-	SpatialLayoutOperation,
-	SpatialLayoutNodePatch,
-	SpatialLayoutNodeVisualState,
-	SpatialLayoutRootVisualState,
-} from "./spatial-layout-editor.types";
-import {
-	DEFAULT_CLASS_NAMES,
-	DEFAULT_GRID_SIZE,
-	DEFAULT_INITIAL_VIEWPORT,
-	DEFAULT_LABELS,
-	DEFAULT_NODE_MIN_SIZE,
-	defaultRenderNodeContent,
-} from "./spatial-layout-editor.defaults";
-import { cn } from "@/lib/utils";
-import {
-	AUTO_LAYOUT_OPTIONS,
-	type AutoLayoutMode,
-	type DraftRect,
-	computeAncestorFrameIgnoreKeys,
-	computeFrameDepth,
-	computeFramePosition,
-	computeLocalNodeAncestorIgnoreKeys,
-	computeSubtreeFrameIds,
-	computeSubtreeLocalIds,
-	computeTargetAncestorIgnoreKeys,
-	findDropTarget,
-	getPreparedMoveOverlapKeys,
-	getViewportWorldGridBackgroundProps,
-	hasPreparedMoveOverlap,
-	intersectsRect,
-	snap,
-	subtreeEntityIgnoreKeys,
-} from "./spatial-layout-editor.utils";
-import { type SpatialLayoutHistoryApi } from "./spatial-layout-editor.history";
-import { useSpatialLayoutHistory } from "./use-spatial-layout-editor-history";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Toggle } from "@/components/ui/toggle";
-import { ChevronDown, Lock, LockOpen, Minus, Plus, Redo2, RefreshCcw, RotateCcw, Undo2 } from "lucide-react";
+import { ButtonGroup } from "@/components/ui/button-group";
+import { Card } from "@/components/ui/card";
 import {
 	ContextMenu,
 	ContextMenuContent,
@@ -66,10 +35,6 @@ import {
 	ContextMenuSubTrigger,
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { ButtonGroup } from "@/components/ui/button-group";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -80,15 +45,63 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Toggle } from "@/components/ui/toggle";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import {
 	localChildGeometriesValidInParent,
 	planGeometriesInParentFrame,
 } from "./spatial-layout-editor.auto-layout-plan";
 import {
+	DEFAULT_CLASS_NAMES,
+	DEFAULT_GRID_SIZE,
+	DEFAULT_INITIAL_VIEWPORT,
+	DEFAULT_LABELS,
+	DEFAULT_NODE_MIN_SIZE,
+	defaultRenderNodeContent,
+	defaultRenderNodeLabel,
+} from "./spatial-layout-editor.defaults";
+import type { SpatialLayoutHistoryApi } from "./spatial-layout-editor.history";
+import {
 	allocateNumberedLabelsForNewSiblings,
 	duplicateNumberingStem,
 	nextDuplicateLabel,
 } from "./spatial-layout-editor.naming";
+import type {
+	SpatialAutoLayoutMode,
+	SpatialGeometry,
+	SpatialLayoutEditorClassNames,
+	SpatialLayoutEditorHistoryOptions,
+	SpatialLayoutEditorProps,
+	SpatialLayoutNode,
+	SpatialLayoutNodePatch,
+	SpatialLayoutNodeSnapshot,
+	SpatialLayoutNodeVisualState,
+	SpatialLayoutOperation,
+	SpatialLayoutRootVisualState,
+} from "./spatial-layout-editor.types";
+import {
+	AUTO_LAYOUT_OPTIONS,
+	type AutoLayoutMode,
+	computeAncestorFrameIgnoreKeys,
+	computeFrameDepth,
+	computeFramePosition,
+	computeLocalNodeAncestorIgnoreKeys,
+	computeSubtreeFrameIds,
+	computeSubtreeLocalIds,
+	computeTargetAncestorIgnoreKeys,
+	type DraftRect,
+	findDropTarget,
+	getPreparedMoveOverlapKeys,
+	getViewportWorldGridBackgroundProps,
+	hasPreparedMoveOverlap,
+	intersectsRect,
+	snap,
+	subtreeEntityIgnoreKeys,
+} from "./spatial-layout-editor.utils";
+import { useSpatialLayoutHistory } from "./use-spatial-layout-editor-history";
 
 function isProvisionalSpatialId(id: string): boolean {
 	return id.startsWith("pending-");
@@ -195,6 +208,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 		onErrorMessage,
 		placementCandidate,
 		renderNodeContent = defaultRenderNodeContent,
+		renderNodeLabel = defaultRenderNodeLabel,
 		renderNodeContextActions,
 		mapNodePatch,
 		gridStep = DEFAULT_GRID_SIZE,
@@ -259,6 +273,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 	// Pointer-driven interaction and pan/zoom viewport.
 	const [interaction, setInteraction] = useState<Interaction | null>(null);
 	const [layoutInteractionLocked, setLayoutInteractionLocked] = useState(true);
+	const [gridDisplayVisible, setGridDisplayVisible] = useState(true);
 	const [viewport, setViewport] = useState(() => ({
 		...DEFAULT_INITIAL_VIEWPORT,
 		...initialViewportPartial,
@@ -965,6 +980,12 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 	}, [root, rootDraft]);
 
 	// Re-pack create-many draft rectangles when quantity/layout/option/parent change (not on every node edit).
+	// biome-ignore lint/correctness/useExhaustiveDependencies(createManyPlacement): narrow deps only; full placement retriggers while drafts update.
+	// biome-ignore lint/correctness/useExhaustiveDependencies(createManyForm): narrow deps only; full form retriggers while drafts update.
+	// biome-ignore lint/correctness/useExhaustiveDependencies(nodeById.get): read via closure; nodeById changes with every layout edit.
+	// biome-ignore lint/correctness/useExhaustiveDependencies(buildManyDraftNodes): stable enough for this trigger pattern; listing it is redundant noise.
+	// biome-ignore lint/correctness/useExhaustiveDependencies(createManyPlacement?.parentId): intentional parentId key vs whole placement object.
+	// biome-ignore lint/correctness/useExhaustiveDependencies(createManyForm.optionId): intentional optionId key vs whole form object.
 	useEffect(() => {
 		if (!createManyPlacement) return;
 		const parent = nodeById.get(createManyPlacement.parentId);
@@ -978,7 +999,6 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 				return { ...prev, optionId: createManyForm.optionId, nodes: built };
 			});
 		});
-		// eslint-disable-next-line react-hooks/exhaustive-deps -- only re-pack on user-driven form/parent keys; adding full placement object/nodeById loops while drafts update.
 	}, [createManyForm.quantity, createManyForm.layoutMode, createManyForm.optionId, createManyPlacement?.parentId]);
 
 	// Root identifiers (string vs raw id) for context targets and tree utilities.
@@ -2487,6 +2507,31 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 							{layoutInteractionLocked ? lb.lockLayoutToggleUnlockHint : lb.lockLayoutToggleLockHint}
 						</TooltipContent>
 					</Tooltip>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Toggle
+								variant="outline"
+								size="sm"
+								className="size-8 shrink-0 p-0"
+								pressed={gridDisplayVisible}
+								onPressedChange={setGridDisplayVisible}
+								aria-label={
+									gridDisplayVisible
+										? (lb.gridDisplayToggleHideHint ?? "")
+										: (lb.gridDisplayToggleShowHint ?? "")
+								}
+							>
+								{gridDisplayVisible ? (
+									<Grid2x2Check className="size-4" aria-hidden />
+								) : (
+									<Grid2x2X className="size-4" aria-hidden />
+								)}
+							</Toggle>
+						</TooltipTrigger>
+						<TooltipContent>
+							{gridDisplayVisible ? lb.gridDisplayToggleHideHint : lb.gridDisplayToggleShowHint}
+						</TooltipContent>
+					</Tooltip>
 					<ButtonGroup>
 						<Tooltip>
 							<TooltipTrigger asChild>
@@ -2574,9 +2619,10 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 				className={cn(cc.viewport)}
 				style={{
 					width: "100%",
-					...viewportWorldGridBackground,
-					backgroundImage:
-						"linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.08) 1px, transparent 1px)",
+					...(gridDisplayVisible ? viewportWorldGridBackground : {}),
+					backgroundImage: gridDisplayVisible
+						? "linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.08) 1px, transparent 1px)"
+						: "none",
 					cursor: interaction?.kind === "pan" ? "grabbing" : geometryEditFrozen ? "default" : "grab",
 					touchAction: "none",
 				}}
@@ -2669,7 +2715,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 												<div className={cn(cc.nodeContent)}>
 													{renderNodeContent(node, vis)}
 													{placementNodeId === nodeId && activePlacement ? (
-														<div className="pointer-events-none absolute left-0 top-[calc(100%+8px)] z-20 w-full">
+														<div className="pointer-events-none absolute top-[calc(100%+8px)] left-0 z-20 w-full">
 															<div className="pointer-events-auto mx-auto w-fit rounded-md border bg-background/95 p-1 shadow-sm">
 																<ButtonGroup>
 																	<Button
@@ -2806,8 +2852,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 																) : null}
 																<ContextMenuSeparator />
 																{!isProvisionalSpatialId(nodeId) ? (
-																	<>
-																		{hasDirectChildren ? (
+																	hasDirectChildren ? (
 																			<>
 																				<ContextMenuSub>
 																					<ContextMenuSubTrigger>
@@ -2918,14 +2963,37 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 																					{removeMenuLabel}
 																				</ContextMenuItem>
 																			</>
-																		)}
-																	</>
+																		)
 																) : null}
 															</>
 														);
 													})()}
 										</ContextMenuContent>
 									</ContextMenu>
+								);
+							})}
+							{effectiveNodes.map((node) => {
+								const nodeId = String(node.id);
+								const vis = getNodeVisualState(node);
+								const rect = getNodeCanvasRect(node);
+								const w = activeDrafts[nodeId]?.width ?? node.geometry.width;
+								const labelEl = renderNodeLabel(node, vis);
+								if (labelEl == null) return null;
+								return (
+									<div
+										key={`spatial-node-label-${nodeId}`}
+										className="pointer-events-none absolute min-w-0"
+										style={{
+											zIndex: 9000,
+											left: rect.x + w / 2,
+											top: `calc(${rect.y}px - 1.25rem)`,
+											transform: "translateX(-50%)",
+											/* Up to ~140% of node width so host labels can extend past the frame */
+											maxWidth: Math.max(48, w * 1.4 - 8),
+										}}
+									>
+										{labelEl}
+									</div>
 								);
 							})}
 						</div>

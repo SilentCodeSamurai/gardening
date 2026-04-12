@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-
-import { PageContent } from "@/components/layout/page-content";
-import { PageHeading } from "@/components/layout/page-heading";
+import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
+import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
 import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages.js";
 
@@ -15,10 +14,10 @@ function DashboardPage() {
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-			<PageHeading>
+			<DashboardPageHeading>
 				<h1 className="font-heading font-medium text-xl">{m.components_hub_title()}</h1>
-			</PageHeading>
-			<PageContent className="flex flex-col gap-6 overflow-y-auto pb-6">
+			</DashboardPageHeading>
+			<DashboardPageContent className="flex flex-col gap-6 overflow-y-auto pb-6">
 				<p className="max-w-prose text-muted-foreground text-sm">{m.components_hub_intro()}</p>
 				<ul className="grid gap-3 sm:grid-cols-2">
 					<li>
@@ -37,7 +36,11 @@ function DashboardPage() {
 						</Link>
 					</li>
 					<li>
-						<Link to="/plants" search={{ category: "", species: "", cultivar: "" }} className={cn(cardClass)}>
+						<Link
+							to="/plants"
+							search={{ category: "", species: "", cultivar: "" }}
+							className={cn(cardClass)}
+						>
 							{m.collections_plant_titlePlural()}
 						</Link>
 					</li>
@@ -52,7 +55,7 @@ function DashboardPage() {
 						</Link>
 					</li>
 				</ul>
-			</PageContent>
+			</DashboardPageContent>
 		</div>
-	)
+	);
 }

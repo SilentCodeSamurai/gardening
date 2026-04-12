@@ -4,7 +4,7 @@ import {
   SpeciesGetAllUseCase,
   SpeciesGetByIdUseCase,
   SpeciesUpdateUseCase,
-} from "@backend/core/application/use-cases/gardening/species.crud-use-cases";
+} from "#/backend/core/application/use-cases/gardening/species.use-cases";
 import {
   RepositoryConflictError,
   RepositoryNotFoundError,

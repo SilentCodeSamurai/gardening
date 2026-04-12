@@ -147,10 +147,12 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 			};
 
 			if (value.target === "none") {
+				onOpenChange(false);
 				await createMut.mutateAsync({ action });
 			} else if (value.target === "location") {
 				const locationId = typeof value.locationId === "string" ? value.locationId.trim() : "";
 				if (!locationId) return;
+				onOpenChange(false);
 				await locationMut.mutateAsync({
 					locationId: locationId as LocationEntityId,
 					action,
@@ -160,13 +162,12 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 					(id): id is string => typeof id === "string" && id.trim().length > 0,
 				);
 				if (plantIds.length === 0) return;
+				onOpenChange(false);
 				await plantsMut.mutateAsync({
 					plantIds: plantIds as PlantEntityId[],
 					action,
 				});
 			}
-
-			onOpenChange(false);
 		},
 	});
 

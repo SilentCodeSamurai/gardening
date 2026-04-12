@@ -8,9 +8,9 @@ import type {
 	WorkspaceRoleAssignmentUpsertInputDTO,
 } from "@backend/core/application/ports/repositories/access/workspace-role-assignment.repository.port";
 import { BaseRepositoryErrors } from "@backend/core/application/ports/repositories/shared/base-repository.errors";
-import type { WorkspaceRoleAssignmentEntity } from "@backend/core/domain/access/workspace-role-assignment.entity";
 import type { InMemoryStore } from "@backend/infrastructure/integrations/in-memory-database/client";
 import { workspaceRoleAssignmentId } from "@backend/infrastructure/integrations/shared/database-ids";
+import type { WorkspaceRoleAssignmentEntity } from "#/backend/core/domain/access/entities";
 import type { SubjectKey } from "#/backend/core/domain/access/subject.vo";
 import type { WorkspaceKey } from "#/backend/core/domain/access/workspace.vo";
 

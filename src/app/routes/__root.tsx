@@ -63,7 +63,8 @@ function RootDocument() {
 				<ThemeProvider>
 					<TooltipProvider>
 						<AppAuthProvider>
-							<div className="flex h-svh max-h-svh flex-col overflow-hidden bg-background">
+							{/* Authenticated layout sets its own h-svh/overflow; public routes (e.g. /) need to scroll. */}
+							<div className="flex min-h-svh flex-col bg-background">
 								<Outlet />
 							</div>
 

@@ -1,4 +1,3 @@
-import type { WorkspaceRoleAssignmentEntityId } from "@backend/core/domain/access/workspace-role-assignment.entity";
 import type {
 	CultivarEntityId,
 	GardeningEventEntityId,
@@ -8,6 +7,7 @@ import type {
 	SpeciesEntityId,
 } from "@backend/core/domain/gardening/entities";
 import type { SpatialNodeEntityId } from "@backend/core/domain/spatial/entities";
+import type { WorkspaceRoleAssignmentEntityId } from "#/backend/core/domain/access/entities";
 
 export function newRawId(): string {
 	return crypto.randomUUID();

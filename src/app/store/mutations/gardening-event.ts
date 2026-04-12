@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { orpc } from "@/orpc/client";
 import * as m from "@/paraglide/messages.js";
+import { useActiveWorkspaceKey } from "@/store/active-workspace-key";
 import {
 	appendToItemsContainer,
 	appendToScopedList,
@@ -14,6 +15,8 @@ import {
 	upsertInItemsContainer,
 } from "@/store/cache-utils";
 import { queryKeys } from "@/store/keys";
+import type { CachedGardeningEvent, CachedGardeningEventList } from "@/store/query-cache-types";
+import { isQueryObjectPending, markQueryObjectPending, QUERY_OBJECT_PENDING } from "@/store/query-object-status";
 import {
 	cancelQueriesByKeys,
 	dropPendingInItemsContainer,
@@ -37,20 +40,22 @@ export function useGardeningEventUpdateMutation() {
 					queryKeys.gardeningEvent.all.queryKey,
 					queryKeys.gardeningEvent.detail(variables.id).queryKey,
 				]);
-				const previousAll = snapshots[0]?.data as ItemsContainer<GardeningEventEntity> | undefined;
-				const previousDetail = snapshots[1]?.data as GardeningEventEntity | undefined;
+				const previousAll = snapshots[0]?.data as
+					| CachedGardeningEventList
+					| undefined;
+				const previousDetail = snapshots[1]?.data as CachedGardeningEvent | undefined;
 				const existing =
 					previousDetail ??
 					previousAll?.items.find((item) => String(item.id) === String(variables.id)) ??
 					null;
-				if (existing) {
-					const optimistic: GardeningEventEntity = {
+				if (existing && !isQueryObjectPending(existing)) {
+					const optimistic = markQueryObjectPending({
 						...existing,
 						...variables,
 						id: existing.id,
 						updatedAt: new Date(),
-					};
-					qc.setQueryData<ItemsContainer<GardeningEventEntity>>(
+					});
+					qc.setQueryData<CachedGardeningEventList>(
 						queryKeys.gardeningEvent.all.queryKey,
 						(prev) => upsertInItemsContainer(prev, optimistic),
 					);
@@ -66,8 +71,9 @@ export function useGardeningEventUpdateMutation() {
 				void variables;
 			},
 			onSuccess: (entity, variables, ctx) => {
-				qc.setQueryData<ItemsContainer<GardeningEventEntity>>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
-					upsertInItemsContainer(prev, entity),
+				qc.setQueryData<CachedGardeningEventList>(
+					queryKeys.gardeningEvent.all.queryKey,
+					(prev) => upsertInItemsContainer(prev, entity),
 				);
 				qc.setQueryData(queryKeys.gardeningEvent.detail(entity.id).queryKey, entity);
 				void qc.invalidateQueries({ queryKey: queryKeys.gardeningEvent.bindings(entity.id).queryKey });
@@ -91,8 +97,14 @@ export function useGardeningEventDeleteMutation() {
 					queryKeys.gardeningEvent.all.queryKey,
 					queryKeys.gardeningEvent.detail(variables.id).queryKey,
 				]);
-				qc.setQueryData<ItemsContainer<GardeningEventEntity>>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
-					removeFromItemsContainer(prev, variables.id),
+				const previousAll = snapshots[0]?.data as
+					| CachedGardeningEventList
+					| undefined;
+				const row = previousAll?.items.find((item) => String(item.id) === String(variables.id));
+				if (isQueryObjectPending(row)) return { snapshots } satisfies Ctx;
+				qc.setQueryData<CachedGardeningEventList>(
+					queryKeys.gardeningEvent.all.queryKey,
+					(prev) => removeFromItemsContainer(prev, variables.id),
 				);
 				qc.setQueryData(queryKeys.gardeningEvent.detail(variables.id).queryKey, undefined);
 				qc.setQueryData(queryKeys.gardeningEvent.bindings(variables.id).queryKey, undefined);
@@ -106,8 +118,9 @@ export function useGardeningEventDeleteMutation() {
 				void variables;
 			},
 			onSuccess: (deletedId, variables, ctx) => {
-				qc.setQueryData<ItemsContainer<GardeningEventEntity>>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
-					dropPendingInItemsContainer(prev, deletedId),
+				qc.setQueryData<CachedGardeningEventList>(
+					queryKeys.gardeningEvent.all.queryKey,
+					(prev) => dropPendingInItemsContainer(prev, deletedId),
 				);
 				qc.setQueryData(queryKeys.gardeningEvent.detail(deletedId).queryKey, undefined);
 				qc.setQueryData(queryKeys.gardeningEvent.bindings(deletedId).queryKey, undefined);
@@ -133,7 +146,7 @@ export function useGardeningEventDeleteManyMutation() {
 				...variables.ids.map((id) => queryKeys.gardeningEvent.detail(id).queryKey),
 				...variables.ids.map((id) => queryKeys.gardeningEvent.bindings(id).queryKey),
 			]);
-			qc.setQueryData<ItemsContainer<GardeningEventEntity>>(
+			qc.setQueryData<CachedGardeningEventList>(
 				queryKeys.gardeningEvent.all.queryKey,
 				(prev) => removeManyFromItemsContainer(prev, variables.ids) ?? { items: [] },
 			);
@@ -150,8 +163,9 @@ export function useGardeningEventDeleteManyMutation() {
 			toast.error(m.collections_gardeningEvent_actionError());
 		},
 		onSuccess: (result) => {
-			qc.setQueryData<ItemsContainer<GardeningEventEntity>>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
-				dropPendingManyInItemsContainer(prev, result.deletedIds),
+			qc.setQueryData<CachedGardeningEventList>(
+				queryKeys.gardeningEvent.all.queryKey,
+				(prev) => dropPendingManyInItemsContainer(prev, result.deletedIds),
 			);
 			for (const deletedId of result.deletedIds) {
 				qc.setQueryData(queryKeys.gardeningEvent.detail(deletedId).queryKey, undefined);
@@ -165,20 +179,25 @@ export function useGardeningEventDeleteManyMutation() {
 
 export function useGardeningEventCreateForLocationMutation() {
 	const qc = useQueryClient();
+	const workspaceKey = useActiveWorkspaceKey();
 	return useMutation(
 		orpc.gardeningEvent.createForLocation.mutationOptions({
 			onMutate: async (variables) => {
 				await cancelQueriesByKeys(qc, [queryKeys.gardeningEvent.all.queryKey]);
 				const snapshots = snapshotQueries(qc, [queryKeys.gardeningEvent.all.queryKey]);
+				if (!workspaceKey) return { snapshots, pendingId: undefined as string | undefined };
 				const pendingId = makePendingId("gardening-event");
-				const pending: GardeningEventEntity = {
+				const pending: CachedGardeningEvent = {
+					workspaceKey,
 					id: pendingId as GardeningEventEntity["id"],
 					action: variables.action,
 					createdAt: new Date(),
 					updatedAt: new Date(),
+					objectStatus: QUERY_OBJECT_PENDING,
 				};
-				qc.setQueryData<ItemsContainer<GardeningEventEntity>>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
-					appendToItemsContainer(prev, pending),
+				qc.setQueryData<CachedGardeningEventList>(
+					queryKeys.gardeningEvent.all.queryKey,
+					(prev) => appendToItemsContainer(prev, pending),
 				);
 				qc.setQueryData(queryKeys.gardeningEvent.detail(pending.id).queryKey, pending);
 				appendToScopedList(qc, queryKeys.gardeningEvent.forLocation(variables.locationId).queryKey, pending);
@@ -191,8 +210,9 @@ export function useGardeningEventCreateForLocationMutation() {
 				void variables;
 			},
 			onSuccess: (entity, variables, ctx) => {
-				qc.setQueryData<ItemsContainer<GardeningEventEntity>>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
-					replacePendingInItemsContainer(prev, ctx?.pendingId ?? entity.id, entity),
+				qc.setQueryData<CachedGardeningEventList>(
+					queryKeys.gardeningEvent.all.queryKey,
+					(prev) => replacePendingInItemsContainer(prev, ctx?.pendingId ?? entity.id, entity),
 				);
 				if (ctx?.pendingId) removeFromGardeningEventScopedLists(qc, ctx.pendingId);
 				qc.setQueryData(queryKeys.gardeningEvent.detail(entity.id).queryKey, entity);
@@ -207,20 +227,25 @@ export function useGardeningEventCreateForLocationMutation() {
 
 export function useGardeningEventCreateMutation() {
 	const qc = useQueryClient();
+	const workspaceKey = useActiveWorkspaceKey();
 	return useMutation(
 		orpc.gardeningEvent.create.mutationOptions({
 			onMutate: async (variables) => {
 				await cancelQueriesByKeys(qc, [queryKeys.gardeningEvent.all.queryKey]);
 				const snapshots = snapshotQueries(qc, [queryKeys.gardeningEvent.all.queryKey]);
+				if (!workspaceKey) return { snapshots, pendingId: undefined as string | undefined };
 				const pendingId = makePendingId("gardening-event");
-				const pending: GardeningEventEntity = {
+				const pending: CachedGardeningEvent = {
+					workspaceKey,
 					id: pendingId as GardeningEventEntity["id"],
 					action: variables.action,
 					createdAt: new Date(),
 					updatedAt: new Date(),
+					objectStatus: QUERY_OBJECT_PENDING,
 				};
-				qc.setQueryData<ItemsContainer<GardeningEventEntity>>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
-					appendToItemsContainer(prev, pending),
+				qc.setQueryData<CachedGardeningEventList>(
+					queryKeys.gardeningEvent.all.queryKey,
+					(prev) => appendToItemsContainer(prev, pending),
 				);
 				qc.setQueryData(queryKeys.gardeningEvent.detail(pending.id).queryKey, pending);
 				return { snapshots, pendingId };
@@ -232,8 +257,9 @@ export function useGardeningEventCreateMutation() {
 				void variables;
 			},
 			onSuccess: (entity, variables, ctx) => {
-				qc.setQueryData<ItemsContainer<GardeningEventEntity>>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
-					replacePendingInItemsContainer(prev, ctx?.pendingId ?? entity.id, entity),
+				qc.setQueryData<CachedGardeningEventList>(
+					queryKeys.gardeningEvent.all.queryKey,
+					(prev) => replacePendingInItemsContainer(prev, ctx?.pendingId ?? entity.id, entity),
 				);
 				if (ctx?.pendingId) removeFromGardeningEventScopedLists(qc, ctx.pendingId);
 				qc.setQueryData(queryKeys.gardeningEvent.detail(entity.id).queryKey, entity);
@@ -247,20 +273,25 @@ export function useGardeningEventCreateMutation() {
 
 export function useGardeningEventCreateForPlantListMutation() {
 	const qc = useQueryClient();
+	const workspaceKey = useActiveWorkspaceKey();
 	return useMutation(
 		orpc.gardeningEvent.createForPlantList.mutationOptions({
 			onMutate: async (variables) => {
 				await cancelQueriesByKeys(qc, [queryKeys.gardeningEvent.all.queryKey]);
 				const snapshots = snapshotQueries(qc, [queryKeys.gardeningEvent.all.queryKey]);
+				if (!workspaceKey) return { snapshots, pendingId: undefined as string | undefined };
 				const pendingId = makePendingId("gardening-event");
-				const pending: GardeningEventEntity = {
+				const pending: CachedGardeningEvent = {
+					workspaceKey,
 					id: pendingId as GardeningEventEntity["id"],
 					action: variables.action,
 					createdAt: new Date(),
 					updatedAt: new Date(),
+					objectStatus: QUERY_OBJECT_PENDING,
 				};
-				qc.setQueryData<ItemsContainer<GardeningEventEntity>>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
-					appendToItemsContainer(prev, pending),
+				qc.setQueryData<CachedGardeningEventList>(
+					queryKeys.gardeningEvent.all.queryKey,
+					(prev) => appendToItemsContainer(prev, pending),
 				);
 				qc.setQueryData(queryKeys.gardeningEvent.detail(pending.id).queryKey, pending);
 				for (const plantId of variables.plantIds) {
@@ -275,8 +306,9 @@ export function useGardeningEventCreateForPlantListMutation() {
 				void variables;
 			},
 			onSuccess: (entity, variables, ctx) => {
-				qc.setQueryData<ItemsContainer<GardeningEventEntity>>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
-					replacePendingInItemsContainer(prev, ctx?.pendingId ?? entity.id, entity),
+				qc.setQueryData<CachedGardeningEventList>(
+					queryKeys.gardeningEvent.all.queryKey,
+					(prev) => replacePendingInItemsContainer(prev, ctx?.pendingId ?? entity.id, entity),
 				);
 				if (ctx?.pendingId) removeFromGardeningEventScopedLists(qc, ctx.pendingId);
 				qc.setQueryData(queryKeys.gardeningEvent.detail(entity.id).queryKey, entity);

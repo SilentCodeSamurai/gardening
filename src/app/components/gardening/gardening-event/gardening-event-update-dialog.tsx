@@ -1,4 +1,3 @@
-import type { GardeningEventEntity } from "@backend/core/domain/gardening/entities";
 import { GardeningActionType } from "@backend/core/domain/gardening/enums";
 import type { GardeningAction } from "@backend/core/domain/gardening/value-objects";
 import { useEffect, useMemo } from "react";
@@ -15,9 +14,10 @@ import { useAppForm } from "@/hooks/form";
 import { gardeningActionMessage } from "@/lib/gardening-action-messages";
 import * as m from "@/paraglide/messages.js";
 import { useGardeningEventUpdateMutation } from "@/store/mutations";
+import type { CachedGardeningEvent } from "@/store/query-cache-types";
 
 type Props = {
-	event: GardeningEventEntity;
+	event: CachedGardeningEvent;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 };
@@ -52,11 +52,11 @@ export function GardeningEventUpdateDialog({ event, open, onOpenChange }: Props)
 				type: actionType,
 				content: value.content,
 			};
+			onOpenChange(false);
 			await mut.mutateAsync({
 				id: event.id,
 				action,
 			});
-			onOpenChange(false);
 		},
 	});
 

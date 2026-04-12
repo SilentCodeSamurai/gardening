@@ -1,12 +1,12 @@
-import { mergeQueryKeys, type inferQueryKeyStore } from "@lukemorales/query-key-factory";
+import { type inferQueryKeyStore, mergeQueryKeys } from "@lukemorales/query-key-factory";
 
 import { cultivarKeys } from "./cultivar";
 import { gardeningEventKeys } from "./gardening-event";
 import { locationKeys } from "./location";
 import { plantKeys } from "./plant";
 import { spatialKeys } from "./spatial";
-import { speciesCategoryKeys } from "./species-category";
 import { speciesKeys } from "./species";
+import { speciesCategoryKeys } from "./species-category";
 
 export const queryKeys = mergeQueryKeys(
 	speciesCategoryKeys,
@@ -25,5 +25,5 @@ export { gardeningEventKeys } from "./gardening-event";
 export { locationKeys } from "./location";
 export { plantKeys } from "./plant";
 export { spatialKeys } from "./spatial";
-export { speciesCategoryKeys } from "./species-category";
 export { speciesKeys } from "./species";
+export { speciesCategoryKeys } from "./species-category";

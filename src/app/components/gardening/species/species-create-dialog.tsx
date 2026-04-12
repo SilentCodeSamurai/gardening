@@ -1,10 +1,9 @@
-import { useEffect, useMemo } from "react";
+import type { SpeciesCategoryEntityId } from "@backend/core/domain/gardening/entities";
 import { useStore } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
-
+import { useEffect, useMemo } from "react";
 import { SELECT_NONE } from "@/components/form/select-sentinel";
 import { Button } from "@/components/ui/button";
-import * as m from "@/paraglide/messages.js";
 import {
 	Dialog,
 	DialogContent,
@@ -13,10 +12,10 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import type { SpeciesCategoryEntityId } from "@backend/core/domain/gardening/entities";
 import { useAppForm } from "@/hooks/form";
 import { normalizePresentationInput } from "@/lib/item-presentation";
 import { translateCatalogField } from "@/lib/translate-catalog-field";
+import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import { useSpeciesCreateMutation } from "@/store/mutations";
 
@@ -63,6 +62,7 @@ export function SpeciesCreateDialog({ open, onOpenChange }: Props) {
 				iconColor: value.iconColor,
 				backgroundColor: value.backgroundColor,
 			});
+			onOpenChange(false);
 			await mut.mutateAsync({
 				categoryId: value.categoryId as SpeciesCategoryEntityId,
 				characteristics: {
@@ -71,7 +71,6 @@ export function SpeciesCreateDialog({ open, onOpenChange }: Props) {
 				},
 				presentation,
 			});
-			onOpenChange(false);
 		},
 	});
 
@@ -127,10 +126,7 @@ export function SpeciesCreateDialog({ open, onOpenChange }: Props) {
 						</form.AppField>
 						<form.AppField name="description">
 							{(field) => (
-								<field.TextField
-									label={m.fields_description()}
-									placeholder={m.fields_description()}
-								/>
+								<field.TextField label={m.fields_description()} placeholder={m.fields_description()} />
 							)}
 						</form.AppField>
 						<div className="grid grid-cols-3 gap-2">

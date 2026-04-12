@@ -1,9 +1,7 @@
-import { useEffect } from "react";
 import { useStore } from "@tanstack/react-form";
-
+import { useEffect } from "react";
 import { SELECT_NONE } from "@/components/form/select-sentinel";
 import { Button } from "@/components/ui/button";
-import * as m from "@/paraglide/messages.js";
 import {
 	Dialog,
 	DialogContent,
@@ -12,13 +10,14 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import type { SpeciesCategoryWithSystemCatalog } from "@backend/core/application/use-cases/gardening/species-category.crud-use-cases";
 import { useAppForm } from "@/hooks/form";
 import { normalizePresentationInput } from "@/lib/item-presentation";
+import * as m from "@/paraglide/messages.js";
 import { useSpeciesCategoryUpdateMutation } from "@/store/mutations";
+import type { CachedSpeciesCategoryWithSystemCatalog } from "@/store/query-cache-types";
 
 type Props = {
-	category: SpeciesCategoryWithSystemCatalog;
+	category: CachedSpeciesCategoryWithSystemCatalog;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 };
@@ -48,12 +47,12 @@ export function SpeciesCategoryUpdateDialog({ category, open, onOpenChange }: Pr
 				iconColor: value.iconColor,
 				backgroundColor: value.backgroundColor,
 			});
+			onOpenChange(false);
 			await mut.mutateAsync({
 				id: category.id,
 				title,
 				presentation,
 			});
-			onOpenChange(false);
 		},
 	});
 
@@ -79,9 +78,7 @@ export function SpeciesCategoryUpdateDialog({ category, open, onOpenChange }: Pr
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<DialogTitle>{m.collections_speciesCategory_update()}</DialogTitle>
-					<DialogDescription className="sr-only">
-						{m.collections_speciesCategory_update()}
-					</DialogDescription>
+					<DialogDescription className="sr-only">{m.collections_speciesCategory_update()}</DialogDescription>
 				</DialogHeader>
 				<form.AppForm>
 					<form
@@ -100,9 +97,7 @@ export function SpeciesCategoryUpdateDialog({ category, open, onOpenChange }: Pr
 								onSubmit: ({ value }) => (!value?.trim() ? m.fields_required() : undefined),
 							}}
 						>
-							{(field) => (
-								<field.TextField label={m.fields_title()} placeholder={m.fields_title()} />
-							)}
+							{(field) => <field.TextField label={m.fields_title()} placeholder={m.fields_title()} />}
 						</form.AppField>
 						<div className="grid grid-cols-3 gap-2">
 							<form.AppField name="iconKey">

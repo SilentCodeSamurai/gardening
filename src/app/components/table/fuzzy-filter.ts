@@ -10,4 +10,5 @@ export const fuzzyFilter = ((row, columnId, value, addMeta) => {
 	const itemRank = rankItem(String(row.getValue(columnId) ?? ""), String(value ?? ""));
 	addMeta({ itemRank });
 	return itemRank.passed;
-}) as FilterFn<any>; // eslint-disable-line @typescript-eslint/no-explicit-any -- shared TanStack FilterFn for all row types
+	// biome-ignore lint/suspicious/noExplicitAny: shared TanStack FilterFn for all row types
+}) as FilterFn<any>; 

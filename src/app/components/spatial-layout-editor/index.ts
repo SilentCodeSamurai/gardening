@@ -1,7 +1,13 @@
-export { DEFAULT_CLASS_NAMES, DEFAULT_LABELS } from "./spatial-layout-editor.defaults";
-
+export { SpatialLayoutEditor } from "./spatial-layout-editor";
+export {
+	DEFAULT_CLASS_NAMES,
+	DEFAULT_LABELS,
+	defaultRenderNodeLabel,
+} from "./spatial-layout-editor.defaults";
+export type { SpatialLayoutHistoryApi } from "./spatial-layout-editor.history";
 export type {
 	SpatialAutoLayoutMode,
+	SpatialGeometry,
 	SpatialLayoutCreateOption,
 	SpatialLayoutEditorClassNames,
 	SpatialLayoutEditorHistoryBuiltinDisabled,
@@ -9,18 +15,14 @@ export type {
 	SpatialLayoutEditorHistoryOptions,
 	SpatialLayoutEditorLabels,
 	SpatialLayoutEditorProps,
-	SpatialGeometry,
 	SpatialLayoutNode,
 	SpatialLayoutNodeContextActionSlices,
-	SpatialLayoutNodeVisualState,
 	SpatialLayoutNodeSnapshot,
+	SpatialLayoutNodeVisualState,
 	SpatialLayoutOperation,
 	SpatialLayoutPersistKind,
 	SpatialLayoutPlacementCandidate,
 	SpatialLayoutRootVisualState,
 	SpatialLayoutViewportState,
 } from "./spatial-layout-editor.types";
-export type { SpatialLayoutHistoryApi } from "./spatial-layout-editor.history";
-
-export { SpatialLayoutEditor } from "./spatial-layout-editor";
 export { useSpatialLayoutHistory } from "./use-spatial-layout-editor-history";

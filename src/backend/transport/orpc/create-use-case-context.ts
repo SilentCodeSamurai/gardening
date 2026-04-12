@@ -8,8 +8,11 @@ import type { AuthenticatedOrpcContext } from "./orpc-procedure";
  */
 export function createUseCaseContextFromOrpc(context: AuthenticatedOrpcContext): UseCaseContext {
 	const userId = context.authSession.user.id;
+	const activeOrganizationId = context.authSession.session.activeOrganizationId;
 	const actorSubject = SubjectVO.user(userId);
-	const activeWorkspaceScope = WorkspaceVO.user(userId);
+	const activeWorkspaceScope = activeOrganizationId
+		? WorkspaceVO.org(activeOrganizationId)
+		: WorkspaceVO.user(userId);
 	return {
 		actorSubject,
 		activeWorkspaceScope,

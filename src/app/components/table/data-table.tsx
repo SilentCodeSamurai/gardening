@@ -1,14 +1,16 @@
-import * as m from "@/paraglide/messages.js";
-import { flexRender, type Column, type RowData, type Table as TanstackTable } from "@tanstack/react-table";
+import { type Column, flexRender, type RowData, type Table as TanstackTable } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ReactNode } from "react";
 import { useCallback, useRef } from "react";
+import { TABLE_LIST_SELECT_COLUMN_WIDTH_PX } from "@/components/table/table-list-column-sizes";
 
 import { Input } from "@/components/ui/input";
+import { pendingItemSurfaceClassName } from "@/components/ui/pending-item-surface";
 import { Spinner } from "@/components/ui/spinner";
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { TABLE_LIST_SELECT_COLUMN_WIDTH_PX } from "@/components/table/table-list-column-sizes";
 import { cn } from "@/lib/utils";
+import * as m from "@/paraglide/messages.js";
+import { isQueryObjectPending } from "@/store/query-object-status";
 
 type DataTableProps<TData extends RowData> = {
 	table: TanstackTable<TData>;
@@ -18,6 +20,8 @@ type DataTableProps<TData extends RowData> = {
 	emptyMessage: string;
 	selectedLabel?: string;
 	selectedActions?: ReactNode;
+	/** When true, rows with {@link isQueryObjectPending} originals get a left accent and tinted background. */
+	highlightPendingRows?: boolean;
 };
 
 type ColumnFilterRenderer<TData extends RowData> = (ctx: {
@@ -63,7 +67,7 @@ function DataTableToolbar({
 	selectedActions?: ReactNode;
 }) {
 	return (
-		<div className="flex shrink-0 flex-wrap items-center justify-between gap-2 h-8">
+		<div className="flex h-8 shrink-0 flex-wrap items-center justify-between gap-2">
 			<p className="text-muted-foreground text-xs">
 				{selectedCount} / {rowCount} {selectedLabel}
 			</p>
@@ -80,6 +84,7 @@ export function DataTable<TData extends RowData>({
 	emptyMessage,
 	selectedLabel = "selected",
 	selectedActions,
+	highlightPendingRows = false,
 }: DataTableProps<TData>) {
 	const selectedCount = table.getFilteredSelectedRowModel().rows.length;
 	const rows = table.getRowModel().rows;
@@ -133,7 +138,7 @@ export function DataTable<TData extends RowData>({
 	const fixedTableClass = cn(virtualTableClass, "table-fixed");
 
 	const theadContent = (
-		<TableHeader className="[&_th]:bg-background bg-background [&_tr]:border-b-0 shadow-[inset_0_-1px_0_0_hsl(var(--border))]">
+		<TableHeader className="bg-background shadow-[inset_0_-1px_0_0_hsl(var(--border))] [&_th]:bg-background [&_tr]:border-b-0">
 			{table.getHeaderGroups().map((headerGroup) => (
 				<TableRow key={headerGroup.id}>
 					{headerGroup.headers.map((header) => {
@@ -148,7 +153,7 @@ export function DataTable<TData extends RowData>({
 					})}
 				</TableRow>
 			))}
-			<TableRow className="border-b border-border hover:bg-transparent">
+			<TableRow className="border-border border-b hover:bg-transparent">
 				{leafHeaders.map((header) => {
 					const filterMeta = header.column.columnDef.meta as ColumnMeta<TData>;
 					if (header.isPlaceholder) {
@@ -218,7 +223,7 @@ export function DataTable<TData extends RowData>({
 					<div
 						ref={bodyScrollRef}
 						className={cn(
-							"min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-auto [overflow-anchor:none]",
+							"min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-auto [overflow-anchor:none]",
 							"[scrollbar-gutter:stable]",
 						)}
 						onScroll={(event) => syncHorizontalScroll(event.currentTarget)}
@@ -266,7 +271,7 @@ export function DataTable<TData extends RowData>({
 				<div
 					ref={bodyScrollRef}
 					className={cn(
-						"min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-auto [overflow-anchor:none]",
+						"min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-auto [overflow-anchor:none]",
 						"[scrollbar-gutter:stable]",
 					)}
 					onScroll={(event) => syncHorizontalScroll(event.currentTarget)}
@@ -284,12 +289,17 @@ export function DataTable<TData extends RowData>({
 										const row = rows[virtualRow.index];
 										const translateY = virtualRow.start - layoutTopBeforeRow;
 										layoutTopBeforeRow += virtualRow.size;
+										const rowPending =
+											highlightPendingRows && isQueryObjectPending(row.original as object);
 										return (
 											<TableRow
 												key={row.id}
 												ref={rowVirtualizer.measureElement}
 												data-index={virtualRow.index}
 												data-state={row.getIsSelected() ? "selected" : undefined}
+												data-pending={rowPending ? "true" : undefined}
+												aria-busy={rowPending ? true : undefined}
+												className={cn(rowPending && pendingItemSurfaceClassName)}
 												style={{
 													height: `${virtualRow.size}px`,
 													transform: `translateY(${translateY}px)`,

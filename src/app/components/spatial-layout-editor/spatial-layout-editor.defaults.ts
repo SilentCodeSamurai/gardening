@@ -30,6 +30,8 @@ export const DEFAULT_LABELS: SpatialLayoutEditorLabels = {
 	zoomIn: "Zoom in",
 	lockLayoutToggleUnlockHint: "Layout is locked — click to move and resize items",
 	lockLayoutToggleLockHint: "Layout is editable — click to lock moving and resizing",
+	gridDisplayToggleShowHint: "Show layout grid",
+	gridDisplayToggleHideHint: "Hide layout grid",
 	canvasMenu: "Canvas",
 	detach: "Detach from layout",
 	remove: "Remove from layout",
@@ -112,15 +114,22 @@ export const DEFAULT_CLASS_NAMES: SpatialLayoutEditorClassNames = {
 	nodeShell: defaultGetNodeShellClassName,
 };
 
-/** Label-only inner content when the host does not pass `renderNodeContent`. */
-export function defaultRenderNodeContent(node: SpatialLayoutNode, state: SpatialLayoutNodeVisualState): ReactNode {
+/** Default floating label (used from the editor’s global label overlay, not inside the node shell). */
+export function defaultRenderNodeLabel(node: SpatialLayoutNode, state: SpatialLayoutNodeVisualState): ReactNode {
 	void state;
 	return createElement(
 		"span",
 		{
 			className:
-				"pointer-events-none absolute -top-5 left-1/2 max-w-[calc(100%-8px)] -translate-x-1/2 truncate rounded bg-background/80 px-1.5 py-0.5 text-[10px] leading-tight",
+				"pointer-events-none block truncate rounded bg-background/80 px-1.5 py-0.5 text-center text-[10px] leading-tight",
 		},
 		node.label,
 	);
+}
+
+/** Inner node body only; labels use {@link defaultRenderNodeLabel} via {@link SpatialLayoutEditorProps.renderNodeLabel}. */
+export function defaultRenderNodeContent(_node: SpatialLayoutNode, _state: SpatialLayoutNodeVisualState): ReactNode {
+	void _node;
+	void _state;
+	return null;
 }

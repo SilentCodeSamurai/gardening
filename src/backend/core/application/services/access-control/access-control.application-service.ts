@@ -1,10 +1,8 @@
-import type { AccessAction } from "@backend/core/domain/access/access-action";
-import type { AccessDecision } from "@backend/core/domain/access/access-decision";
-import type { AccessRole } from "@backend/core/domain/access/access-role";
-import { accessRoleAllows, accessRoleOrder } from "@backend/core/domain/access/access-role";
+import type { WorkspaceRoleAssignmentEntity } from "@backend/core/domain/access/entities";
 import type { SubjectVO } from "@backend/core/domain/access/subject.vo";
+import type { AccessAction, AccessDecision, AccessRole } from "@backend/core/domain/access/types";
+import { accessRoleAllows, accessRoleOrder } from "@backend/core/domain/access/types";
 import type { WorkspaceVO } from "@backend/core/domain/access/workspace.vo";
-import type { WorkspaceRoleAssignmentEntity } from "#/backend/core/domain/access/workspace-role-assignment.entity";
 import type { AccessAuditPort } from "../../ports/access/access-audit.port";
 import type { WorkspaceRoleAssignmentRepositoryPort } from "../../ports/repositories/access/workspace-role-assignment.repository.port";
 import { AccessForbiddenApplicationError } from "./access-control.errors";

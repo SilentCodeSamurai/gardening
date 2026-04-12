@@ -4,7 +4,7 @@ import {
 	SpeciesCategoryGetAllUseCase,
 	SpeciesCategoryGetByIdUseCase,
 	SpeciesCategoryUpdateUseCase,
-} from "@backend/core/application/use-cases/gardening/species-category.crud-use-cases";
+} from "#/backend/core/application/use-cases/gardening/species-category.use-cases";
 
 import { createUseCaseContextFromOrpc } from "../../create-use-case-context";
 import { authenticatedProcedure } from "../../orpc-procedure";

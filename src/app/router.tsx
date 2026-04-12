@@ -11,7 +11,8 @@ export function getRouter() {
 		context,
 		scrollRestoration: true,
 		defaultPreload: "intent",
-		defaultPreloadStaleTime: 0,
+		// How long a successful intent-preload stays “fresh” before hover can trigger it again (per matched route).
+		defaultPreloadStaleTime: 900_000, // 15 minutes
 	});
 
 	setupRouterSsrQueryIntegration({ router, queryClient: context.queryClient });

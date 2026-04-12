@@ -1,15 +1,15 @@
-﻿import type { PlantEntityId } from "@backend/core/domain/gardening/entities";
+import type { PlantEntityId } from "@backend/core/domain/gardening/entities";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
+import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
+import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
 import { GardeningActionPresentationIcon } from "@/components/gardening/gardening-action-icon";
 import { getPlantDisplayTitle } from "@/components/gardening/plant/plant-list-card";
 import { PlantUpdateDialog } from "@/components/gardening/plant/plant-update-dialog";
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
-import { PageContent } from "@/components/layout/page-content";
-import { PageHeading } from "@/components/layout/page-heading";
 import { Button } from "@/components/ui/button";
 import { ButtonTooltip } from "@/components/ui/button-tooltip";
 import { gardeningActionMessage } from "@/lib/gardening-action-messages";
@@ -47,7 +47,7 @@ function PlantDetailPage() {
 	if (isError || !data) {
 		return (
 			<div className="text-destructive text-sm">{"${m.collections_plant_title()} ${m.common_notFound()}"}</div>
-		)
+		);
 	}
 
 	const title = getPlantDisplayTitle(data);
@@ -60,7 +60,7 @@ function PlantDetailPage() {
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-			<PageHeading className="min-w-0 flex-wrap" collection="plant">
+			<DashboardPageHeading className="min-w-0 flex-wrap" collection="plant">
 				<div className="flex min-w-0 flex-wrap items-center gap-3">
 					<ItemPresentationIcon presentation={cultivar.presentation} />
 					<h1 className="font-heading font-medium text-lg">{title}</h1>
@@ -88,8 +88,8 @@ function PlantDetailPage() {
 							disabled={isPlaced}
 							aria-label={isPlaced ? m.common_deleteDisabledWhilePlaced() : m.common_delete()}
 							onClick={() => {
-								if (isPlaced) return
-								setDeleteOpen(true)
+								if (isPlaced) return;
+								setDeleteOpen(true);
 							}}
 						>
 							<Trash2Icon />
@@ -103,17 +103,17 @@ function PlantDetailPage() {
 						description={title}
 						isPending={del.isPending}
 						onConfirm={async () => {
-							await del.mutateAsync({ id: data.id });
 							setDeleteOpen(false);
+							await del.mutateAsync({ id: data.id });
 							await navigate({
 								to: "/plants",
 								search: { category: "", species: "", cultivar: "" },
-							})
+							});
 						}}
 					/>
 				</div>
-			</PageHeading>
-			<PageContent className="flex flex-col gap-8 overflow-y-auto pb-6">
+			</DashboardPageHeading>
+			<DashboardPageContent className="flex flex-col gap-8 overflow-y-auto pb-6">
 				<div className="space-y-4">
 					{data.description ? (
 						<p className="max-w-2xl text-muted-foreground text-sm leading-relaxed">{data.description}</p>
@@ -214,9 +214,7 @@ function PlantDetailPage() {
 				<section className="space-y-3">
 					<h2 className="font-medium text-lg">{m.components_detail_eventsSection_title()}</h2>
 					{eventsPending ? (
-						<p className="text-muted-foreground text-sm">
-							{m.components_detail_eventsSection_loading()}
-						</p>
+						<p className="text-muted-foreground text-sm">{m.components_detail_eventsSection_loading()}</p>
 					) : events.length === 0 ? (
 						<p className="rounded-lg border border-border/80 border-dashed bg-muted/10 px-4 py-6 text-center text-muted-foreground text-sm">
 							{m.components_detail_eventsSection_empty()}
@@ -256,7 +254,7 @@ function PlantDetailPage() {
 						</ul>
 					)}
 				</section>
-			</PageContent>
+			</DashboardPageContent>
 		</div>
-	)
+	);
 }

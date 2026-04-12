@@ -1,10 +1,9 @@
-import { useEffect, useMemo } from "react";
+import type { SpeciesEntityId } from "@backend/core/domain/gardening/entities";
 import { useStore } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
-
+import { useEffect, useMemo } from "react";
 import { SELECT_NONE } from "@/components/form/select-sentinel";
 import { Button } from "@/components/ui/button";
-import * as m from "@/paraglide/messages.js";
 import {
 	Dialog,
 	DialogContent,
@@ -13,15 +12,16 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import type { CultivarEntity, SpeciesEntityId } from "@backend/core/domain/gardening/entities";
 import { useAppForm } from "@/hooks/form";
 import { normalizePresentationInput } from "@/lib/item-presentation";
 import { translateCatalogField } from "@/lib/translate-catalog-field";
+import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import { useCultivarUpdateMutation } from "@/store/mutations";
+import type { CachedCultivar } from "@/store/query-cache-types";
 
 type Props = {
-	cultivar: CultivarEntity;
+	cultivar: CachedCultivar;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 };
@@ -64,6 +64,7 @@ export function CultivarUpdateDialog({ cultivar, open, onOpenChange }: Props) {
 				iconColor: value.iconColor,
 				backgroundColor: value.backgroundColor,
 			});
+			onOpenChange(false);
 			await mut.mutateAsync({
 				id: cultivar.id,
 				speciesId: value.speciesId as SpeciesEntityId,
@@ -73,7 +74,6 @@ export function CultivarUpdateDialog({ cultivar, open, onOpenChange }: Props) {
 				},
 				presentation,
 			});
-			onOpenChange(false);
 		},
 	});
 
@@ -138,10 +138,7 @@ export function CultivarUpdateDialog({ cultivar, open, onOpenChange }: Props) {
 						</form.AppField>
 						<form.AppField name="description">
 							{(field) => (
-								<field.TextField
-									label={m.fields_description()}
-									placeholder={m.fields_description()}
-								/>
+								<field.TextField label={m.fields_description()} placeholder={m.fields_description()} />
 							)}
 						</form.AppField>
 						<div className="grid grid-cols-3 gap-2">

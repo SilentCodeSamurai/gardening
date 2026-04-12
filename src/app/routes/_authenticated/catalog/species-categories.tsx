@@ -1,4 +1,3 @@
-﻿import type { SpeciesCategoryWithSystemCatalog } from "@backend/core/application/use-cases/gardening/species-category.crud-use-cases";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
@@ -21,12 +20,13 @@ import {
 	XIcon,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
+import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
+import type { SpeciesCategoryWithSystemCatalog } from "#/backend/core/application/use-cases/gardening/species-category.use-cases";
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
 import { SpeciesCategoryCreateDialog } from "@/components/gardening/species-category/species-category-create-dialog";
 import { SpeciesCategoryUpdateDialog } from "@/components/gardening/species-category/species-category-update-dialog";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
-import { PageContent } from "@/components/layout/page-content";
-import { PageHeading } from "@/components/layout/page-heading";
 import { DataTable } from "@/components/table/data-table";
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
 import { fuzzyFilter } from "@/components/table/fuzzy-filter";
@@ -133,7 +133,7 @@ function SpeciesCategoriesPage() {
 							<ItemPresentationIcon presentation={row.original.presentation} />
 							<span className="truncate font-medium">{label}</span>
 						</Link>
-					)
+					);
 				},
 			}),
 
@@ -196,7 +196,7 @@ function SpeciesCategoriesPage() {
 								<XIcon aria-label={m.common_default()} className="size-3.5 text-muted-foreground" />
 							)}
 						</div>
-					)
+					);
 				},
 			}),
 			columnHelper.display({
@@ -218,7 +218,7 @@ function SpeciesCategoriesPage() {
 			}),
 		],
 		[columnHelper],
-	)
+	);
 	const table = useMemo(
 		() =>
 			createTable<SpeciesCategoryWithSystemCatalog>({
@@ -245,11 +245,11 @@ function SpeciesCategoriesPage() {
 				},
 			}),
 		[columnFilters, columns, globalFilter, items, rowSelection, sorting],
-	)
+	);
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-			<PageHeading collection="speciesCategory">
+			<DashboardPageHeading collection="speciesCategory">
 				<h1 className="font-heading font-medium text-lg">{m.collections_speciesCategory_titlePlural()}</h1>
 				<ButtonTooltip label={m.collections_speciesCategory_create()}>
 					<Button type="button" size="icon" variant="outline" onClick={() => setCreateOpen(true)}>
@@ -257,8 +257,8 @@ function SpeciesCategoriesPage() {
 						<PlusIcon />
 					</Button>
 				</ButtonTooltip>
-			</PageHeading>
-			<PageContent className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
+			</DashboardPageHeading>
+			<DashboardPageContent className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
 				<div className="flex flex-wrap items-end gap-2">
 					<Input
 						className="w-full min-w-40 sm:w-56"
@@ -274,7 +274,7 @@ function SpeciesCategoriesPage() {
 							onClick={() => {
 								table.resetGlobalFilter();
 								table.resetColumnFilters();
-								setRowSelection({})
+								setRowSelection({});
 							}}
 							aria-label={m.filtering_clearFilters()}
 						>
@@ -289,12 +289,13 @@ function SpeciesCategoriesPage() {
 						isError={isError}
 						errorMessage={m.common_loadError()}
 						emptyMessage={m.items_noElements()}
+						highlightPendingRows
 					/>
 				</div>
-			</PageContent>
+			</DashboardPageContent>
 			<SpeciesCategoryCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
 		</div>
-	)
+	);
 }
 
 function SpeciesCategoryRowActions({ category }: { category: SpeciesCategoryWithSystemCatalog }) {
@@ -398,10 +399,10 @@ function SpeciesCategoryRowActions({ category }: { category: SpeciesCategoryWith
 				description={label ?? ""}
 				isPending={del.isPending}
 				onConfirm={async () => {
-					await del.mutateAsync({ id: category.id });
 					setDeleteOpen(false);
+					await del.mutateAsync({ id: category.id });
 				}}
 			/>
 		</div>
-	)
+	);
 }

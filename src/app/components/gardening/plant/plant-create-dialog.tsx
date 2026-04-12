@@ -1,9 +1,9 @@
-import { useEffect, useMemo } from "react";
+import type { CultivarEntityId } from "@backend/core/domain/gardening/entities";
+import type { SpatialNodeEntityId } from "@backend/core/domain/spatial/entities";
 import { useQuery } from "@tanstack/react-query";
-
+import { useEffect, useMemo } from "react";
 import { SELECT_NONE } from "@/components/form/select-sentinel";
 import { Button } from "@/components/ui/button";
-import * as m from "@/paraglide/messages.js";
 import {
 	Dialog,
 	DialogContent,
@@ -12,9 +12,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import type { CultivarEntityId } from "@backend/core/domain/gardening/entities";
-import type { SpatialNodeEntityId } from "@backend/core/domain/spatial/entities";
 import { useAppForm } from "@/hooks/form";
+import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import { usePlantCreateMutation, useSpatialNodeCreateMutation } from "@/store/mutations";
 
@@ -100,6 +99,7 @@ export function PlantCreateDialog({
 				width: initialPlacement?.width,
 				height: initialPlacement?.height,
 			};
+			onOpenChange(false);
 			if (onSubmit) await onSubmit(payload);
 			else {
 				const entity = await mut.mutateAsync({
@@ -128,7 +128,6 @@ export function PlantCreateDialog({
 					});
 				}
 			}
-			onOpenChange(false);
 		},
 	});
 
@@ -184,16 +183,11 @@ export function PlantCreateDialog({
 							)}
 						</form.AppField>
 						<form.AppField name="title">
-							{(field) => (
-								<field.TextField label={m.fields_title()} placeholder={m.fields_title()} />
-							)}
+							{(field) => <field.TextField label={m.fields_title()} placeholder={m.fields_title()} />}
 						</form.AppField>
 						<form.AppField name="description">
 							{(field) => (
-								<field.TextField
-									label={m.fields_description()}
-									placeholder={m.fields_description()}
-								/>
+								<field.TextField label={m.fields_description()} placeholder={m.fields_description()} />
 							)}
 						</form.AppField>
 						<DialogFooter>

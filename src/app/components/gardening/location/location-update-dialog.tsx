@@ -1,9 +1,8 @@
-import { useEffect } from "react";
 import { useStore } from "@tanstack/react-form";
+import { useEffect } from "react";
 
 import { SELECT_NONE } from "@/components/form/select-sentinel";
 import { Button } from "@/components/ui/button";
-import * as m from "@/paraglide/messages.js";
 import {
 	Dialog,
 	DialogContent,
@@ -12,13 +11,14 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import type { LocationEntity } from "@backend/core/domain/gardening/entities";
 import { useAppForm } from "@/hooks/form";
 import { normalizePresentationInput } from "@/lib/item-presentation";
+import * as m from "@/paraglide/messages.js";
 import { useLocationUpdateMutation } from "@/store/mutations";
+import type { CachedLocation } from "@/store/query-cache-types";
 
 type Props = {
-	location: LocationEntity;
+	location: CachedLocation;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 };
@@ -48,12 +48,12 @@ export function LocationUpdateDialog({ location, open, onOpenChange }: Props) {
 				iconColor: value.iconColor,
 				backgroundColor: value.backgroundColor,
 			});
+			onOpenChange(false);
 			await mut.mutateAsync({
 				id: location.id,
 				name,
 				presentation,
 			});
-			onOpenChange(false);
 		},
 	});
 

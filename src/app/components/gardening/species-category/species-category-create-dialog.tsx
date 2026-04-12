@@ -1,9 +1,8 @@
-import { useEffect } from "react";
 import { useStore } from "@tanstack/react-form";
+import { useEffect } from "react";
 
 import { SELECT_NONE } from "@/components/form/select-sentinel";
 import { Button } from "@/components/ui/button";
-import * as m from "@/paraglide/messages.js";
 import {
 	Dialog,
 	DialogContent,
@@ -14,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAppForm } from "@/hooks/form";
 import { normalizePresentationInput } from "@/lib/item-presentation";
+import * as m from "@/paraglide/messages.js";
 import { useSpeciesCategoryCreateMutation } from "@/store/mutations";
 
 type Props = {
@@ -46,8 +46,8 @@ export function SpeciesCategoryCreateDialog({ open, onOpenChange }: Props) {
 				iconColor: value.iconColor,
 				backgroundColor: value.backgroundColor,
 			});
-			await mut.mutateAsync({ title, presentation });
 			onOpenChange(false);
+			await mut.mutateAsync({ title, presentation });
 		},
 	});
 
@@ -64,9 +64,7 @@ export function SpeciesCategoryCreateDialog({ open, onOpenChange }: Props) {
 			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<DialogTitle>{m.collections_speciesCategory_create()}</DialogTitle>
-					<DialogDescription className="sr-only">
-						{m.collections_speciesCategory_create()}
-					</DialogDescription>
+					<DialogDescription className="sr-only">{m.collections_speciesCategory_create()}</DialogDescription>
 				</DialogHeader>
 				<form.AppForm>
 					<form
@@ -85,9 +83,7 @@ export function SpeciesCategoryCreateDialog({ open, onOpenChange }: Props) {
 								onSubmit: ({ value }) => (!value?.trim() ? m.fields_required() : undefined),
 							}}
 						>
-							{(field) => (
-								<field.TextField label={m.fields_title()} placeholder={m.fields_title()} />
-							)}
+							{(field) => <field.TextField label={m.fields_title()} placeholder={m.fields_title()} />}
 						</form.AppField>
 						<div className="grid grid-cols-3 gap-2">
 							<form.AppField name="iconKey">

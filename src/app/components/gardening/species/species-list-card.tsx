@@ -1,4 +1,3 @@
-import type { SpeciesWithSystemCatalog } from "@backend/core/application/use-cases/gardening/species.crud-use-cases";
 import { Link } from "@tanstack/react-router";
 import { ExternalLinkIcon, PencilIcon, PencilOffIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
@@ -14,13 +13,17 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { pendingItemSurfaceClassName } from "@/components/ui/pending-item-surface";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { translateCatalogField } from "@/lib/translate-catalog-field";
+import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages.js";
 import { useSpeciesDeleteMutation } from "@/store/mutations";
+import type { CachedSpeciesWithSystemCatalog } from "@/store/query-cache-types";
+import { isQueryObjectPending } from "@/store/query-object-status";
 
 type Props = {
-	species: SpeciesWithSystemCatalog;
+	species: CachedSpeciesWithSystemCatalog;
 	categoryId: string;
 	categoryLabel: string;
 };
@@ -32,9 +35,25 @@ export function SpeciesListCard({ species, categoryId, categoryLabel }: Props) {
 
 	const name = translateCatalogField(species.characteristics.name, species.systemCatalog);
 	const desc = translateCatalogField(species.characteristics.description, species.systemCatalog);
+	const syncPending = isQueryObjectPending(species);
+	const catalogLocked = species.systemCatalog || syncPending;
+	const editDisabledReason = species.systemCatalog
+		? m.common_editDisabledDefaultCatalog()
+		: syncPending
+			? m.common_editDisabledPendingSync()
+			: m.common_edit();
 
 	return (
-		<Card type="item" className="relative transition-colors hover:bg-card/80">
+		<Card
+			type="item"
+			className={cn(
+				"relative transition-colors",
+				!syncPending && "hover:bg-card/80",
+				syncPending && pendingItemSurfaceClassName,
+			)}
+			data-pending={syncPending ? "true" : undefined}
+			aria-busy={syncPending || undefined}
+		>
 			<CardContent className="relative flex flex-row items-center justify-between gap-3">
 				<Link
 					to="/catalog/species-detail/$speciesId"
@@ -55,38 +74,43 @@ export function SpeciesListCard({ species, categoryId, categoryLabel }: Props) {
 					{desc ? <span className="line-clamp-2 text-muted-foreground text-xs">{desc}</span> : null}
 				</div>
 				<div className="relative z-20 flex shrink-0 items-center gap-1">
-					<ButtonTooltip
-						disabled={species.systemCatalog}
-						label={species.systemCatalog ? m.common_editDisabledDefaultCatalog() : m.common_edit()}
-					>
+					<ButtonTooltip disabled={catalogLocked} label={editDisabledReason}>
 						<Button
 							type="button"
 							variant="outline"
 							size="icon-sm"
-							disabled={species.systemCatalog}
-							aria-label={species.systemCatalog ? m.common_editDisabledDefaultCatalog() : m.common_edit()}
+							disabled={catalogLocked}
+							aria-label={editDisabledReason}
 							onClick={() => setEditOpen(true)}
 						>
-							{species.systemCatalog ? (
-								<PencilOffIcon className="size-4" />
-							) : (
-								<PencilIcon className="size-4" />
-							)}
+							{catalogLocked ? <PencilOffIcon className="size-4" /> : <PencilIcon className="size-4" />}
 						</Button>
 					</ButtonTooltip>
 					{!species.systemCatalog ? (
 						<SpeciesUpdateDialog species={species} open={editOpen} onOpenChange={setEditOpen} />
 					) : null}
 					<ButtonTooltip
-						disabled={species.systemCatalog}
-						label={species.systemCatalog ? m.common_editDisabledDefaultCatalog() : m.common_delete()}
+						disabled={catalogLocked}
+						label={
+							species.systemCatalog
+								? m.common_editDisabledDefaultCatalog()
+								: syncPending
+									? m.common_editDisabledPendingSync()
+									: m.common_delete()
+						}
 					>
 						<Button
 							type="button"
 							variant="outline"
 							size="icon-sm"
-							disabled={species.systemCatalog}
-							aria-label={species.systemCatalog ? m.common_editDisabledDefaultCatalog() : m.common_delete()}
+							disabled={catalogLocked}
+							aria-label={
+								species.systemCatalog
+									? m.common_editDisabledDefaultCatalog()
+									: syncPending
+										? m.common_editDisabledPendingSync()
+										: m.common_delete()
+							}
 							onClick={() => setDeleteOpen(true)}
 						>
 							<Trash2Icon className="size-4" />
@@ -99,8 +123,8 @@ export function SpeciesListCard({ species, categoryId, categoryLabel }: Props) {
 						description={name ?? ""}
 						isPending={del.isPending}
 						onConfirm={async () => {
-							await del.mutateAsync({ id: species.id });
 							setDeleteOpen(false);
+							await del.mutateAsync({ id: species.id });
 						}}
 					/>
 					<DropdownMenu>

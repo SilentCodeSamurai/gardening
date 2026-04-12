@@ -50,7 +50,7 @@ export class LocationGetByIdUseCase implements IUseCase<LocationGetByIdUseCaseIn
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "read" });
 		const wk = input.context.activeWorkspaceScope.toKey();
 		return this.locationRepository.getByIdScoped({ workspaceKey: wk, dto: { id: input.dto.id } });
-	}
+	}	
 }
 
 export type LocationGetAllUseCaseInput = UseCaseRequest;

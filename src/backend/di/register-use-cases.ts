@@ -52,14 +52,14 @@ import {
 	SpeciesGetAllUseCase,
 	SpeciesGetByIdUseCase,
 	SpeciesUpdateUseCase,
-} from "../core/application/use-cases/gardening/species.crud-use-cases";
+} from "../core/application/use-cases/gardening/species.use-cases";
 import {
 	SpeciesCategoryCreateUseCase,
 	SpeciesCategoryDeleteUseCase,
 	SpeciesCategoryGetAllUseCase,
 	SpeciesCategoryGetByIdUseCase,
 	SpeciesCategoryUpdateUseCase,
-} from "../core/application/use-cases/gardening/species-category.crud-use-cases";
+} from "../core/application/use-cases/gardening/species-category.use-cases";
 import {
 	SpatialApplyOperationsUseCase,
 	SpatialNodeCreateUseCase,

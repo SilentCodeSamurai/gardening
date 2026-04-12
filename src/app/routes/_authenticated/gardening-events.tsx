@@ -1,4 +1,4 @@
-﻿import type { GardeningEventEntity, GardeningEventEntityId } from "@backend/core/domain/gardening/entities";
+import type { GardeningEventEntity, GardeningEventEntityId } from "@backend/core/domain/gardening/entities";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
@@ -13,12 +13,12 @@ import {
 } from "@tanstack/react-table";
 import { EllipsisVerticalIcon, PencilIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useMemo, useState } from "react";
+import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
+import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
 import { GardeningActionPresentationIcon } from "@/components/gardening/gardening-action-icon";
 import { GardeningEventCreateDialog } from "@/components/gardening/gardening-event/gardening-event-create-dialog";
 import { GardeningEventUpdateDialog } from "@/components/gardening/gardening-event/gardening-event-update-dialog";
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
-import { PageContent } from "@/components/layout/page-content";
-import { PageHeading } from "@/components/layout/page-heading";
 import { DataTable } from "@/components/table/data-table";
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
 import { fuzzyFilter } from "@/components/table/fuzzy-filter";
@@ -121,7 +121,7 @@ function GardeningEventsPage() {
 							<GardeningActionPresentationIcon action={row.original.action} />
 							<p className="truncate font-medium capitalize">{actionLabel}</p>
 						</Link>
-					)
+					);
 				},
 			}),
 			columnHelper.accessor((event) => event.action.content ?? "", {
@@ -169,7 +169,7 @@ function GardeningEventsPage() {
 			}),
 		],
 		[columnHelper],
-	)
+	);
 	const table = useMemo(
 		() =>
 			createTable<GardeningEventEntity>({
@@ -196,11 +196,11 @@ function GardeningEventsPage() {
 				},
 			}),
 		[columnFilters, columns, globalFilter, items, rowSelection, sorting],
-	)
+	);
 	const selectedEventIds = useMemo(
 		() => table.getFilteredSelectedRowModel().rows.map((row) => row.original.id as GardeningEventEntityId),
 		[table],
-	)
+	);
 	const bulkDeleteEventsDisabled = selectedEventIds.length === 0;
 	const bulkDeleteManyTooltip = tableSelectionBulkTooltip({
 		selectedCount: selectedEventIds.length,
@@ -210,7 +210,7 @@ function GardeningEventsPage() {
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-			<PageHeading collection="gardeningEvent">
+			<DashboardPageHeading collection="gardeningEvent">
 				<h1 className="font-heading font-medium text-lg">{m.collections_gardeningEvent_titlePlural()}</h1>
 				<ButtonTooltip label={m.collections_gardeningEvent_create()}>
 					<Button type="button" size="icon" variant="outline" onClick={() => setCreateOpen(true)}>
@@ -218,8 +218,8 @@ function GardeningEventsPage() {
 						<PlusIcon />
 					</Button>
 				</ButtonTooltip>
-			</PageHeading>
-			<PageContent className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
+			</DashboardPageHeading>
+			<DashboardPageContent className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
 				<div className="flex flex-wrap items-end gap-2">
 					<Input
 						className="w-full min-w-40 sm:w-56"
@@ -235,7 +235,7 @@ function GardeningEventsPage() {
 							onClick={() => {
 								table.resetGlobalFilter();
 								table.resetColumnFilters();
-								setRowSelection({})
+								setRowSelection({});
 							}}
 							aria-label={m.filtering_clearFilters()}
 						>
@@ -250,6 +250,7 @@ function GardeningEventsPage() {
 						isError={isError}
 						errorMessage={m.common_loadError()}
 						emptyMessage={m.items_noElements()}
+						highlightPendingRows
 						selectedActions={
 							<div className="flex flex-wrap items-center gap-2">
 								<ButtonTooltip label={bulkDeleteManyTooltip} disabled={bulkDeleteEventsDisabled}>
@@ -266,7 +267,7 @@ function GardeningEventsPage() {
 						}
 					/>
 				</div>
-			</PageContent>
+			</DashboardPageContent>
 			<GardeningEventCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
 			<DeleteConfirmDialog
 				open={bulkDeleteOpen}
@@ -277,13 +278,13 @@ function GardeningEventsPage() {
 				})}
 				isPending={bulkDeleteMany.isPending}
 				onConfirm={async () => {
-					await bulkDeleteMany.mutateAsync({ ids: selectedEventIds });
 					setBulkDeleteOpen(false);
 					setRowSelection({});
+					await bulkDeleteMany.mutateAsync({ ids: selectedEventIds });
 				}}
 			/>
 		</div>
-	)
+	);
 }
 
 function GardeningEventRowActions({ event }: { event: GardeningEventEntity }) {
@@ -318,10 +319,10 @@ function GardeningEventRowActions({ event }: { event: GardeningEventEntity }) {
 				description={gardeningActionMessage(event.action.type)}
 				isPending={del.isPending}
 				onConfirm={async () => {
-					await del.mutateAsync({ id: event.id });
 					setDeleteOpen(false);
+					await del.mutateAsync({ id: event.id });
 				}}
 			/>
 		</div>
-	)
+	);
 }

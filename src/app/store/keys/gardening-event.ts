@@ -1,25 +1,26 @@
 import { createQueryKeys } from "@lukemorales/query-key-factory";
 import { client as api } from "@/orpc/client";
+import { markQueryObjectSynced, withSyncedItemsContainer } from "@/store/query-object-status";
 
 export const gardeningEventKeys = createQueryKeys("gardeningEvent", {
 	all: {
 		queryKey: null,
-		queryFn: api.gardeningEvent.getAll,
+		queryFn: async (context) => withSyncedItemsContainer(await api.gardeningEvent.getAll(context)),
 	},
 
 	detail: (id: string) => ({
 		queryKey: [id],
-		queryFn: () => api.gardeningEvent.getById({ id }),
+		queryFn: async () => markQueryObjectSynced(await api.gardeningEvent.getById({ id })),
 	}),
 
 	forPlant: (plantId: string) => ({
 		queryKey: [plantId],
-		queryFn: () => api.gardeningEvent.getForPlant({ plantId }),
+		queryFn: async () => withSyncedItemsContainer(await api.gardeningEvent.getForPlant({ plantId })),
 	}),
 
 	forLocation: (locationId: string) => ({
 		queryKey: [locationId],
-		queryFn: () => api.gardeningEvent.getForLocation({ locationId }),
+		queryFn: async () => withSyncedItemsContainer(await api.gardeningEvent.getForLocation({ locationId })),
 	}),
 
 	bindings: (id: string) => ({

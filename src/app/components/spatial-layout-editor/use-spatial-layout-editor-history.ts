@@ -3,8 +3,8 @@ import type { SpatialLayoutHistoryApi, SpatialLayoutHistoryDiskEntryV2 } from ".
 import { loadHistoryPast, saveHistoryPast, trimPast } from "./spatial-layout-editor.history";
 import type {
 	SpatialLayoutNode,
-	SpatialLayoutOperation,
 	SpatialLayoutNodeSnapshot,
+	SpatialLayoutOperation,
 } from "./spatial-layout-editor.types";
 
 const defaultMaxEntries = 80;

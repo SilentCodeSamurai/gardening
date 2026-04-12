@@ -3,22 +3,34 @@ import type {
 	SpatialNodeEntityId,
 	SpatialNodeTreeNode,
 } from "@backend/core/domain/spatial/entities";
-import type { ItemsContainer } from "@backend/shared/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@/orpc/client";
 
+import { useActiveWorkspaceKey } from "@/store/active-workspace-key";
 import { queryKeys } from "@/store/keys";
+import type { CachedSpatialNode, CachedSpatialNodeList } from "@/store/query-cache-types";
+import { QUERY_OBJECT_PENDING } from "@/store/query-object-status";
 import { makePendingId } from "./optimistic";
 
 export function useSpatialNodeCreateMutation() {
 	const queryClient = useQueryClient();
+	const workspaceKey = useActiveWorkspaceKey();
 
 	return useMutation(
 		orpc.spatial.createNode.mutationOptions({
 			onMutate: async (variables) => {
 				await queryClient.cancelQueries({ queryKey: queryKeys.spatial.allNodes.queryKey });
+				const previousAll = queryClient.getQueryData<CachedSpatialNodeList>(
+					queryKeys.spatial.allNodes.queryKey,
+				);
+				const treeQueries = queryClient.getQueriesData<SpatialNodeTreeNode>({
+					queryKey: queryKeys.spatial.tree._def,
+				});
+				if (!workspaceKey) return { previousAll, treeQueries, pendingId: undefined as string | undefined };
+
 				const pendingId = makePendingId("spatial") as unknown as SpatialNodeEntityId;
-				const pending: SpatialNodeEntity = {
+				const pending: CachedSpatialNode = {
+					workspaceKey,
 					id: pendingId,
 					parentId: variables.parentId as SpatialNodeEntityId | null,
 					rect: variables.rect,
@@ -26,17 +38,12 @@ export function useSpatialNodeCreateMutation() {
 					ref: variables.ref,
 					createdAt: new Date(),
 					updatedAt: new Date(),
+					objectStatus: QUERY_OBJECT_PENDING,
 				};
-				const previousAll = queryClient.getQueryData<ItemsContainer<SpatialNodeEntity>>(
-					queryKeys.spatial.allNodes.queryKey,
-				);
-				queryClient.setQueryData<ItemsContainer<SpatialNodeEntity>>(
+				queryClient.setQueryData<CachedSpatialNodeList>(
 					queryKeys.spatial.allNodes.queryKey,
 					(prev) => ({ items: [...(prev?.items ?? []), pending] }),
 				);
-				const treeQueries = queryClient.getQueriesData<SpatialNodeTreeNode>({
-					queryKey: queryKeys.spatial.tree._def,
-				});
 				for (const [key, tree] of treeQueries) {
 					if (!tree) continue;
 					const parentId = variables.parentId ? String(variables.parentId) : null;
@@ -55,7 +62,7 @@ export function useSpatialNodeCreateMutation() {
 			},
 			onSuccess: (entity, _vars, ctx) => {
 				if (ctx?.pendingId) {
-					queryClient.setQueryData<ItemsContainer<SpatialNodeEntity>>(
+					queryClient.setQueryData<CachedSpatialNodeList>(
 						queryKeys.spatial.allNodes.queryKey,
 						(prev) => {
 							if (!prev) return prev;
@@ -65,7 +72,7 @@ export function useSpatialNodeCreateMutation() {
 						},
 					);
 				}
-				queryClient.setQueryData<ItemsContainer<SpatialNodeEntity>>(
+				queryClient.setQueryData<CachedSpatialNodeList>(
 					queryKeys.spatial.allNodes.queryKey,
 					(prev) => ({ items: [...(prev?.items ?? []), entity] }),
 				);

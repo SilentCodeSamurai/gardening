@@ -1,0 +1,27 @@
+export const ACCESS_ACTION = {
+	READ: "read",
+	CREATE: "create",
+	UPDATE: "update",
+	DELETE: "delete",
+	GRANT_PERMISSION: "grantPermission",
+} as const;
+
+export const ACCESS_ACTION_VALUES = Object.values(ACCESS_ACTION);
+
+export const ACCESS_ROLE = {
+	VIEWER: "viewer",
+	EDITOR: "editor",
+	ADMIN: "admin",
+} as const;
+
+export const ACCESS_ROLE_VALUES = Object.values(ACCESS_ROLE);
+
+export const ACCESS_DECISION_REASON_CODE = {
+	ALLOW_ROLE: "ALLOW_ROLE",
+	DENY_NO_MATCHING_ASSIGNMENT: "DENY_NO_MATCHING_ASSIGNMENT",
+	DENY_ROLE_MISSING_ACTION: "DENY_ROLE_MISSING_ACTION",
+	ACCESS_SCOPE_MISMATCH: "ACCESS_SCOPE_MISMATCH",
+	ACCESS_SUBJECT_NOT_RESOLVED: "ACCESS_SUBJECT_NOT_RESOLVED",
+} as const;
+
+export const ACCESS_DECISION_REASON_CODE_VALUES = Object.values(ACCESS_DECISION_REASON_CODE);

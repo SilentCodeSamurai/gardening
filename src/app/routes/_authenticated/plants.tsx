@@ -1,4 +1,4 @@
-﻿import type { CultivarEntity, HydratedPlantEntity, PlantEntityId } from "@backend/core/domain/gardening/entities";
+import type { CultivarEntity, PlantEntityId } from "@backend/core/domain/gardening/entities";
 import type { ItemPresentationValueObject } from "@backend/core/domain/gardening/value-objects";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -17,6 +17,8 @@ import {
 } from "@tanstack/react-table";
 import { EllipsisVerticalIcon, PencilIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
+import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
 import {
 	GardeningEventCreateDialog,
 	type GardeningEventCreateDialogInitialValues,
@@ -25,8 +27,6 @@ import { PlantCreateDialog } from "@/components/gardening/plant/plant-create-dia
 import { PlantUpdateDialog } from "@/components/gardening/plant/plant-update-dialog";
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
-import { PageContent } from "@/components/layout/page-content";
-import { PageHeading } from "@/components/layout/page-heading";
 import { DataTable } from "@/components/table/data-table";
 import { DataTableColumnHeader } from "@/components/table/data-table-column-header";
 import { fuzzyFilter } from "@/components/table/fuzzy-filter";
@@ -67,6 +67,7 @@ import { translateCatalogField } from "@/lib/translate-catalog-field";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import { usePlantDeleteManyMutation, usePlantDeleteMutation } from "@/store/mutations";
+import type { CachedHydratedPlant } from "@/store/query-cache-types";
 import { collectPlacedEntityIds } from "@/store/spatial-placement";
 
 export const Route = createFileRoute("/_authenticated/plants")({
@@ -102,7 +103,7 @@ function resolveSpeciesDisplayName(rawSpeciesName: string): string {
 	return trimmed;
 }
 
-function getPlantDisplayTitle(plant: HydratedPlantEntity): string {
+function getPlantDisplayTitle(plant: CachedHydratedPlant): string {
 	if (plant.title?.trim()) return plant.title.trim();
 	return plant.cultivar.characteristics.name || m.items_untitled();
 }
@@ -207,15 +208,15 @@ function PlantsPage() {
 	const speciesById = useMemo(
 		() => new Map((speciesData?.items ?? []).map((s) => [String(s.id), s] as const)),
 		[speciesData?.items],
-	)
+	);
 	const cultivarById = useMemo(
 		() => new Map((cultivarData?.items ?? []).map((c) => [String(c.id), c] as const)),
 		[cultivarData?.items],
-	)
+	);
 	const placedPlantIds = useMemo(
 		() => collectPlacedEntityIds(spatialData?.items ?? [], "plant"),
 		[spatialData?.items],
-	)
+	);
 	const plantPlacementParentIdsFromTable = useMemo(() => {
 		const spatial = spatialData?.items ?? [];
 		const ids = new Set<string>();
@@ -259,7 +260,7 @@ function PlantsPage() {
 							: plant.cultivar.species.characteristics.name,
 					presentation: speciesEntity?.presentation,
 					categoryId: speciesEntity ? String(speciesEntity.categoryId) : "",
-				})
+				});
 			}
 			const cultivarId = String(plant.cultivar.id);
 			if (!cultivarMap.has(cultivarId)) {
@@ -272,7 +273,7 @@ function PlantsPage() {
 					categoryId: cultivarEntity
 						? String(speciesCategoryById.get(String(cultivarEntity.speciesId)) ?? "")
 						: "",
-				})
+				});
 			}
 		}
 
@@ -303,7 +304,7 @@ function PlantsPage() {
 				presentation?: ItemPresentationValueObject;
 				categoryId: string;
 			}
-		>()
+		>();
 		for (const plant of items) {
 			const sid = String(plant.cultivar.species.id);
 			if (seen.has(sid)) continue;
@@ -318,7 +319,7 @@ function PlantsPage() {
 				label,
 				presentation: speciesEntity?.presentation ?? plant.cultivar.species.presentation,
 				categoryId: speciesCategoryById.get(sid) ?? "",
-			})
+			});
 		}
 		return [...seen.values()].sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: "base" }));
 	}, [items, speciesById, speciesCategoryById]);
@@ -341,12 +342,12 @@ function PlantsPage() {
 	const effectiveColumnFilters = useMemo(
 		() => reconcilePlantsColumnFilters(columnFilters, columnFilters, speciesCategoryById, cultivarById),
 		[columnFilters, cultivarById, speciesCategoryById],
-	)
+	);
 
 	const placementColumnFilterRaw = useMemo(
 		() => String(effectiveColumnFilters.find((f) => f.id === "placement")?.value ?? ""),
 		[effectiveColumnFilters],
-	)
+	);
 
 	const plantPlacementFilterItems = useMemo((): PlacementFilterComboboxItem[] => {
 		const parentIds = new Set(plantPlacementParentIdsFromTable);
@@ -365,7 +366,7 @@ function PlantsPage() {
 				label: loc.name,
 				presentation: loc.presentation,
 			})),
-		]
+		];
 	}, [allLocations, placementColumnFilterRaw, plantPlacementParentIdsFromTable]);
 
 	const onColumnFiltersChange = useCallback(
@@ -374,12 +375,12 @@ function PlantsPage() {
 				const prevEffective = reconcilePlantsColumnFilters(prev, prev, speciesCategoryById, cultivarById);
 				const next = applyUpdater(updater, prevEffective);
 				return reconcilePlantsColumnFilters(prevEffective, next, speciesCategoryById, cultivarById);
-			})
+			});
 		},
 		[cultivarById, speciesCategoryById],
-	)
+	);
 
-	const columnHelper = useMemo(() => createColumnHelper<HydratedPlantEntity>(), []);
+	const columnHelper = useMemo(() => createColumnHelper<CachedHydratedPlant>(), []);
 	const columns = useMemo(
 		() => [
 			columnHelper.display({
@@ -448,7 +449,7 @@ function PlantsPage() {
 							<ItemPresentationIcon presentation={plant.cultivar.presentation} />
 							<p className="truncate font-medium">{title}</p>
 						</Link>
-					)
+					);
 				},
 			}),
 			columnHelper.accessor((p) => speciesCategoryById.get(String(p.cultivar.species.id)) ?? "", {
@@ -460,11 +461,11 @@ function PlantsPage() {
 					const a =
 						categoryLabelById.get(
 							speciesCategoryById.get(String(rowA.original.cultivar.species.id)) ?? "",
-						) ?? ""
+						) ?? "";
 					const b =
 						categoryLabelById.get(
 							speciesCategoryById.get(String(rowB.original.cultivar.species.id)) ?? "",
-						) ?? ""
+						) ?? "";
 					return a.localeCompare(b, undefined, { sensitivity: "base" });
 				},
 				filterFn: (row, _columnId, filterValue) => {
@@ -474,7 +475,7 @@ function PlantsPage() {
 				},
 				enableGlobalFilter: false,
 				meta: {
-					filter: ({ column }: { column: Column<HydratedPlantEntity, unknown> }) => {
+					filter: ({ column }: { column: Column<CachedHydratedPlant, unknown> }) => {
 						const value = String(column.getFilterValue() ?? "");
 						const selected = plantCategoryFilterOptions.find((opt) => opt.value === value) ?? null;
 						return (
@@ -513,7 +514,7 @@ function PlantsPage() {
 									</ComboboxList>
 								</ComboboxContent>
 							</Combobox>
-						)
+						);
 					},
 				},
 				cell: ({ row }) => {
@@ -523,9 +524,7 @@ function PlantsPage() {
 			}),
 			columnHelper.accessor((p) => String(p.cultivar.species.id), {
 				id: "species",
-				header: ({ column }) => (
-					<DataTableColumnHeader column={column} title={m.collections_species_title()} />
-				),
+				header: ({ column }) => <DataTableColumnHeader column={column} title={m.collections_species_title()} />,
 				sortingFn: (rowA, rowB) =>
 					resolveSpeciesDisplayName(rowA.original.cultivar.species.characteristics.name).localeCompare(
 						resolveSpeciesDisplayName(rowB.original.cultivar.species.characteristics.name),
@@ -542,8 +541,8 @@ function PlantsPage() {
 						column,
 						table,
 					}: {
-						column: Column<HydratedPlantEntity, unknown>;
-						table: Table<HydratedPlantEntity>;
+						column: Column<CachedHydratedPlant, unknown>;
+						table: Table<CachedHydratedPlant>;
 					}) => {
 						const categoryFilter = String(table.getColumn("category")?.getFilterValue() ?? "");
 						const filteredSpeciesOptions = categoryFilter
@@ -587,7 +586,7 @@ function PlantsPage() {
 									</ComboboxList>
 								</ComboboxContent>
 							</Combobox>
-						)
+						);
 					},
 				},
 				cell: ({ row }) => (
@@ -617,8 +616,8 @@ function PlantsPage() {
 						column,
 						table,
 					}: {
-						column: Column<HydratedPlantEntity, unknown>;
-						table: Table<HydratedPlantEntity>;
+						column: Column<CachedHydratedPlant, unknown>;
+						table: Table<CachedHydratedPlant>;
 					}) => {
 						const categoryFilter = String(table.getColumn("category")?.getFilterValue() ?? "");
 						const speciesFilter = String(table.getColumn("species")?.getFilterValue() ?? "");
@@ -665,7 +664,7 @@ function PlantsPage() {
 									</ComboboxList>
 								</ComboboxContent>
 							</Combobox>
-						)
+						);
 					},
 				},
 				cell: ({ row }) => (
@@ -781,11 +780,11 @@ function PlantsPage() {
 			spatialData?.items,
 			speciesCategoryById,
 		],
-	)
+	);
 
 	const table = useMemo(
 		() =>
-			createTable<HydratedPlantEntity>({
+			createTable<CachedHydratedPlant>({
 				data: items,
 				columns,
 				globalFilterFn: fuzzyFilter,
@@ -809,24 +808,24 @@ function PlantsPage() {
 				},
 			}),
 		[columns, effectiveColumnFilters, globalFilter, items, onColumnFiltersChange, rowSelection, sorting],
-	)
+	);
 
 	const filteredRowCount = table.getFilteredRowModel().rows.length;
 	const selectedPlantIds = useMemo(
 		() => table.getFilteredSelectedRowModel().rows.map((row) => row.original.id as PlantEntityId),
 		[table],
-	)
+	);
 	const selectedPlantsEventInitialValues = useMemo<GardeningEventCreateDialogInitialValues>(
 		() => ({
 			target: "plants",
 			plantIds: selectedPlantIds,
 		}),
 		[selectedPlantIds],
-	)
+	);
 	const selectionHasPlacedPlant = useMemo(
 		() => selectedPlantIds.some((id) => placedPlantIds.has(String(id))),
 		[placedPlantIds, selectedPlantIds],
-	)
+	);
 	const bulkCreateEventDisabled = selectedPlantIds.length === 0;
 	const bulkDeleteManyDisabled = selectedPlantIds.length === 0 || selectionHasPlacedPlant;
 	const bulkCreateEventTooltip = useMemo(
@@ -835,7 +834,7 @@ function PlantsPage() {
 				? m.common_actionRequiresSelection()
 				: m.collections_gardeningEvent_createFromTableSelection(),
 		[selectedPlantIds.length],
-	)
+	);
 	const bulkDeleteManyTooltip = tableSelectionBulkTooltip({
 		selectedCount: selectedPlantIds.length,
 		hasPlacedInSelection: selectionHasPlacedPlant,
@@ -850,7 +849,7 @@ function PlantsPage() {
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-			<PageHeading collection="plant">
+			<DashboardPageHeading collection="plant">
 				<h1 className="font-heading font-medium text-lg">{m.collections_plant_titlePlural()}</h1>
 				<ButtonTooltip label={m.collections_plant_create()}>
 					<Button type="button" size="icon" variant="outline" onClick={() => setCreateOpen(true)}>
@@ -858,8 +857,8 @@ function PlantsPage() {
 						<PlusIcon />
 					</Button>
 				</ButtonTooltip>
-			</PageHeading>
-			<PageContent className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
+			</DashboardPageHeading>
+			<DashboardPageContent className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
 				<div className="flex flex-wrap items-end gap-2">
 					<Input
 						className="w-full min-w-40 sm:w-56"
@@ -876,7 +875,7 @@ function PlantsPage() {
 							onClick={() => {
 								table.resetGlobalFilter();
 								table.resetColumnFilters();
-								setRowSelection({})
+								setRowSelection({});
 							}}
 							aria-label={m.filtering_clearFilters()}
 						>
@@ -891,6 +890,7 @@ function PlantsPage() {
 						isError={isError}
 						errorMessage={m.common_loadError()}
 						emptyMessage={emptyMessage}
+						highlightPendingRows
 						selectedActions={
 							<div className="flex flex-wrap items-center gap-2">
 								<ButtonTooltip label={bulkCreateEventTooltip} disabled={bulkCreateEventDisabled}>
@@ -917,7 +917,7 @@ function PlantsPage() {
 						}
 					/>
 				</div>
-			</PageContent>
+			</DashboardPageContent>
 			<PlantCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
 			<GardeningEventCreateDialog
 				open={createEventOpen}
@@ -933,16 +933,16 @@ function PlantsPage() {
 				})}
 				isPending={bulkDeleteMany.isPending}
 				onConfirm={async () => {
-					await bulkDeleteMany.mutateAsync({ ids: selectedPlantIds });
 					setBulkDeleteOpen(false);
 					setRowSelection({});
+					await bulkDeleteMany.mutateAsync({ ids: selectedPlantIds });
 				}}
 			/>
 		</div>
-	)
+	);
 }
 
-function PlantRowActions({ plant, isPlaced }: { plant: HydratedPlantEntity; isPlaced: boolean }) {
+function PlantRowActions({ plant, isPlaced }: { plant: CachedHydratedPlant; isPlaced: boolean }) {
 	const [editOpen, setEditOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [createEventOpen, setCreateEventOpen] = useState(false);
@@ -1004,10 +1004,10 @@ function PlantRowActions({ plant, isPlaced }: { plant: HydratedPlantEntity; isPl
 				description={title}
 				isPending={del.isPending}
 				onConfirm={async () => {
-					await del.mutateAsync({ id: plant.id });
 					setDeleteOpen(false);
+					await del.mutateAsync({ id: plant.id });
 				}}
 			/>
 		</div>
-	)
+	);
 }

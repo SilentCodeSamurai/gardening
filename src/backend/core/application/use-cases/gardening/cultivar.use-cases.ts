@@ -17,7 +17,7 @@ import type { AccessControlApplicationService } from "../../services/access-cont
 import type { IUseCase } from "../shared/use-case.interface";
 import type { UseCaseRequest } from "../use-case-context";
 
-import type { SpeciesWithSystemCatalog } from "./species.crud-use-cases";
+import type { SpeciesWithSystemCatalog } from "./species.use-cases";
 
 export type CultivarGetFullByIdUseCaseOutput = CultivarRepositoryGetFullByIdOutputDTO & {
 	species: SpeciesWithSystemCatalog;

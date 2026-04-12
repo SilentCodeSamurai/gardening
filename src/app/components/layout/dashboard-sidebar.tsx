@@ -1,6 +1,6 @@
 import { UserButton } from "@daveyplate/better-auth-ui";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ChevronDownIcon, SettingsIcon } from "lucide-react";
+import { ChevronDownIcon, HomeIcon, Sprout } from "lucide-react";
 import { CollectionIcon } from "@/components/icon/collection-icon";
 import { SidebarLanguageMenu } from "@/components/layout/sidebar-language-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -12,37 +12,45 @@ import {
 	SidebarGroup,
 	SidebarGroupContent,
 	SidebarGroupLabel,
+	SidebarHeader,
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
 	SidebarRail,
 } from "@/components/ui/sidebar";
+import { markIntentToOpenPublicHome } from "@/lib/public-home-navigation";
 import * as m from "@/paraglide/messages.js";
 
-export function AppSidebar() {
+export function DashboardSidebar() {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
 	const isActivePath = (to: string) => pathname === to;
 
 	return (
 		<Sidebar variant="inset" collapsible="offcanvas" aria-label={m.components_layout_appShell_sidebarNavLabel()}>
+			<SidebarHeader className="border-sidebar-border border-b px-2 py-2">
+				<Link
+					to="/"
+					onClick={() => markIntentToOpenPublicHome()}
+					className="flex items-center gap-2 rounded-md px-2 py-1.5 outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+					aria-label={m.components_layout_sidebar_logoLinkAria()}
+				>
+					<span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+						<Sprout className="size-5" aria-hidden />
+					</span>
+					<span className="truncate font-heading font-semibold text-sidebar-foreground text-sm">
+						{m.components_hub_title()}
+					</span>
+				</Link>
+			</SidebarHeader>
 			<SidebarContent>
 				<SidebarGroup>
 					<SidebarGroupContent>
 						<SidebarMenu>
 							<SidebarMenuItem>
 								<SidebarMenuButton asChild isActive={isActivePath("/dashboard")}>
-									<Link to="/dashboard">{m.components_layout_nav_home()}</Link>
-								</SidebarMenuButton>
-							</SidebarMenuItem>
-							<SidebarMenuItem>
-								<SidebarMenuButton asChild isActive={isActivePath("/account/settings")}>
-									<Link
-										to="/account/$accountView"
-										params={{ accountView: "settings" }}
-										className="flex w-full min-w-0 items-center gap-2"
-									>
-										<SettingsIcon className="size-4 shrink-0" />
-										Settings
+									<Link to="/dashboard" className="flex w-full min-w-0 items-center gap-2">
+										<HomeIcon className="size-4" />
+										{m.components_layout_nav_home()}
 									</Link>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
@@ -139,7 +147,12 @@ export function AppSidebar() {
 				</SidebarGroup>
 			</SidebarContent>
 			<SidebarFooter className="gap-3 border-sidebar-border border-t pt-3">
-					<UserButton className="w-full" />
+				<div className="flex w-full items-center gap-2">
+					<UserButton
+						size="sm"
+						className="w-full border border-border bg-input/20 text-foreground hover:bg-input/50 hover:text-foreground"
+					/>
+				</div>
 				<ThemeToggle />
 				<SidebarLanguageMenu />
 			</SidebarFooter>

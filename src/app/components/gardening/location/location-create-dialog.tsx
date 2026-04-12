@@ -1,9 +1,8 @@
-import { useEffect } from "react";
+import type { SpatialNodeEntityId } from "@backend/core/domain/spatial/entities";
 import { useStore } from "@tanstack/react-form";
-
+import { useEffect } from "react";
 import { SELECT_NONE } from "@/components/form/select-sentinel";
 import { Button } from "@/components/ui/button";
-import * as m from "@/paraglide/messages.js";
 import {
 	Dialog,
 	DialogContent,
@@ -12,9 +11,9 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import type { SpatialNodeEntityId } from "@backend/core/domain/spatial/entities";
 import { useAppForm } from "@/hooks/form";
 import { normalizePresentationInput } from "@/lib/item-presentation";
+import * as m from "@/paraglide/messages.js";
 import { useLocationCreateMutation, useSpatialNodeCreateMutation } from "@/store/mutations";
 
 type Props = {
@@ -96,6 +95,7 @@ export function LocationCreateDialog({
 				width: initialPlacement?.width,
 				height: initialPlacement?.height,
 			};
+			onOpenChange(false);
 			if (onSubmit) await onSubmit(payload);
 			else if (initialPlacement != null && onSpatialNodeCreated) {
 				const entity = await mut.mutateAsync({ name, presentation });
@@ -120,7 +120,6 @@ export function LocationCreateDialog({
 			} else {
 				await mut.mutateAsync({ name, presentation });
 			}
-			onOpenChange(false);
 		},
 	});
 

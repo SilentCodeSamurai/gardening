@@ -108,6 +108,7 @@ export function PlantCreateManyDialog({
 							existingSiblingTitles,
 							nodes.length,
 						).map((s) => s.trim() || null);
+			onOpenChange(false);
 			const container = await mut.mutateAsync({
 				rows: nodes.map((_node, i) => ({
 					cultivarId,
@@ -138,7 +139,6 @@ export function PlantCreateManyDialog({
 					ref: spatialNode.ref,
 				});
 			}
-			onOpenChange(false);
 		},
 	});
 

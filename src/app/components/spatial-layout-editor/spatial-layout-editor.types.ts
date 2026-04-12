@@ -177,6 +177,10 @@ export type SpatialLayoutEditorLabels = Readonly<{
 	lockLayoutToggleUnlockHint?: string;
 	/** Toolbar toggle: shown when layout is unlocked (editable). */
 	lockLayoutToggleLockHint?: string;
+	/** Toolbar grid toggle: grid lines are hidden; press to show. */
+	gridDisplayToggleShowHint?: string;
+	/** Toolbar grid toggle: grid lines are visible; press to hide. */
+	gridDisplayToggleHideHint?: string;
 	canvasMenu?: string;
 	/** Lift bound nodes to unplaced roots (spatial rows kept); subtree stays for location frames. */
 	detach?: string;
@@ -287,6 +291,11 @@ export type SpatialLayoutEditorProps<TNode extends SpatialLayoutNode = SpatialLa
 	highlightDurationMs?: number;
 	onErrorMessage?: (message: string) => void;
 	renderNodeContent?: (node: TNode, state: SpatialLayoutNodeVisualState) => ReactNode;
+	/**
+	 * Title/label drawn above the node frame. Rendered in a top overlay so labels stay above every
+	 * node border (sibling z-index no longer clips labels that extend past the frame).
+	 */
+	renderNodeLabel?: (node: TNode, state: SpatialLayoutNodeVisualState) => ReactNode;
 	renderNodeContextActions?: (node: TNode) => SpatialLayoutNodeContextActionSlices | null | undefined;
 	gridStep?: number;
 	nodeMinSize?: number;

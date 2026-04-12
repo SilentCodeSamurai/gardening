@@ -1,14 +1,14 @@
-﻿import type { GardeningEventEntityId, LocationEntityId, PlantEntityId } from "@backend/core/domain/gardening/entities";
+import type { GardeningEventEntityId, LocationEntityId, PlantEntityId } from "@backend/core/domain/gardening/entities";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
+import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
+import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
 import { GardeningActionPresentationIcon } from "@/components/gardening/gardening-action-icon";
 import { GardeningEventUpdateDialog } from "@/components/gardening/gardening-event/gardening-event-update-dialog";
 import { getPlantDisplayTitle } from "@/components/gardening/plant/plant-list-card";
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
-import { PageContent } from "@/components/layout/page-content";
-import { PageHeading } from "@/components/layout/page-heading";
 import { Button } from "@/components/ui/button";
 import { ButtonTooltip } from "@/components/ui/button-tooltip";
 import { gardeningActionMessage } from "@/lib/gardening-action-messages";
@@ -61,14 +61,14 @@ function GardeningEventDetailPage() {
 			<div className="text-destructive text-sm">
 				{`${m.collections_gardeningEvent_title()} ${m.common_notFound()}`}
 			</div>
-		)
+		);
 	}
 
 	const data = detailQuery.data;
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-			<PageHeading className="min-w-0 flex-wrap" collection="gardeningEvent">
+			<DashboardPageHeading className="min-w-0 flex-wrap" collection="gardeningEvent">
 				<div className="flex min-w-0 flex-wrap items-center gap-3">
 					<GardeningActionPresentationIcon action={data.action} />
 					<h1 className="font-heading font-medium text-lg capitalize">
@@ -106,13 +106,13 @@ function GardeningEventDetailPage() {
 						description={gardeningActionMessage(data.action.type)}
 						isPending={del.isPending}
 						onConfirm={async () => {
-							await del.mutateAsync({ id: data.id });
 							setDeleteOpen(false);
+							await del.mutateAsync({ id: data.id });
 						}}
 					/>
 				</div>
-			</PageHeading>
-			<PageContent className="flex flex-col gap-6 overflow-y-auto pb-6">
+			</DashboardPageHeading>
+			<DashboardPageContent className="flex flex-col gap-6 overflow-y-auto pb-6">
 				<p className="max-w-2xl whitespace-pre-wrap text-muted-foreground text-sm leading-relaxed">
 					{data.action.content.trim() ? (
 						data.action.content
@@ -165,13 +165,13 @@ function GardeningEventDetailPage() {
 						) : (
 							<ul className="space-y-2">
 								{plantIds.map((plantId, i) => {
-									const q = plantQueries[i]
+									const q = plantQueries[i];
 									const label =
 										q?.data != null
 											? getPlantDisplayTitle(q.data)
 											: q?.isError
 												? String(plantId)
-												: m.common_loading()
+												: m.common_loading();
 									return (
 										<li key={String(plantId)}>
 											{q?.data != null ? (
@@ -188,7 +188,7 @@ function GardeningEventDetailPage() {
 												</div>
 											)}
 										</li>
-									)
+									);
 								})}
 							</ul>
 						)}
@@ -213,7 +213,7 @@ function GardeningEventDetailPage() {
 											? q.data.name
 											: q?.isError
 												? String(locationId)
-												: m.common_loading()
+												: m.common_loading();
 									return (
 										<li key={String(locationId)}>
 											{q?.data != null ? (
@@ -230,13 +230,13 @@ function GardeningEventDetailPage() {
 												</div>
 											)}
 										</li>
-									)
+									);
 								})}
 							</ul>
 						)}
 					</section>
 				</div>
-			</PageContent>
+			</DashboardPageContent>
 		</div>
-	)
+	);
 }
