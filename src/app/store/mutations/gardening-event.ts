@@ -41,9 +41,7 @@ export function useGardeningEventUpdateMutation() {
 					queryKeys.gardeningEvent.all.queryKey,
 					queryKeys.gardeningEvent.detail(variables.id).queryKey,
 				]);
-				const previousAll = snapshots[0]?.data as
-					| CachedGardeningEventList
-					| undefined;
+				const previousAll = snapshots[0]?.data as CachedGardeningEventList | undefined;
 				const previousDetail = snapshots[1]?.data as CachedGardeningEvent | undefined;
 				const existing =
 					previousDetail ??
@@ -56,9 +54,8 @@ export function useGardeningEventUpdateMutation() {
 						id: existing.id,
 						updatedAt: new Date(),
 					});
-					qc.setQueryData<CachedGardeningEventList>(
-						queryKeys.gardeningEvent.all.queryKey,
-						(prev) => upsertInItemsContainer(prev, optimistic),
+					qc.setQueryData<CachedGardeningEventList>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
+						upsertInItemsContainer(prev, optimistic),
 					);
 					qc.setQueryData(queryKeys.gardeningEvent.detail(variables.id).queryKey, optimistic);
 					upsertInGardeningEventScopedLists(qc, optimistic);
@@ -72,9 +69,8 @@ export function useGardeningEventUpdateMutation() {
 				void variables;
 			},
 			onSuccess: (entity, variables, ctx) => {
-				qc.setQueryData<CachedGardeningEventList>(
-					queryKeys.gardeningEvent.all.queryKey,
-					(prev) => upsertInItemsContainer(prev, entity),
+				qc.setQueryData<CachedGardeningEventList>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
+					upsertInItemsContainer(prev, entity),
 				);
 				qc.setQueryData(queryKeys.gardeningEvent.detail(entity.id).queryKey, entity);
 				void qc.invalidateQueries({ queryKey: queryKeys.gardeningEvent.bindings(entity.id).queryKey });
@@ -98,14 +94,11 @@ export function useGardeningEventDeleteMutation() {
 					queryKeys.gardeningEvent.all.queryKey,
 					queryKeys.gardeningEvent.detail(variables.id).queryKey,
 				]);
-				const previousAll = snapshots[0]?.data as
-					| CachedGardeningEventList
-					| undefined;
+				const previousAll = snapshots[0]?.data as CachedGardeningEventList | undefined;
 				const row = previousAll?.items.find((item) => String(item.id) === String(variables.id));
 				if (isQueryObjectPending(row)) return { snapshots } satisfies Ctx;
-				qc.setQueryData<CachedGardeningEventList>(
-					queryKeys.gardeningEvent.all.queryKey,
-					(prev) => removeFromItemsContainer(prev, variables.id),
+				qc.setQueryData<CachedGardeningEventList>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
+					removeFromItemsContainer(prev, variables.id),
 				);
 				qc.setQueryData(queryKeys.gardeningEvent.detail(variables.id).queryKey, undefined);
 				qc.setQueryData(queryKeys.gardeningEvent.bindings(variables.id).queryKey, undefined);
@@ -119,9 +112,8 @@ export function useGardeningEventDeleteMutation() {
 				void variables;
 			},
 			onSuccess: (deletedId, variables, ctx) => {
-				qc.setQueryData<CachedGardeningEventList>(
-					queryKeys.gardeningEvent.all.queryKey,
-					(prev) => dropPendingInItemsContainer(prev, deletedId),
+				qc.setQueryData<CachedGardeningEventList>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
+					dropPendingInItemsContainer(prev, deletedId),
 				);
 				qc.setQueryData(queryKeys.gardeningEvent.detail(deletedId).queryKey, undefined);
 				qc.setQueryData(queryKeys.gardeningEvent.bindings(deletedId).queryKey, undefined);
@@ -164,9 +156,8 @@ export function useGardeningEventDeleteManyMutation() {
 			toast.error(m.collections_gardeningEvent_actionError());
 		},
 		onSuccess: (result) => {
-			qc.setQueryData<CachedGardeningEventList>(
-				queryKeys.gardeningEvent.all.queryKey,
-				(prev) => dropPendingManyInItemsContainer(prev, result.deletedIds),
+			qc.setQueryData<CachedGardeningEventList>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
+				dropPendingManyInItemsContainer(prev, result.deletedIds),
 			);
 			for (const deletedId of result.deletedIds) {
 				qc.setQueryData(queryKeys.gardeningEvent.detail(deletedId).queryKey, undefined);
@@ -196,9 +187,8 @@ export function useGardeningEventCreateForLocationMutation() {
 					updatedAt: new Date(),
 					objectStatus: QUERY_OBJECT_PENDING,
 				};
-				qc.setQueryData<CachedGardeningEventList>(
-					queryKeys.gardeningEvent.all.queryKey,
-					(prev) => appendToItemsContainer(prev, pending),
+				qc.setQueryData<CachedGardeningEventList>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
+					appendToItemsContainer(prev, pending),
 				);
 				qc.setQueryData(queryKeys.gardeningEvent.detail(pending.id).queryKey, pending);
 				appendToScopedList(qc, queryKeys.gardeningEvent.forLocation(variables.locationId).queryKey, pending);
@@ -211,9 +201,8 @@ export function useGardeningEventCreateForLocationMutation() {
 				void variables;
 			},
 			onSuccess: (entity, variables, ctx) => {
-				qc.setQueryData<CachedGardeningEventList>(
-					queryKeys.gardeningEvent.all.queryKey,
-					(prev) => replacePendingInItemsContainer(prev, ctx?.pendingId ?? entity.id, entity),
+				qc.setQueryData<CachedGardeningEventList>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
+					replacePendingInItemsContainer(prev, ctx?.pendingId ?? entity.id, entity),
 				);
 				if (ctx?.pendingId) removeFromGardeningEventScopedLists(qc, ctx.pendingId);
 				qc.setQueryData(queryKeys.gardeningEvent.detail(entity.id).queryKey, entity);
@@ -244,9 +233,8 @@ export function useGardeningEventCreateMutation() {
 					updatedAt: new Date(),
 					objectStatus: QUERY_OBJECT_PENDING,
 				};
-				qc.setQueryData<CachedGardeningEventList>(
-					queryKeys.gardeningEvent.all.queryKey,
-					(prev) => appendToItemsContainer(prev, pending),
+				qc.setQueryData<CachedGardeningEventList>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
+					appendToItemsContainer(prev, pending),
 				);
 				qc.setQueryData(queryKeys.gardeningEvent.detail(pending.id).queryKey, pending);
 				return { snapshots, pendingId };
@@ -258,9 +246,8 @@ export function useGardeningEventCreateMutation() {
 				void variables;
 			},
 			onSuccess: (entity, variables, ctx) => {
-				qc.setQueryData<CachedGardeningEventList>(
-					queryKeys.gardeningEvent.all.queryKey,
-					(prev) => replacePendingInItemsContainer(prev, ctx?.pendingId ?? entity.id, entity),
+				qc.setQueryData<CachedGardeningEventList>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
+					replacePendingInItemsContainer(prev, ctx?.pendingId ?? entity.id, entity),
 				);
 				if (ctx?.pendingId) removeFromGardeningEventScopedLists(qc, ctx.pendingId);
 				qc.setQueryData(queryKeys.gardeningEvent.detail(entity.id).queryKey, entity);
@@ -290,9 +277,8 @@ export function useGardeningEventCreateForPlantListMutation() {
 					updatedAt: new Date(),
 					objectStatus: QUERY_OBJECT_PENDING,
 				};
-				qc.setQueryData<CachedGardeningEventList>(
-					queryKeys.gardeningEvent.all.queryKey,
-					(prev) => appendToItemsContainer(prev, pending),
+				qc.setQueryData<CachedGardeningEventList>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
+					appendToItemsContainer(prev, pending),
 				);
 				qc.setQueryData(queryKeys.gardeningEvent.detail(pending.id).queryKey, pending);
 				for (const plantId of variables.plantIds) {
@@ -307,9 +293,8 @@ export function useGardeningEventCreateForPlantListMutation() {
 				void variables;
 			},
 			onSuccess: (entity, variables, ctx) => {
-				qc.setQueryData<CachedGardeningEventList>(
-					queryKeys.gardeningEvent.all.queryKey,
-					(prev) => replacePendingInItemsContainer(prev, ctx?.pendingId ?? entity.id, entity),
+				qc.setQueryData<CachedGardeningEventList>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
+					replacePendingInItemsContainer(prev, ctx?.pendingId ?? entity.id, entity),
 				);
 				if (ctx?.pendingId) removeFromGardeningEventScopedLists(qc, ctx.pendingId);
 				qc.setQueryData(queryKeys.gardeningEvent.detail(entity.id).queryKey, entity);

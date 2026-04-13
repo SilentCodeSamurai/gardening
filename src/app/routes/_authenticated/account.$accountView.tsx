@@ -12,5 +12,5 @@ function AccountSettingsRoute() {
 		<div className="flex min-h-0 flex-1 flex-col overflow-hidden p-4 md:p-6">
 			<AccountView pathname={accountView} />
 		</div>
-	)
+	);
 }

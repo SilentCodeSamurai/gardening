@@ -2853,117 +2853,109 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 																<ContextMenuSeparator />
 																{!isProvisionalSpatialId(nodeId) ? (
 																	hasDirectChildren ? (
-																			<>
-																				<ContextMenuSub>
-																					<ContextMenuSubTrigger>
-																						{detachMenuLabel}
-																					</ContextMenuSubTrigger>
-																					<ContextMenuSubContent>
-																						<ContextMenuItem
-																							onClick={() =>
-																								void handleDeleteNodeWithChildren(
-																									nodeId,
-																									"detach",
-																								).catch(() => {
-																									clearDraftById(
-																										nodeId,
-																									);
-																								})
-																							}
-																						>
-																							{
-																								detachOrRemoveSubLabels.withChildren
-																							}
-																						</ContextMenuItem>
-																						<ContextMenuItem
-																							onClick={() =>
-																								void handleDeleteNodeWithoutChildren(
-																									nodeId,
-																									"detach",
-																								).catch(() => {
-																									clearDraftById(
-																										nodeId,
-																									);
-																								})
-																							}
-																						>
-																							{
-																								detachOrRemoveSubLabels.withoutChildren
-																							}
-																						</ContextMenuItem>
-																					</ContextMenuSubContent>
-																				</ContextMenuSub>
-																				<ContextMenuSub>
-																					<ContextMenuSubTrigger className="text-destructive">
-																						{removeMenuLabel}
-																					</ContextMenuSubTrigger>
-																					<ContextMenuSubContent>
-																						<ContextMenuItem
-																							variant="destructive"
-																							onClick={() =>
-																								void handleDeleteNodeWithChildren(
-																									nodeId,
-																									"remove",
-																								).catch(() => {
-																									clearDraftById(
-																										nodeId,
-																									);
-																								})
-																							}
-																						>
-																							{
-																								detachOrRemoveSubLabels.withChildren
-																							}
-																						</ContextMenuItem>
-																						<ContextMenuItem
-																							variant="destructive"
-																							onClick={() =>
-																								void handleDeleteNodeWithoutChildren(
-																									nodeId,
-																									"remove",
-																								).catch(() => {
-																									clearDraftById(
-																										nodeId,
-																									);
-																								})
-																							}
-																						>
-																							{
-																								detachOrRemoveSubLabels.withoutChildren
-																							}
-																						</ContextMenuItem>
-																					</ContextMenuSubContent>
-																				</ContextMenuSub>
-																			</>
-																		) : (
-																			<>
-																				<ContextMenuItem
-																					onClick={() =>
-																						void handleDeleteNodeWithoutChildren(
-																							nodeId,
-																							"detach",
-																						).catch(() => {
-																							clearDraftById(nodeId);
-																						})
-																					}
-																				>
+																		<>
+																			<ContextMenuSub>
+																				<ContextMenuSubTrigger>
 																					{detachMenuLabel}
-																				</ContextMenuItem>
-																				<ContextMenuItem
-																					variant="destructive"
-																					onClick={() =>
-																						void handleDeleteNodeWithoutChildren(
-																							nodeId,
-																							"remove",
-																						).catch(() => {
-																							clearDraftById(nodeId);
-																						})
-																					}
-																				>
+																				</ContextMenuSubTrigger>
+																				<ContextMenuSubContent>
+																					<ContextMenuItem
+																						onClick={() =>
+																							void handleDeleteNodeWithChildren(
+																								nodeId,
+																								"detach",
+																							).catch(() => {
+																								clearDraftById(nodeId);
+																							})
+																						}
+																					>
+																						{
+																							detachOrRemoveSubLabels.withChildren
+																						}
+																					</ContextMenuItem>
+																					<ContextMenuItem
+																						onClick={() =>
+																							void handleDeleteNodeWithoutChildren(
+																								nodeId,
+																								"detach",
+																							).catch(() => {
+																								clearDraftById(nodeId);
+																							})
+																						}
+																					>
+																						{
+																							detachOrRemoveSubLabels.withoutChildren
+																						}
+																					</ContextMenuItem>
+																				</ContextMenuSubContent>
+																			</ContextMenuSub>
+																			<ContextMenuSub>
+																				<ContextMenuSubTrigger className="text-destructive">
 																					{removeMenuLabel}
-																				</ContextMenuItem>
-																			</>
-																		)
+																				</ContextMenuSubTrigger>
+																				<ContextMenuSubContent>
+																					<ContextMenuItem
+																						variant="destructive"
+																						onClick={() =>
+																							void handleDeleteNodeWithChildren(
+																								nodeId,
+																								"remove",
+																							).catch(() => {
+																								clearDraftById(nodeId);
+																							})
+																						}
+																					>
+																						{
+																							detachOrRemoveSubLabels.withChildren
+																						}
+																					</ContextMenuItem>
+																					<ContextMenuItem
+																						variant="destructive"
+																						onClick={() =>
+																							void handleDeleteNodeWithoutChildren(
+																								nodeId,
+																								"remove",
+																							).catch(() => {
+																								clearDraftById(nodeId);
+																							})
+																						}
+																					>
+																						{
+																							detachOrRemoveSubLabels.withoutChildren
+																						}
+																					</ContextMenuItem>
+																				</ContextMenuSubContent>
+																			</ContextMenuSub>
+																		</>
+																	) : (
+																		<>
+																			<ContextMenuItem
+																				onClick={() =>
+																					void handleDeleteNodeWithoutChildren(
+																						nodeId,
+																						"detach",
+																					).catch(() => {
+																						clearDraftById(nodeId);
+																					})
+																				}
+																			>
+																				{detachMenuLabel}
+																			</ContextMenuItem>
+																			<ContextMenuItem
+																				variant="destructive"
+																				onClick={() =>
+																					void handleDeleteNodeWithoutChildren(
+																						nodeId,
+																						"remove",
+																					).catch(() => {
+																						clearDraftById(nodeId);
+																					})
+																				}
+																			>
+																				{removeMenuLabel}
+																			</ContextMenuItem>
+																		</>
+																	)
 																) : null}
 															</>
 														);

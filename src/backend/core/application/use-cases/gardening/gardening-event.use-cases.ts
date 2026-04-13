@@ -149,7 +149,9 @@ export class GardeningEventDeleteManyUseCase extends BaseUseCase<
 		super();
 	}
 
-	protected async execute(input: GardeningEventDeleteManyUseCaseInput): Promise<GardeningEventDeleteManyUseCaseOutput> {
+	protected async execute(
+		input: GardeningEventDeleteManyUseCaseInput,
+	): Promise<GardeningEventDeleteManyUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "delete" });
 		const scope = input.context.activeWorkspaceScope;
 		return this.gardeningEventRepository.deleteMany({

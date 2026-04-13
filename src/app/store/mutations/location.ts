@@ -49,9 +49,8 @@ export function useLocationCreateMutation() {
 					updatedAt: new Date(),
 					objectStatus: QUERY_OBJECT_PENDING,
 				};
-				queryClient.setQueryData<CachedLocationList>(
-					queryKeys.location.all.queryKey,
-					(prev) => appendToItemsContainer(prev, pending),
+				queryClient.setQueryData<CachedLocationList>(queryKeys.location.all.queryKey, (prev) =>
+					appendToItemsContainer(prev, pending),
 				);
 				queryClient.setQueryData(queryKeys.location.detail(pending.id).queryKey, pending);
 				return { snapshots, pendingId };
@@ -70,18 +69,16 @@ export function useLocationCreateMutation() {
 			},
 			onSuccess: (entity, _vars, ctx) => {
 				if (ctx?.pendingId) {
-					queryClient.setQueryData<CachedLocationList>(
-						queryKeys.location.all.queryKey,
-						(prev) => replacePendingInItemsContainer(prev, ctx.pendingId as LocationEntity["id"], entity),
+					queryClient.setQueryData<CachedLocationList>(queryKeys.location.all.queryKey, (prev) =>
+						replacePendingInItemsContainer(prev, ctx.pendingId as LocationEntity["id"], entity),
 					);
 					queryClient.setQueryData(
 						queryKeys.location.detail(ctx.pendingId as LocationEntity["id"]).queryKey,
 						undefined,
 					);
 				} else {
-					queryClient.setQueryData<CachedLocationList>(
-						queryKeys.location.all.queryKey,
-						(prev) => replacePendingInItemsContainer(prev, entity.id, entity),
+					queryClient.setQueryData<CachedLocationList>(queryKeys.location.all.queryKey, (prev) =>
+						replacePendingInItemsContainer(prev, entity.id, entity),
 					);
 				}
 				queryClient.setQueryData(queryKeys.location.detail(entity.id).queryKey, entity);
@@ -115,9 +112,8 @@ export function useLocationUpdateMutation() {
 						id: base.id,
 						updatedAt: new Date(),
 					});
-					queryClient.setQueryData<CachedLocationList>(
-						queryKeys.location.all.queryKey,
-						(prev) => upsertInItemsContainer(prev, optimistic),
+					queryClient.setQueryData<CachedLocationList>(queryKeys.location.all.queryKey, (prev) =>
+						upsertInItemsContainer(prev, optimistic),
 					);
 					queryClient.setQueryData(queryKeys.location.detail(variables.id).queryKey, optimistic);
 				}
@@ -131,9 +127,8 @@ export function useLocationUpdateMutation() {
 				toast.error(m.collections_location_actionError());
 			},
 			onSuccess: (entity) => {
-				queryClient.setQueryData<CachedLocationList>(
-					queryKeys.location.all.queryKey,
-					(prev) => upsertInItemsContainer(prev, entity),
+				queryClient.setQueryData<CachedLocationList>(queryKeys.location.all.queryKey, (prev) =>
+					upsertInItemsContainer(prev, entity),
 				);
 				queryClient.setQueryData(queryKeys.location.detail(entity.id).queryKey, entity);
 				toast.success(m.collections_location_updateSuccess());
@@ -164,9 +159,8 @@ export function useLocationDeleteMutation() {
 				const previousAll = snapshots[0]?.data as CachedLocationList | undefined;
 				const row = previousAll?.items.find((item) => String(item.id) === String(variables.id));
 				if (isQueryObjectPending(row)) return { snapshots, treeQueries };
-				queryClient.setQueryData<CachedLocationList>(
-					queryKeys.location.all.queryKey,
-					(prev) => removeFromItemsContainer(prev, variables.id),
+				queryClient.setQueryData<CachedLocationList>(queryKeys.location.all.queryKey, (prev) =>
+					removeFromItemsContainer(prev, variables.id),
 				);
 				queryClient.setQueryData(queryKeys.location.detail(variables.id).queryKey, undefined);
 				const previousSpatial = snapshots[2]?.data as ItemsContainer<SpatialNodeEntity> | undefined;
@@ -195,9 +189,8 @@ export function useLocationDeleteMutation() {
 				toast.error(m.collections_location_actionError());
 			},
 			onSuccess: (deletedId) => {
-				queryClient.setQueryData<CachedLocationList>(
-					queryKeys.location.all.queryKey,
-					(prev) => dropPendingInItemsContainer(prev, deletedId),
+				queryClient.setQueryData<CachedLocationList>(queryKeys.location.all.queryKey, (prev) =>
+					dropPendingInItemsContainer(prev, deletedId),
 				);
 				queryClient.setQueryData(queryKeys.location.detail(deletedId).queryKey, undefined);
 				toast.success(m.collections_location_deleteSuccess());
@@ -262,9 +255,8 @@ export function useLocationDeleteManyMutation() {
 				toast.error(m.collections_location_actionError());
 			},
 			onSuccess: (result) => {
-				queryClient.setQueryData<CachedLocationList>(
-					queryKeys.location.all.queryKey,
-					(prev) => dropPendingManyInItemsContainer(prev, result.deletedIds),
+				queryClient.setQueryData<CachedLocationList>(queryKeys.location.all.queryKey, (prev) =>
+					dropPendingManyInItemsContainer(prev, result.deletedIds),
 				);
 				for (const deletedId of result.deletedIds) {
 					void queryClient.invalidateQueries({

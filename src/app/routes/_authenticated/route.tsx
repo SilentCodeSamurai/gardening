@@ -34,7 +34,7 @@ function MainOutletShell({ children }: { children: ReactNode }) {
 		>
 			{children}
 		</div>
-	)
+	);
 }
 
 export const Route = createFileRoute("/_authenticated")({
@@ -44,7 +44,7 @@ export const Route = createFileRoute("/_authenticated")({
 		// `matchStores`, so both flags are often false — `getAuthSession` is deduped briefly on the client
 		// (see `get-auth-session.ts`) and `defaultPreloadStaleTime` limits repeat preloads.
 		if (preload || cause === "preload") {
-			return
+			return;
 		}
 		const session = await getAuthSession();
 		if (!session) {
@@ -52,7 +52,7 @@ export const Route = createFileRoute("/_authenticated")({
 				to: "/auth/$authView",
 				params: { authView: "sign-in" },
 				search: { redirect: location.pathname },
-			})
+			});
 		}
 	},
 	component: AuthenticatedLayout,
@@ -72,5 +72,5 @@ function AuthenticatedLayout() {
 				</MainOutletShell>
 			</SidebarInset>
 		</SidebarProvider>
-	)
+	);
 }

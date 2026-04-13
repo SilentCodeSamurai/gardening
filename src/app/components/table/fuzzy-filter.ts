@@ -11,4 +11,4 @@ export const fuzzyFilter = ((row, columnId, value, addMeta) => {
 	addMeta({ itemRank });
 	return itemRank.passed;
 	// biome-ignore lint/suspicious/noExplicitAny: shared TanStack FilterFn for all row types
-}) as FilterFn<any>; 
+}) as FilterFn<any>;

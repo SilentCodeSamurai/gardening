@@ -89,10 +89,7 @@ function PublicHomePage() {
 									{m.landing_signIn()}
 								</Link>
 							</Button>
-							<Button
-								className="bg-primary text-primary-foreground shadow-md shadow-primary/15"
-								asChild
-							>
+							<Button className="bg-primary text-primary-foreground shadow-md shadow-primary/15" asChild>
 								<Link to="/auth/$authView" params={{ authView: "sign-up" }}>
 									{m.landing_signUp()}
 								</Link>
@@ -154,7 +151,9 @@ function PublicHomePage() {
 						<p className="mb-5 max-w-prose text-muted-foreground text-sm">{m.landing_previewHint()}</p>
 					</SignedOut>
 					<SignedIn>
-						<p className="mb-5 max-w-prose text-muted-foreground text-sm">{m.landing_previewHintSignedIn()}</p>
+						<p className="mb-5 max-w-prose text-muted-foreground text-sm">
+							{m.landing_previewHintSignedIn()}
+						</p>
 					</SignedIn>
 					<ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
 						<LandingPreviewLink

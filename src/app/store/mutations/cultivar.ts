@@ -53,9 +53,8 @@ export function useCultivarCreateMutation() {
 					updatedAt: new Date(),
 					objectStatus: QUERY_OBJECT_PENDING,
 				};
-				queryClient.setQueryData<CachedCultivarList>(
-					queryKeys.cultivar.all.queryKey,
-					(prev) => appendToItemsContainer(prev, pending),
+				queryClient.setQueryData<CachedCultivarList>(queryKeys.cultivar.all.queryKey, (prev) =>
+					appendToItemsContainer(prev, pending),
 				);
 				queryClient.setQueryData(queryKeys.cultivar.detail(pending.id).queryKey, pending);
 				return { snapshots, pendingId };
@@ -68,18 +67,16 @@ export function useCultivarCreateMutation() {
 			},
 			onSuccess: async (entity, _vars, ctx) => {
 				if (ctx?.pendingId) {
-					queryClient.setQueryData<CachedCultivarList>(
-						queryKeys.cultivar.all.queryKey,
-						(prev) => replacePendingInItemsContainer(prev, ctx.pendingId as CultivarEntityId, entity),
+					queryClient.setQueryData<CachedCultivarList>(queryKeys.cultivar.all.queryKey, (prev) =>
+						replacePendingInItemsContainer(prev, ctx.pendingId as CultivarEntityId, entity),
 					);
 					queryClient.setQueryData(
 						queryKeys.cultivar.detail(ctx.pendingId as CultivarEntity["id"]).queryKey,
 						undefined,
 					);
 				} else {
-					queryClient.setQueryData<CachedCultivarList>(
-						queryKeys.cultivar.all.queryKey,
-						(prev) => replacePendingInItemsContainer(prev, entity.id, entity),
+					queryClient.setQueryData<CachedCultivarList>(queryKeys.cultivar.all.queryKey, (prev) =>
+						replacePendingInItemsContainer(prev, entity.id, entity),
 					);
 				}
 				queryClient.setQueryData(queryKeys.cultivar.detail(entity.id).queryKey, entity);
@@ -101,9 +98,7 @@ export function useCultivarUpdateMutation() {
 					queryKeys.cultivar.all.queryKey,
 					queryKeys.cultivar.detail(variables.id).queryKey,
 				]);
-				const previousAll = snapshots[0]?.data as
-					| CachedCultivarList
-					| undefined;
+				const previousAll = snapshots[0]?.data as CachedCultivarList | undefined;
 				const previousDetail = snapshots[1]?.data as CachedCultivar | undefined;
 				const base =
 					previousDetail ??
@@ -117,9 +112,8 @@ export function useCultivarUpdateMutation() {
 						speciesId: (variables.speciesId ?? base.speciesId) as CultivarEntity["speciesId"],
 						updatedAt: new Date(),
 					});
-					queryClient.setQueryData<CachedCultivarList>(
-						queryKeys.cultivar.all.queryKey,
-						(prev) => upsertInItemsContainer(prev, optimistic),
+					queryClient.setQueryData<CachedCultivarList>(queryKeys.cultivar.all.queryKey, (prev) =>
+						upsertInItemsContainer(prev, optimistic),
 					);
 					queryClient.setQueryData(queryKeys.cultivar.detail(variables.id).queryKey, optimistic);
 				}
@@ -133,36 +127,32 @@ export function useCultivarUpdateMutation() {
 				toast.error(m.collections_cultivar_actionError());
 			},
 			onSuccess: async (entity) => {
-				queryClient.setQueryData<CachedCultivarList>(
-					queryKeys.cultivar.all.queryKey,
-					(prev) => upsertInItemsContainer(prev, entity),
+				queryClient.setQueryData<CachedCultivarList>(queryKeys.cultivar.all.queryKey, (prev) =>
+					upsertInItemsContainer(prev, entity),
 				);
 				queryClient.setQueryData(queryKeys.cultivar.detail(entity.id).queryKey, entity);
-				queryClient.setQueryData<CachedHydratedPlantList>(
-					queryKeys.plant.all.queryKey,
-					(prev) => {
-						if (!prev) return prev;
-						const speciesById = new Map<string, SpeciesWithSystemCatalog>(
-							(queryClient.getQueryData<CachedSpeciesList>(queryKeys.species.all.queryKey)?.items ?? []).map(
-								(species) => [String(species.id), species] as const,
-							),
-						);
-						return {
-							...prev,
-							items: prev.items.map((plant) => {
-								if (String(plant.cultivar.id) !== String(entity.id)) return plant;
-								const nextSpecies = speciesById.get(String(entity.speciesId)) ?? plant.cultivar.species;
-								return {
-									...plant,
-									cultivar: {
-										...entity,
-										species: nextSpecies,
-									},
-								};
-							}),
-						};
-					},
-				);
+				queryClient.setQueryData<CachedHydratedPlantList>(queryKeys.plant.all.queryKey, (prev) => {
+					if (!prev) return prev;
+					const speciesById = new Map<string, SpeciesWithSystemCatalog>(
+						(queryClient.getQueryData<CachedSpeciesList>(queryKeys.species.all.queryKey)?.items ?? []).map(
+							(species) => [String(species.id), species] as const,
+						),
+					);
+					return {
+						...prev,
+						items: prev.items.map((plant) => {
+							if (String(plant.cultivar.id) !== String(entity.id)) return plant;
+							const nextSpecies = speciesById.get(String(entity.speciesId)) ?? plant.cultivar.species;
+							return {
+								...plant,
+								cultivar: {
+									...entity,
+									species: nextSpecies,
+								},
+							};
+						}),
+					};
+				});
 				await refreshCultivarFullByIdIfCached(queryClient, entity.id);
 				toast.success(m.collections_cultivar_updateSuccess());
 			},
@@ -181,14 +171,11 @@ export function useCultivarDeleteMutation() {
 					queryKeys.cultivar.all.queryKey,
 					queryKeys.cultivar.detail(variables.id).queryKey,
 				]);
-				const previousAll = snapshots[0]?.data as
-					| CachedCultivarList
-					| undefined;
+				const previousAll = snapshots[0]?.data as CachedCultivarList | undefined;
 				const row = previousAll?.items.find((item) => String(item.id) === String(variables.id));
 				if (isQueryObjectPending(row)) return { snapshots };
-				queryClient.setQueryData<CachedCultivarList>(
-					queryKeys.cultivar.all.queryKey,
-					(prev) => removeFromItemsContainer(prev, variables.id),
+				queryClient.setQueryData<CachedCultivarList>(queryKeys.cultivar.all.queryKey, (prev) =>
+					removeFromItemsContainer(prev, variables.id),
 				);
 				queryClient.setQueryData(queryKeys.cultivar.detail(variables.id).queryKey, undefined);
 				queryClient.setQueryData(queryKeys.cultivar.fullById(variables.id).queryKey, undefined);
@@ -202,9 +189,8 @@ export function useCultivarDeleteMutation() {
 				toast.error(m.collections_cultivar_actionError());
 			},
 			onSuccess: (deletedId) => {
-				queryClient.setQueryData<CachedCultivarList>(
-					queryKeys.cultivar.all.queryKey,
-					(prev) => dropPendingInItemsContainer(prev, deletedId),
+				queryClient.setQueryData<CachedCultivarList>(queryKeys.cultivar.all.queryKey, (prev) =>
+					dropPendingInItemsContainer(prev, deletedId),
 				);
 				queryClient.setQueryData(queryKeys.cultivar.detail(deletedId).queryKey, undefined);
 				queryClient.setQueryData(queryKeys.cultivar.fullById(deletedId).queryKey, undefined);

@@ -36,7 +36,7 @@ function OnActiveOrganizationChange() {
 			previousOrganizationId.current = activeOrganizationId;
 			queryClient.invalidateQueries();
 			router.navigate({ to: "/dashboard" });
-		}			
+		}
 	}, [activeOrganizationId, activeOrganizationPending, queryClient, router]);
 
 	return null;

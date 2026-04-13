@@ -40,7 +40,12 @@ function AuthViewRoute() {
 					)}
 				>
 					Powered by{" "}
-					<a className="text-primary underline" href="https://better-auth.com" target="_blank" rel="noreferrer">
+					<a
+						className="text-primary underline"
+						href="https://better-auth.com"
+						target="_blank"
+						rel="noreferrer"
+					>
 						better-auth
 					</a>
 					.

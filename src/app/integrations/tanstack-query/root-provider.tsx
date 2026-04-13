@@ -7,7 +7,6 @@ export function getContext() {
 				gcTime: 1 * 60 * 60 * 1000, // 1 hour
 				staleTime: 1 * 60 * 60 * 1000, // 1 hour
 			},
-			
 		},
 	});
 

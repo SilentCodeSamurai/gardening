@@ -41,10 +41,9 @@ export function useSpatialNodeCreateMutation() {
 					updatedAt: new Date(),
 					objectStatus: QUERY_OBJECT_PENDING,
 				};
-				queryClient.setQueryData<CachedSpatialNodeList>(
-					queryKeys.spatial.allNodes.queryKey,
-					(prev) => ({ items: [...(prev?.items ?? []), pending] }),
-				);
+				queryClient.setQueryData<CachedSpatialNodeList>(queryKeys.spatial.allNodes.queryKey, (prev) => ({
+					items: [...(prev?.items ?? []), pending],
+				}));
 				for (const [key, tree] of treeQueries) {
 					if (!tree) continue;
 					const parentId = variables.parentId ? String(variables.parentId) : null;
@@ -63,20 +62,16 @@ export function useSpatialNodeCreateMutation() {
 			},
 			onSuccess: (entity, _vars, ctx) => {
 				if (ctx?.pendingId) {
-					queryClient.setQueryData<CachedSpatialNodeList>(
-						queryKeys.spatial.allNodes.queryKey,
-						(prev) => {
-							if (!prev) return prev;
-							return {
-								items: prev.items.filter((item) => String(item.id) !== String(ctx.pendingId)),
-							};
-						},
-					);
+					queryClient.setQueryData<CachedSpatialNodeList>(queryKeys.spatial.allNodes.queryKey, (prev) => {
+						if (!prev) return prev;
+						return {
+							items: prev.items.filter((item) => String(item.id) !== String(ctx.pendingId)),
+						};
+					});
 				}
-				queryClient.setQueryData<CachedSpatialNodeList>(
-					queryKeys.spatial.allNodes.queryKey,
-					(prev) => ({ items: [...(prev?.items ?? []), entity] }),
-				);
+				queryClient.setQueryData<CachedSpatialNodeList>(queryKeys.spatial.allNodes.queryKey, (prev) => ({
+					items: [...(prev?.items ?? []), entity],
+				}));
 
 				const treeQueries = queryClient.getQueriesData<SpatialNodeTreeNode>({
 					queryKey: queryKeys.spatial.tree._def,

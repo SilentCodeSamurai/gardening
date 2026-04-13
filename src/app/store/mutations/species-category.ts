@@ -8,10 +8,7 @@ import * as m from "@/paraglide/messages.js";
 import { useActiveWorkspaceKey } from "@/store/active-workspace-key";
 import { appendToItemsContainer, removeFromItemsContainer, upsertInItemsContainer } from "@/store/cache-utils";
 import { queryKeys } from "@/store/keys";
-import type {
-	CachedSpeciesCategoryList,
-	CachedSpeciesCategoryWithSystemCatalog,
-} from "@/store/query-cache-types";
+import type { CachedSpeciesCategoryList, CachedSpeciesCategoryWithSystemCatalog } from "@/store/query-cache-types";
 import { isQueryObjectPending, markQueryObjectPending, QUERY_OBJECT_PENDING } from "@/store/query-object-status";
 import {
 	cancelQueriesByKeys,
@@ -43,9 +40,8 @@ export function useSpeciesCategoryCreateMutation() {
 					updatedAt: new Date(),
 					objectStatus: QUERY_OBJECT_PENDING,
 				};
-				queryClient.setQueryData<CachedSpeciesCategoryList>(
-					queryKeys.speciesCategory.all.queryKey,
-					(prev) => appendToItemsContainer(prev, pending),
+				queryClient.setQueryData<CachedSpeciesCategoryList>(queryKeys.speciesCategory.all.queryKey, (prev) =>
+					appendToItemsContainer(prev, pending),
 				);
 				queryClient.setQueryData(queryKeys.speciesCategory.detail(pending.id).queryKey, pending);
 				return { snapshots, pendingId };
@@ -103,12 +99,8 @@ export function useSpeciesCategoryUpdateMutation() {
 					queryKeys.speciesCategory.all.queryKey,
 					queryKeys.speciesCategory.detail(variables.id).queryKey,
 				]);
-				const previousAll = snapshots[0]?.data as
-					| CachedSpeciesCategoryList
-					| undefined;
-				const previousDetail = snapshots[1]?.data as
-					| CachedSpeciesCategoryWithSystemCatalog
-					| undefined;
+				const previousAll = snapshots[0]?.data as CachedSpeciesCategoryList | undefined;
+				const previousDetail = snapshots[1]?.data as CachedSpeciesCategoryWithSystemCatalog | undefined;
 				const base =
 					previousDetail ??
 					previousAll?.items.find((item) => String(item.id) === String(variables.id)) ??
@@ -136,9 +128,8 @@ export function useSpeciesCategoryUpdateMutation() {
 				toast.error(m.collections_speciesCategory_actionError());
 			},
 			onSuccess: (entity) => {
-				queryClient.setQueryData<CachedSpeciesCategoryList>(
-					queryKeys.speciesCategory.all.queryKey,
-					(prev) => upsertInItemsContainer(prev, entity),
+				queryClient.setQueryData<CachedSpeciesCategoryList>(queryKeys.speciesCategory.all.queryKey, (prev) =>
+					upsertInItemsContainer(prev, entity),
 				);
 				queryClient.setQueryData(queryKeys.speciesCategory.detail(entity.id).queryKey, entity);
 				toast.success(m.collections_speciesCategory_updateSuccess());
@@ -158,14 +149,11 @@ export function useSpeciesCategoryDeleteMutation() {
 					queryKeys.speciesCategory.all.queryKey,
 					queryKeys.speciesCategory.detail(variables.id).queryKey,
 				]);
-				const previousAll = snapshots[0]?.data as
-					| CachedSpeciesCategoryList
-					| undefined;
+				const previousAll = snapshots[0]?.data as CachedSpeciesCategoryList | undefined;
 				const row = previousAll?.items.find((item) => String(item.id) === String(variables.id));
 				if (isQueryObjectPending(row)) return { snapshots };
-				queryClient.setQueryData<CachedSpeciesCategoryList>(
-					queryKeys.speciesCategory.all.queryKey,
-					(prev) => removeFromItemsContainer(prev, variables.id),
+				queryClient.setQueryData<CachedSpeciesCategoryList>(queryKeys.speciesCategory.all.queryKey, (prev) =>
+					removeFromItemsContainer(prev, variables.id),
 				);
 				queryClient.setQueryData(queryKeys.speciesCategory.detail(variables.id).queryKey, undefined);
 				return { snapshots };
@@ -178,9 +166,8 @@ export function useSpeciesCategoryDeleteMutation() {
 				toast.error(m.collections_speciesCategory_actionError());
 			},
 			onSuccess: (deletedId) => {
-				queryClient.setQueryData<CachedSpeciesCategoryList>(
-					queryKeys.speciesCategory.all.queryKey,
-					(prev) => dropPendingInItemsContainer(prev, deletedId),
+				queryClient.setQueryData<CachedSpeciesCategoryList>(queryKeys.speciesCategory.all.queryKey, (prev) =>
+					dropPendingInItemsContainer(prev, deletedId),
 				);
 				queryClient.setQueryData(queryKeys.speciesCategory.detail(deletedId).queryKey, undefined);
 				toast.success(m.collections_speciesCategory_deleteSuccess());

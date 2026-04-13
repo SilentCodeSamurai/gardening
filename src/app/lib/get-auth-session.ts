@@ -24,9 +24,7 @@ export function resetClientAuthSessionGuardCache(): void {
 
 const resolveAuthSession = createIsomorphicFn()
 	.server(async (): Promise<SessionResult> => {
-		const { betterAuthBackendClient } = await import(
-			"@backend/infrastructure/integrations/better-auth/client"
-		);
+		const { betterAuthBackendClient } = await import("@backend/infrastructure/integrations/better-auth/client");
 		const headers = getRequestHeaders();
 		const session = await betterAuthBackendClient.api.getSession({ headers });
 		const user = session?.user;
