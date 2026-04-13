@@ -23,7 +23,9 @@ export function transformApplicationErrorToOrpc(error: unknown): never {
 		defined: true,
 		message: error.message,
 		data: {
+			discriminator: error.discriminator,
 			applicationCode: error.code,
+			i18nMessageKey: error.i18nMessageKey,
 			source: error.source,
 			data: error.data,
 		},

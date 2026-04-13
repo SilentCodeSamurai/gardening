@@ -91,6 +91,7 @@ export class PlantCreateManyUseCase extends BaseUseCase<PlantCreateManyUseCaseIn
 			throw new UseCaseValidationError({
 				useCaseName: "PlantCreateManyUseCase",
 				validationCode: "invalid-rows",
+				i18nMessageKey: "errors_application_plant_create_many_invalid_rows",
 				context: { rowCount: input.dto.rows.length },
 				details: { minAllowed: 1 },
 				message: "createMany rows must be at least 1.",
@@ -178,6 +179,7 @@ export class PlantDeleteUseCasePlacedEntityError extends BaseUseCaseError {
 	constructor(params: { id: string }) {
 		super({
 			message: "This plant is placed. Remove it in the editor first.",
+			i18nMessageKey: "errors_application_plant_delete_placed",
 			useCaseName: "PlantDeleteUseCase",
 			context: params,
 		});
@@ -188,6 +190,7 @@ export class PlantDeleteManyUseCasePlacedEntityError extends BaseUseCaseError {
 	constructor(params: { ids: string[] }) {
 		super({
 			message: "The selection includes placed items. Remove them in the editor first.",
+			i18nMessageKey: "errors_application_plant_delete_many_placed",
 			useCaseName: "PlantDeleteManyUseCase",
 			context: params,
 		});
@@ -248,6 +251,7 @@ export class PlantDeleteManyUseCase extends TransactionalUseCase<
 			throw new UseCaseValidationError({
 				useCaseName: "PlantDeleteManyUseCase",
 				validationCode: "invalid-ids",
+				i18nMessageKey: "errors_application_plant_delete_many_invalid_ids",
 				context: { idCount: input.dto.ids.length },
 				details: { minAllowed: 1 },
 				message: "deleteMany ids must be at least 1.",
@@ -271,6 +275,7 @@ export class PlantDeleteManyUseCase extends TransactionalUseCase<
 			throw new UseCaseValidationError({
 				useCaseName: "PlantDeleteManyUseCase",
 				validationCode: "partial-delete",
+				i18nMessageKey: "errors_application_plant_delete_many_partial_delete",
 				context: { requested: input.dto.ids.length, deleted: count },
 				message: "deleteMany removed fewer rows than requested.",
 			});

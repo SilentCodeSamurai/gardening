@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import type { SpeciesCategoryWithSystemCatalog } from "#/backend/core/application/use-cases/gardening/species-category.use-cases";
 import { orpc } from "@/orpc/client";
 import * as m from "@/paraglide/messages.js";
+import { renderError } from "@/lib/render-error";
 
 import { useActiveWorkspaceKey } from "@/store/active-workspace-key";
 import { appendToItemsContainer, removeFromItemsContainer, upsertInItemsContainer } from "@/store/cache-utils";
@@ -46,7 +47,7 @@ export function useSpeciesCategoryCreateMutation() {
 				queryClient.setQueryData(queryKeys.speciesCategory.detail(pending.id).queryKey, pending);
 				return { snapshots, pendingId };
 			},
-			onError: (_e, _vars, ctx) => {
+			onError: (error, _vars, ctx) => {
 				if (!ctx) return;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
 				if (ctx.pendingId) {
@@ -56,8 +57,7 @@ export function useSpeciesCategoryCreateMutation() {
 						undefined,
 					);
 				}
-				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m.collections_speciesCategory_actionError());
+				toast.error(renderError(error, m.collections_speciesCategory_actionError()));
 			},
 			onSuccess: (entity, _vars, ctx) => {
 				if (ctx?.pendingId) {
@@ -120,12 +120,11 @@ export function useSpeciesCategoryUpdateMutation() {
 				}
 				return { snapshots };
 			},
-			onError: (_e, variables, ctx) => {
+			onError: (error, variables, ctx) => {
 				if (!ctx) return;
 				void variables;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
-				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m.collections_speciesCategory_actionError());
+				toast.error(renderError(error, m.collections_speciesCategory_actionError()));
 			},
 			onSuccess: (entity) => {
 				queryClient.setQueryData<CachedSpeciesCategoryList>(queryKeys.speciesCategory.all.queryKey, (prev) =>
@@ -158,12 +157,12 @@ export function useSpeciesCategoryDeleteMutation() {
 				queryClient.setQueryData(queryKeys.speciesCategory.detail(variables.id).queryKey, undefined);
 				return { snapshots };
 			},
-			onError: (_e, variables, ctx) => {
+			onError: (error, variables, ctx) => {
 				if (!ctx) return;
 				void variables;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
 				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m.collections_speciesCategory_actionError());
+				toast.error(renderError(error, m.collections_speciesCategory_actionError()));
 			},
 			onSuccess: (deletedId) => {
 				queryClient.setQueryData<CachedSpeciesCategoryList>(queryKeys.speciesCategory.all.queryKey, (prev) =>

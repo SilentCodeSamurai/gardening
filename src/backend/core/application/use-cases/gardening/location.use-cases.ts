@@ -121,6 +121,7 @@ export class LocationDeleteUseCasePlacedEntityError extends BaseUseCaseError {
 	constructor(params: { id: string }) {
 		super({
 			message: "This location is placed. Remove it in the editor first.",
+			i18nMessageKey: "errors_application_location_delete_placed",
 			useCaseName: "LocationDeleteUseCase",
 			context: params,
 		});
@@ -131,6 +132,7 @@ export class LocationDeleteManyUseCasePlacedEntityError extends BaseUseCaseError
 	constructor(params: { ids: string[] }) {
 		super({
 			message: "The selection includes placed items. Remove them in the editor first.",
+			i18nMessageKey: "errors_application_location_delete_many_placed",
 			useCaseName: "LocationDeleteManyUseCase",
 			context: params,
 		});
@@ -195,6 +197,7 @@ export class LocationDeleteManyUseCase extends TransactionalUseCase<
 			throw new UseCaseValidationError({
 				useCaseName: "LocationDeleteManyUseCase",
 				validationCode: "invalid-ids",
+				i18nMessageKey: "errors_application_location_delete_many_invalid_ids",
 				context: { idCount: input.dto.ids.length },
 				details: { minAllowed: 1 },
 				message: "deleteMany ids must be at least 1.",
@@ -218,6 +221,7 @@ export class LocationDeleteManyUseCase extends TransactionalUseCase<
 			throw new UseCaseValidationError({
 				useCaseName: "LocationDeleteManyUseCase",
 				validationCode: "partial-delete",
+				i18nMessageKey: "errors_application_location_delete_many_partial_delete",
 				context: { requested: input.dto.ids.length, deleted: count },
 				message: "deleteMany removed fewer rows than requested.",
 			});

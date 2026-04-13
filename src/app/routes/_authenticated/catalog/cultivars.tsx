@@ -54,6 +54,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { translateCatalogField } from "@/lib/translate-catalog-field";
+import { renderError } from "@/lib/render-error";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import { useCultivarDeleteMutation } from "@/store/mutations";
@@ -133,7 +134,7 @@ function reconcileCultivarColumnFilters(
 
 function CultivarsPage() {
 	const { category: categoryFromSearch, species: speciesFromSearch } = Route.useSearch();
-	const { data, isPending, isError } = useQuery({ ...queryKeys.cultivar.all });
+	const { data, isPending, isError, error } = useQuery({ ...queryKeys.cultivar.all });
 	const { data: speciesData } = useQuery({ ...queryKeys.species.all });
 	const { data: categoriesData } = useQuery({ ...queryKeys.speciesCategory.all });
 
@@ -545,7 +546,7 @@ function CultivarsPage() {
 						table={table}
 						isPending={isPending}
 						isError={isError}
-						errorMessage={m.common_loadError()}
+						errorMessage={renderError(error, m.common_loadError())}
 						emptyMessage={emptyMessage}
 						highlightPendingRows
 					/>

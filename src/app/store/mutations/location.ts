@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { orpc } from "@/orpc/client";
 import * as m from "@/paraglide/messages.js";
+import { renderError } from "@/lib/render-error";
 
 import { useActiveWorkspaceKey } from "@/store/active-workspace-key";
 import {
@@ -55,7 +56,7 @@ export function useLocationCreateMutation() {
 				queryClient.setQueryData(queryKeys.location.detail(pending.id).queryKey, pending);
 				return { snapshots, pendingId };
 			},
-			onError: (_e, _vars, ctx) => {
+			onError: (error, _vars, ctx) => {
 				if (!ctx) return;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
 				if (ctx.pendingId) {
@@ -64,8 +65,7 @@ export function useLocationCreateMutation() {
 						undefined,
 					);
 				}
-				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m.collections_location_actionError());
+				toast.error(renderError(error, m.collections_location_actionError()));
 			},
 			onSuccess: (entity, _vars, ctx) => {
 				if (ctx?.pendingId) {
@@ -119,12 +119,11 @@ export function useLocationUpdateMutation() {
 				}
 				return { snapshots };
 			},
-			onError: (_e, variables, ctx) => {
+			onError: (error, variables, ctx) => {
 				if (!ctx) return;
 				void variables;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
-				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m.collections_location_actionError());
+				toast.error(renderError(error, m.collections_location_actionError()));
 			},
 			onSuccess: (entity) => {
 				queryClient.setQueryData<CachedLocationList>(queryKeys.location.all.queryKey, (prev) =>
@@ -176,7 +175,7 @@ export function useLocationDeleteMutation() {
 				}
 				return { snapshots, treeQueries };
 			},
-			onError: (_e, variables, ctx) => {
+			onError: (error, variables, ctx) => {
 				if (!ctx) return;
 				void variables;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
@@ -185,8 +184,7 @@ export function useLocationDeleteMutation() {
 						queryClient.setQueryData(key, value);
 					}
 				}
-				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m.collections_location_actionError());
+				toast.error(renderError(error, m.collections_location_actionError()));
 			},
 			onSuccess: (deletedId) => {
 				queryClient.setQueryData<CachedLocationList>(queryKeys.location.all.queryKey, (prev) =>
@@ -242,7 +240,7 @@ export function useLocationDeleteManyMutation() {
 				}
 				return { snapshots, treeQueries };
 			},
-			onError: (_e, variables, ctx) => {
+			onError: (error, variables, ctx) => {
 				if (!ctx) return;
 				void variables;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
@@ -251,8 +249,7 @@ export function useLocationDeleteManyMutation() {
 						queryClient.setQueryData(key, value);
 					}
 				}
-				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m.collections_location_actionError());
+				toast.error(renderError(error, m.collections_location_actionError()));
 			},
 			onSuccess: (result) => {
 				queryClient.setQueryData<CachedLocationList>(queryKeys.location.all.queryKey, (prev) =>

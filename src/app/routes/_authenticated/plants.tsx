@@ -62,6 +62,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { getPlantPlacementSummary, plantPlacementFilterToken } from "@/lib/spatial-placement-summary";
+import { renderError } from "@/lib/render-error";
 import { tableSelectionBulkTooltip } from "@/lib/table-selection-tooltips";
 import { translateCatalogField } from "@/lib/translate-catalog-field";
 import * as m from "@/paraglide/messages.js";
@@ -187,7 +188,7 @@ function PlantsPage() {
 		species: speciesFromSearch,
 		cultivar: cultivarFromSearch,
 	} = Route.useSearch();
-	const { data, isPending, isError } = useQuery({ ...queryKeys.plant.all });
+	const { data, isPending, isError, error } = useQuery({ ...queryKeys.plant.all });
 	const { data: spatialData } = useQuery({
 		...queryKeys.spatial.allNodes,
 		placeholderData: (previous) => previous,
@@ -888,7 +889,7 @@ function PlantsPage() {
 						table={table}
 						isPending={isPending}
 						isError={isError}
-						errorMessage={m.common_loadError()}
+						errorMessage={renderError(error, m.common_loadError())}
 						emptyMessage={emptyMessage}
 						highlightPendingRows
 						selectedActions={

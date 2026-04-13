@@ -16,6 +16,7 @@ export class RepositoryNotFoundError extends BaseRepositoryError {
 		super({
 			code: "NOT_FOUND",
 			message: `Not found: ${params.resource} ${JSON.stringify(params.context ?? {})}`,
+			i18nMessageKey: "errors_application_repository_not_found",
 			context: params.context,
 		});
 		this.resource = params.resource;
@@ -33,6 +34,7 @@ export class RepositoryConflictError extends BaseRepositoryError {
 		participants?: RepositoryParticipant[];
 		context?: Record<string, unknown>;
 		message?: string;
+		i18nMessageKey?: string;
 		cause?: unknown;
 	}) {
 		super({
@@ -40,6 +42,7 @@ export class RepositoryConflictError extends BaseRepositoryError {
 			message:
 				params.message ??
 				`Conflict: ${params.operation} ${params.reason} ${JSON.stringify(params.context ?? {})}`,
+			i18nMessageKey: params.i18nMessageKey ?? "errors_application_repository_conflict",
 			context: params.context,
 			cause: params.cause,
 		});
@@ -63,6 +66,7 @@ export abstract class BaseRepositoryErrors {
 		participants?: RepositoryParticipant[];
 		context?: Record<string, unknown>;
 		message?: string;
+		i18nMessageKey?: string;
 		cause?: unknown;
 	}): never {
 		throw new RepositoryConflictError(params);

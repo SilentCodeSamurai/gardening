@@ -13,6 +13,7 @@ export class SubjectKeyValidationError extends ApplicationError {
 		super({
 			code: "VALIDATION",
 			message: message,
+			i18nMessageKey: "errors_application_subject_key_validation",
 			source: "SubjectKeyValidationError",
 		});
 	}

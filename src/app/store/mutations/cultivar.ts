@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import type { SpeciesWithSystemCatalog } from "#/backend/core/application/use-cases/gardening/species.use-cases";
 import { orpc } from "@/orpc/client";
 import * as m from "@/paraglide/messages.js";
+import { renderError } from "@/lib/render-error";
 
 import { useActiveWorkspaceKey } from "@/store/active-workspace-key";
 import { appendToItemsContainer, removeFromItemsContainer, upsertInItemsContainer } from "@/store/cache-utils";
@@ -59,11 +60,10 @@ export function useCultivarCreateMutation() {
 				queryClient.setQueryData(queryKeys.cultivar.detail(pending.id).queryKey, pending);
 				return { snapshots, pendingId };
 			},
-			onError: (_e, _vars, ctx) => {
+			onError: (error, _vars, ctx) => {
 				if (!ctx) return;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
-				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m.collections_cultivar_actionError());
+				toast.error(renderError(error, m.collections_cultivar_actionError()));
 			},
 			onSuccess: async (entity, _vars, ctx) => {
 				if (ctx?.pendingId) {
@@ -119,12 +119,11 @@ export function useCultivarUpdateMutation() {
 				}
 				return { snapshots };
 			},
-			onError: (_e, variables, ctx) => {
+			onError: (error, variables, ctx) => {
 				if (!ctx) return;
 				void variables;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
-				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m.collections_cultivar_actionError());
+				toast.error(renderError(error, m.collections_cultivar_actionError()));
 			},
 			onSuccess: async (entity) => {
 				queryClient.setQueryData<CachedCultivarList>(queryKeys.cultivar.all.queryKey, (prev) =>
@@ -181,12 +180,11 @@ export function useCultivarDeleteMutation() {
 				queryClient.setQueryData(queryKeys.cultivar.fullById(variables.id).queryKey, undefined);
 				return { snapshots };
 			},
-			onError: (_e, variables, ctx) => {
+			onError: (error, variables, ctx) => {
 				if (!ctx) return;
 				void variables;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
-				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m.collections_cultivar_actionError());
+				toast.error(renderError(error, m.collections_cultivar_actionError()));
 			},
 			onSuccess: (deletedId) => {
 				queryClient.setQueryData<CachedCultivarList>(queryKeys.cultivar.all.queryKey, (prev) =>

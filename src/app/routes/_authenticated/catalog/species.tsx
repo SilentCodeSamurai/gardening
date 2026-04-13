@@ -62,6 +62,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { translateCatalogField } from "@/lib/translate-catalog-field";
+import { renderError } from "@/lib/render-error";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import { useSpeciesDeleteMutation } from "@/store/mutations";
@@ -79,6 +80,7 @@ function SpeciesPage() {
 		data: speciesData,
 		isPending: spPending,
 		isError: spError,
+		error: spErrorValue,
 	} = useQuery({
 		...queryKeys.species.all,
 	});
@@ -425,7 +427,7 @@ function SpeciesPage() {
 						table={table}
 						isPending={spPending}
 						isError={spError}
-						errorMessage={m.common_loadError()}
+						errorMessage={renderError(spErrorValue, m.common_loadError())}
 						emptyMessage={emptyMessage}
 						highlightPendingRows
 					/>

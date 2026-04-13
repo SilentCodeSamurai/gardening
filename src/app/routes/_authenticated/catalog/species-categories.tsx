@@ -52,6 +52,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { translateCatalogField } from "@/lib/translate-catalog-field";
+import { renderError } from "@/lib/render-error";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import { useSpeciesCategoryDeleteMutation } from "@/store/mutations";
@@ -61,7 +62,7 @@ export const Route = createFileRoute("/_authenticated/catalog/species-categories
 });
 
 function SpeciesCategoriesPage() {
-	const { data, isPending, isError } = useQuery({ ...queryKeys.speciesCategory.all });
+	const { data, isPending, isError, error } = useQuery({ ...queryKeys.speciesCategory.all });
 	const items = useMemo(() => data?.items ?? [], [data?.items]);
 
 	const [sorting, setSorting] = useState<SortingState>([{ id: "title", desc: false }]);
@@ -287,7 +288,7 @@ function SpeciesCategoriesPage() {
 						table={table}
 						isPending={isPending}
 						isError={isError}
-						errorMessage={m.common_loadError()}
+						errorMessage={renderError(error, m.common_loadError())}
 						emptyMessage={m.items_noElements()}
 						highlightPendingRows
 					/>

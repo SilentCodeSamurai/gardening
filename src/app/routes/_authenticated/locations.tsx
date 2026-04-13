@@ -51,6 +51,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { getLocationPlacementSummary, locationPlacementFilterToken } from "@/lib/spatial-placement-summary";
 import { tableSelectionBulkTooltip } from "@/lib/table-selection-tooltips";
+import { renderError } from "@/lib/render-error";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import { useLocationDeleteManyMutation, useLocationDeleteMutation } from "@/store/mutations";
@@ -63,7 +64,7 @@ export const Route = createFileRoute("/_authenticated/locations")({
 });
 
 function LocationsPage() {
-	const { data, isPending, isError } = useQuery({ ...queryKeys.location.all });
+	const { data, isPending, isError, error } = useQuery({ ...queryKeys.location.all });
 	const { data: spatialData } = useQuery({
 		...queryKeys.spatial.allNodes,
 		placeholderData: (previous) => previous,
@@ -370,7 +371,7 @@ function LocationsPage() {
 						table={table}
 						isPending={isPending}
 						isError={isError}
-						errorMessage={m.common_loadError()}
+						errorMessage={renderError(error, m.common_loadError())}
 						emptyMessage={emptyMessage}
 						highlightPendingRows
 						selectedActions={

@@ -66,6 +66,7 @@ export class WorkspaceRoleAssignmentInMemoryRepository
 			this.throwConflictError({
 				operation: "create",
 				reason: "duplicate-subject-workspace",
+				i18nMessageKey: "errors_application_repository_conflict_workspace_role_create_duplicate",
 				context: { subjectKey: dto.subject.toKey(), workspaceKey: dto.workspace.toKey() },
 				message: "Workspace role assignment already exists for this subject and workspace.",
 			});
@@ -91,6 +92,7 @@ export class WorkspaceRoleAssignmentInMemoryRepository
 			this.throwConflictError({
 				operation: "update",
 				reason: "duplicate-subject-workspace",
+				i18nMessageKey: "errors_application_repository_conflict_workspace_role_update_duplicate",
 				context: { targetKey },
 				message: "Another assignment already uses this subject and workspace pair.",
 			});

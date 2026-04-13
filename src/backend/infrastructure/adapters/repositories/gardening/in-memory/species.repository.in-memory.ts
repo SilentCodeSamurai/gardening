@@ -137,6 +137,7 @@ export class SpeciesInMemoryRepository extends BaseRepositoryErrors implements S
 				this.throwConflictError({
 					operation: "delete",
 					reason: "cultivar-reference-species",
+					i18nMessageKey: "errors_application_repository_conflict_species_delete_cultivar_reference",
 					context: { speciesId: row.id, cultivarId: c.id },
 					participants: [
 						{ entity: "Species", role: "target", id: row.id as unknown as string },

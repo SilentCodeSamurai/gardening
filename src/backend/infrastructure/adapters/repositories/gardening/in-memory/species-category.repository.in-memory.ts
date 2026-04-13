@@ -129,6 +129,7 @@ export class SpeciesCategoryInMemoryRepository extends BaseRepositoryErrors impl
 				this.throwConflictError({
 					operation: "delete",
 					reason: "species-reference-category",
+					i18nMessageKey: "errors_application_repository_conflict_species_category_delete_species_reference",
 					context: { categoryId: row.id, speciesId: s.id },
 					participants: [
 						{ entity: "SpeciesCategory", role: "target", id: row.id as unknown as string },

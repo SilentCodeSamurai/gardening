@@ -10,7 +10,9 @@ export type ApplicationErrorCode =
 export type ApplicationErrorData = Record<string, unknown>;
 
 export class ApplicationError extends Error {
+	public readonly discriminator = "application_error";
 	private readonly _code: ApplicationErrorCode;
+	public readonly i18nMessageKey: string;
 	public readonly source: string;
 	public readonly data: ApplicationErrorData | undefined;
 
@@ -21,6 +23,7 @@ export class ApplicationError extends Error {
 	constructor(params: {
 		code: ApplicationErrorCode;
 		message: string;
+		i18nMessageKey: string;
 		source: string;
 		data?: ApplicationErrorData;
 		cause?: unknown;
@@ -28,6 +31,7 @@ export class ApplicationError extends Error {
 		super(params.message, { cause: params.cause });
 		this.name = new.target.name;
 		this._code = params.code;
+		this.i18nMessageKey = params.i18nMessageKey;
 		this.source = params.source;
 		this.data = params.data;
 	}

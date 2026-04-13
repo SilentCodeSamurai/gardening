@@ -24,6 +24,7 @@ export class PopulateDefaultCatalogUseCaseDuplicateCategorySlugError extends Bas
 	constructor(params: { slug: string }) {
 		super({
 			message: `Duplicate default catalog category slug: ${params.slug}`,
+			i18nMessageKey: "errors_application_populate_default_catalog_duplicate_category_slug",
 			useCaseName: "PopulateDefaultCatalogUseCase",
 			context: params,
 		});
@@ -34,6 +35,7 @@ export class PopulateDefaultCatalogUseCaseUnknownCategorySlugError extends BaseU
 	constructor(params: { categorySlug: string }) {
 		super({
 			message: `Default catalog species references unknown category slug: ${params.categorySlug}`,
+			i18nMessageKey: "errors_application_populate_default_catalog_unknown_category_slug",
 			useCaseName: "PopulateDefaultCatalogUseCase",
 			context: params,
 		});

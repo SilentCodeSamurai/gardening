@@ -156,6 +156,7 @@ export class CultivarInMemoryRepository extends BaseRepositoryErrors implements 
 				this.throwConflictError({
 					operation: "delete",
 					reason: "plant-reference-cultivar",
+					i18nMessageKey: "errors_application_repository_conflict_cultivar_delete_plant_reference",
 					context: { cultivarId: row.id, plantId: plant.id },
 					participants: [
 						{ entity: "Cultivar", role: "target", id: row.id as unknown as string },

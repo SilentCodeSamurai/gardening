@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { gardeningActionMessage } from "@/lib/gardening-action-messages";
+import { renderError } from "@/lib/render-error";
 import { tableSelectionBulkTooltip } from "@/lib/table-selection-tooltips";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
@@ -50,7 +51,7 @@ export const Route = createFileRoute("/_authenticated/gardening-events")({
 });
 
 function GardeningEventsPage() {
-	const { data, isPending, isError } = useQuery({ ...queryKeys.gardeningEvent.all });
+	const { data, isPending, isError, error } = useQuery({ ...queryKeys.gardeningEvent.all });
 	const items = useMemo(() => data?.items ?? [], [data?.items]);
 	const [createOpen, setCreateOpen] = useState(false);
 
@@ -248,7 +249,7 @@ function GardeningEventsPage() {
 						table={table}
 						isPending={isPending}
 						isError={isError}
-						errorMessage={m.common_loadError()}
+						errorMessage={renderError(error, m.common_loadError())}
 						emptyMessage={m.items_noElements()}
 						highlightPendingRows
 						selectedActions={

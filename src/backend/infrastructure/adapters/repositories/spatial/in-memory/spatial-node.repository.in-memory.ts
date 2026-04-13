@@ -159,6 +159,7 @@ export class SpatialNodeInMemoryRepository extends BaseRepositoryErrors implemen
 				this.throwConflictError({
 					operation: "delete",
 					reason: "child-nodes-exist",
+					i18nMessageKey: "errors_application_repository_conflict_spatial_node_delete_child_nodes_exist",
 					context: { id: row.id, childId: n.id, parentId: n.parentId },
 					participants: [
 						{ entity: "SpatialNode", role: "target", id: row.id as unknown as string },

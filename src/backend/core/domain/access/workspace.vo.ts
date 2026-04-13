@@ -13,6 +13,7 @@ export class WorkspaceKeyValidationError extends ApplicationError {
 		super({
 			code: "VALIDATION",
 			message: message,
+			i18nMessageKey: "errors_application_workspace_key_validation",
 			source: "WorkspaceKeyValidationError",
 		});
 	}

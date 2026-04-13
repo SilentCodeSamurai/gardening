@@ -1,10 +1,10 @@
 import { WorkspaceVO } from "@backend/core/domain/access/workspace.vo";
 import type { GardeningEventEntity } from "@backend/core/domain/gardening/entities";
-import type { ItemsContainer } from "@backend/shared/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { orpc } from "@/orpc/client";
 import * as m from "@/paraglide/messages.js";
+import { renderError } from "@/lib/render-error";
 import { useActiveWorkspaceKey } from "@/store/active-workspace-key";
 import {
 	appendToItemsContainer,
@@ -64,7 +64,7 @@ export function useGardeningEventUpdateMutation() {
 			},
 			onError: (error, variables, ctx) => {
 				if (ctx) restoreQuerySnapshots(qc, ctx.snapshots);
-				toast.error(m.collections_gardeningEvent_actionError());
+				toast.error(renderError(error, m.collections_gardeningEvent_actionError()));
 				void error;
 				void variables;
 			},
@@ -107,7 +107,7 @@ export function useGardeningEventDeleteMutation() {
 			},
 			onError: (error, variables, ctx) => {
 				if (ctx) restoreQuerySnapshots(qc, ctx.snapshots);
-				toast.error(m.collections_gardeningEvent_actionError());
+				toast.error(renderError(error, m.collections_gardeningEvent_actionError()));
 				void error;
 				void variables;
 			},
@@ -150,10 +150,10 @@ export function useGardeningEventDeleteManyMutation() {
 			}
 			return { snapshots };
 		},
-		onError: (_e, _variables, ctx) => {
+		onError: (error, _variables, ctx) => {
 			if (!ctx) return;
 			restoreQuerySnapshots(qc, ctx.snapshots);
-			toast.error(m.collections_gardeningEvent_actionError());
+			toast.error(renderError(error, m.collections_gardeningEvent_actionError()));
 		},
 		onSuccess: (result) => {
 			qc.setQueryData<CachedGardeningEventList>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
@@ -196,7 +196,7 @@ export function useGardeningEventCreateForLocationMutation() {
 			},
 			onError: (error, variables, ctx) => {
 				if (ctx) restoreQuerySnapshots(qc, ctx.snapshots);
-				toast.error(m.collections_gardeningEvent_actionError());
+				toast.error(renderError(error, m.collections_gardeningEvent_actionError()));
 				void error;
 				void variables;
 			},
@@ -241,7 +241,7 @@ export function useGardeningEventCreateMutation() {
 			},
 			onError: (error, variables, ctx) => {
 				if (ctx) restoreQuerySnapshots(qc, ctx.snapshots);
-				toast.error(m.collections_gardeningEvent_actionError());
+				toast.error(renderError(error, m.collections_gardeningEvent_actionError()));
 				void error;
 				void variables;
 			},
@@ -288,7 +288,7 @@ export function useGardeningEventCreateForPlantListMutation() {
 			},
 			onError: (error, variables, ctx) => {
 				if (ctx) restoreQuerySnapshots(qc, ctx.snapshots);
-				toast.error(m.collections_gardeningEvent_actionError());
+				toast.error(renderError(error, m.collections_gardeningEvent_actionError()));
 				void error;
 				void variables;
 			},

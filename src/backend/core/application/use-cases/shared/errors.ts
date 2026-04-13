@@ -7,6 +7,7 @@ export abstract class BaseUseCaseError extends ApplicationError {
 	protected constructor(params: {
 		code?: ApplicationErrorCode;
 		message: string;
+		i18nMessageKey: string;
 		useCaseName: string;
 		context?: Record<string, unknown>;
 		cause?: unknown;
@@ -14,6 +15,7 @@ export abstract class BaseUseCaseError extends ApplicationError {
 		super({
 			code: params.code ?? "BAD_REQUEST",
 			message: params.message,
+			i18nMessageKey: params.i18nMessageKey,
 			source: params.useCaseName,
 			data: params.context,
 			cause: params.cause,
@@ -35,6 +37,7 @@ export class UseCaseValidationError extends BaseUseCaseError {
 		useCaseName: string;
 		validationCode: string;
 		message: string;
+		i18nMessageKey: string;
 		context?: Record<string, unknown>;
 		details?: Record<string, unknown>;
 		cause?: unknown;
@@ -42,6 +45,7 @@ export class UseCaseValidationError extends BaseUseCaseError {
 		super({
 			code: "VALIDATION",
 			message: params.message,
+			i18nMessageKey: params.i18nMessageKey,
 			useCaseName: params.useCaseName,
 			context: params.context,
 			cause: params.cause,

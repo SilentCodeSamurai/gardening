@@ -6,12 +6,14 @@ export abstract class BaseRepositoryError extends ApplicationError {
 	protected constructor(params: {
 		code?: ApplicationErrorCode;
 		message: string;
+		i18nMessageKey?: string;
 		context?: Record<string, unknown>;
 		cause?: unknown;
 	}) {
 		super({
 			code: params.code ?? "BAD_REQUEST",
 			message: params.message,
+			i18nMessageKey: params.i18nMessageKey ?? "errors_application_repository_generic",
 			source: "Repository",
 			data: params.context,
 			cause: params.cause,

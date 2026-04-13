@@ -1,9 +1,10 @@
 import { WorkspaceVO } from "@backend/core/domain/access/workspace.vo";
-import type { CultivarEntity, HydratedPlantEntity } from "@backend/core/domain/gardening/entities";
+import type { HydratedPlantEntity } from "@backend/core/domain/gardening/entities";
 import type { SpatialNodeEntity, SpatialNodeTreeNode } from "@backend/core/domain/spatial/entities";
 import type { ItemsContainer } from "@backend/shared/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { renderError } from "@/lib/render-error";
 import { orpc } from "@/orpc/client";
 import * as m from "@/paraglide/messages.js";
 
@@ -79,7 +80,7 @@ export function usePlantCreateMutation() {
 				queryClient.setQueryData(queryKeys.plant.detail(pending.id).queryKey, pending);
 				return { snapshots, pendingIds: [pendingId] };
 			},
-			onError: (_e, _vars, ctx) => {
+			onError: (error, _vars, ctx) => {
 				if (!ctx) return;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
 				for (const pendingId of ctx.pendingIds ?? []) {
@@ -88,8 +89,7 @@ export function usePlantCreateMutation() {
 						undefined,
 					);
 				}
-				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m.collections_plant_actionError());
+				toast.error(renderError(error, m.collections_plant_actionError()));
 			},
 			onSuccess: (entity, _vars, ctx) => {
 				if (ctx?.pendingIds?.[0]) {
@@ -148,11 +148,10 @@ export function usePlantCreateManyMutation() {
 				}
 				return { snapshots, pendingIds: pendingItems.map((p) => String(p.id)) };
 			},
-			onError: (_e, _vars, ctx) => {
+			onError: (error, _vars, ctx) => {
 				if (!ctx) return;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
-				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m.collections_plant_actionError());
+				toast.error(renderError(error, m.collections_plant_actionError()));
 			},
 			onSuccess: (container, _vars, ctx) => {
 				if (ctx?.pendingIds?.length) {
@@ -206,12 +205,11 @@ export function usePlantUpdateMutation() {
 				}
 				return { snapshots };
 			},
-			onError: (_e, variables, ctx) => {
+			onError: (error, variables, ctx) => {
 				if (!ctx) return;
 				void variables;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
-				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m.collections_plant_actionError());
+				toast.error(renderError(error, m.collections_plant_actionError()));
 			},
 			onSuccess: (entity) => {
 				queryClient.setQueryData<CachedHydratedPlantList>(queryKeys.plant.all.queryKey, (prev) =>
@@ -263,7 +261,7 @@ export function usePlantDeleteMutation() {
 				}
 				return { snapshots, treeQueries };
 			},
-			onError: (_e, variables, ctx) => {
+			onError: (error, variables, ctx) => {
 				if (!ctx) return;
 				void variables;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
@@ -272,8 +270,7 @@ export function usePlantDeleteMutation() {
 						queryClient.setQueryData(key, value);
 					}
 				}
-				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m.collections_plant_actionError());
+				toast.error(renderError(error, m.collections_plant_actionError()));
 			},
 			onSuccess: (deletedId) => {
 				queryClient.setQueryData<CachedHydratedPlantList>(queryKeys.plant.all.queryKey, (prev) =>
@@ -332,7 +329,7 @@ export function usePlantDeleteManyMutation() {
 				}
 				return { snapshots, treeQueries };
 			},
-			onError: (_e, variables, ctx) => {
+			onError: (error, variables, ctx) => {
 				if (!ctx) return;
 				void variables;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
@@ -341,8 +338,7 @@ export function usePlantDeleteManyMutation() {
 						queryClient.setQueryData(key, value);
 					}
 				}
-				// TODO: Translate backend error details/codes instead of generic messages.
-				toast.error(m.collections_plant_actionError());
+				toast.error(renderError(error, m.collections_plant_actionError()));
 			},
 			onSuccess: (result) => {
 				queryClient.setQueryData<CachedHydratedPlantList>(queryKeys.plant.all.queryKey, (prev) =>
