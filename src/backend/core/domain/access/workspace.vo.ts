@@ -104,4 +104,15 @@ export class WorkspaceVO {
 	public toKey(): WorkspaceKey {
 		return `${this.version}:${this.type}:${this.externalId}` as WorkspaceKey;
 	}
+
+	public equals(other: WorkspaceVO): boolean {
+		return (
+			this.version === other.version && this.type === other.type && this.externalId === other.externalId
+		);
+	}
+
+	/** True when this workspace is the global shared catalog scope (not keyed by org/user id). */
+	public static isGlobalShared(workspace: WorkspaceVO): boolean {
+		return workspace.type === "globalShared";
+	}
 }

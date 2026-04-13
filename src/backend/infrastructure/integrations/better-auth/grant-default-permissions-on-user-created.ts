@@ -19,8 +19,8 @@ export async function grantDefaultPermissionsOnUserCreated(user: { id: unknown }
 		TOKENS.WorkspaceRoleAssignmentRepositoryPort,
 	);
 	await repository.upsertOne({
-		subjectKey: userSubject.toKey(),
-		workspaceKey: userWorkspace.toKey(),
+		subject: userSubject,
+		workspace: userWorkspace,
 		role: "admin",
 		grantSource: "user-created-default-own-workspace-admin",
 	});

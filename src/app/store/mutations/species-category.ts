@@ -1,3 +1,4 @@
+import { WorkspaceVO } from "@backend/core/domain/access/workspace.vo";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { SpeciesCategoryWithSystemCatalog } from "#/backend/core/application/use-cases/gardening/species-category.use-cases";
@@ -33,7 +34,7 @@ export function useSpeciesCategoryCreateMutation() {
 				if (!workspaceKey) return { snapshots, pendingId: undefined as string | undefined };
 				const pendingId = makePendingId("species-category");
 				const pending: CachedSpeciesCategoryWithSystemCatalog = {
-					workspaceKey,
+					workspace: WorkspaceVO.fromKey(workspaceKey),
 					id: pendingId as SpeciesCategoryWithSystemCatalog["id"],
 					title: variables.title,
 					systemCatalog: false,

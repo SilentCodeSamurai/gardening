@@ -44,8 +44,8 @@ export class WorkspaceRoleAssignmentInMemoryRepository
 	): WorkspaceRoleAssignmentEntity {
 		return {
 			...existing,
-			subjectKey: dto.subjectKey !== undefined ? dto.subjectKey : existing.subjectKey,
-			workspaceKey: dto.workspaceKey !== undefined ? dto.workspaceKey : existing.workspaceKey,
+			subject: dto.subject !== undefined ? dto.subject : existing.subject,
+			workspace: dto.workspace !== undefined ? dto.workspace : existing.workspace,
 			role: dto.role !== undefined ? dto.role : existing.role,
 			grantSource: dto.grantSource !== undefined ? dto.grantSource : existing.grantSource,
 			updatedAt: new Date(),
@@ -55,12 +55,12 @@ export class WorkspaceRoleAssignmentInMemoryRepository
 	private insertRow(
 		dto: WorkspaceRoleAssignmentRepositoryCreateInputDTO,
 	): WorkspaceRoleAssignmentRepositoryCreateOutputDTO {
-		const mapKey = compositeKey(dto.subjectKey, dto.workspaceKey);
+		const mapKey = compositeKey(dto.subject.toKey(), dto.workspace.toKey());
 		if (this.store.workspaceRoleAssignments.has(mapKey)) {
 			this.throwConflictError({
 				operation: "create",
 				reason: "duplicate-subject-workspace",
-				context: { subjectKey: dto.subjectKey, workspaceKey: dto.workspaceKey },
+				context: { subjectKey: dto.subject.toKey(), workspaceKey: dto.workspace.toKey() },
 				message: "Workspace role assignment already exists for this subject and workspace.",
 			});
 		}
@@ -92,7 +92,7 @@ export class WorkspaceRoleAssignmentInMemoryRepository
 	}
 
 	private replaceInMap(previousKey: `${SubjectKey}|${WorkspaceKey}`, row: WorkspaceRoleAssignmentEntity): void {
-		const nextKey = compositeKey(row.subjectKey, row.workspaceKey);
+		const nextKey = compositeKey(row.subject.toKey(), row.workspace.toKey());
 		if (previousKey !== nextKey) {
 			this.store.workspaceRoleAssignments.delete(previousKey);
 		}
@@ -119,10 +119,10 @@ export class WorkspaceRoleAssignmentInMemoryRepository
 	async upsertOne(
 		input: WorkspaceRoleAssignmentRepositoryUpsertInputDTO,
 	): Promise<WorkspaceRoleAssignmentRepositoryUpsertOutputDTO> {
-		const mapKey = compositeKey(input.subjectKey, input.workspaceKey);
+		const mapKey = compositeKey(input.subject.toKey(), input.workspace.toKey());
 		if (this.store.workspaceRoleAssignments.has(mapKey)) {
 			return this.updateOne({
-				filters: [{ subjectKey: input.subjectKey, workspaceKey: input.workspaceKey }],
+				filters: [{ subject: input.subject, workspace: input.workspace }],
 				dto:
 					input.grantSource !== undefined
 						? { role: input.role, grantSource: input.grantSource }
@@ -130,8 +130,8 @@ export class WorkspaceRoleAssignmentInMemoryRepository
 			});
 		}
 		return this.createOne({
-			subjectKey: input.subjectKey,
-			workspaceKey: input.workspaceKey,
+			subject: input.subject,
+			workspace: input.workspace,
 			role: input.role,
 			grantSource: input.grantSource,
 		});
@@ -162,9 +162,9 @@ export class WorkspaceRoleAssignmentInMemoryRepository
 	}): Promise<WorkspaceRoleAssignmentRepositoryUpdateOutputDTO> {
 		const row = findFirstRowMatchingAnyClause(this.store.workspaceRoleAssignments.values(), input.filters);
 		if (!row) this.throwNotFoundError("WorkspaceRoleAssignment", input.filters);
-		const previousKey = compositeKey(row.subjectKey, row.workspaceKey);
+		const previousKey = compositeKey(row.subject.toKey(), row.workspace.toKey());
 		const updated = this.patchStored(row, input.dto);
-		const nextKey = compositeKey(updated.subjectKey, updated.workspaceKey);
+		const nextKey = compositeKey(updated.subject.toKey(), updated.workspace.toKey());
 		if (previousKey !== nextKey) {
 			this.assertVacantTargetKey(nextKey, updated.id);
 		}
@@ -179,9 +179,9 @@ export class WorkspaceRoleAssignmentInMemoryRepository
 		const rows = findRowsMatchingAnyClause([...this.store.workspaceRoleAssignments.values()], input.filters);
 		let count = 0;
 		for (const row of rows) {
-			const previousKey = compositeKey(row.subjectKey, row.workspaceKey);
+			const previousKey = compositeKey(row.subject.toKey(), row.workspace.toKey());
 			const updated = this.patchStored(row, input.dto);
-			const nextKey = compositeKey(updated.subjectKey, updated.workspaceKey);
+			const nextKey = compositeKey(updated.subject.toKey(), updated.workspace.toKey());
 			if (previousKey !== nextKey) {
 				this.assertVacantTargetKey(nextKey, updated.id);
 			}
@@ -196,7 +196,7 @@ export class WorkspaceRoleAssignmentInMemoryRepository
 	}): Promise<WorkspaceRoleAssignmentRepositoryDeleteOutputDTO> {
 		const row = findFirstRowMatchingAnyClause(this.store.workspaceRoleAssignments.values(), input.filters);
 		if (!row) this.throwNotFoundError("WorkspaceRoleAssignment", input.filters);
-		const key = compositeKey(row.subjectKey, row.workspaceKey);
+		const key = compositeKey(row.subject.toKey(), row.workspace.toKey());
 		this.store.workspaceRoleAssignments.delete(key);
 		return row.id;
 	}
@@ -207,7 +207,7 @@ export class WorkspaceRoleAssignmentInMemoryRepository
 		const rows = findRowsMatchingAnyClause([...this.store.workspaceRoleAssignments.values()], input.filters);
 		let count = 0;
 		for (const row of rows) {
-			const key = compositeKey(row.subjectKey, row.workspaceKey);
+			const key = compositeKey(row.subject.toKey(), row.workspace.toKey());
 			if (this.store.workspaceRoleAssignments.delete(key)) count += 1;
 		}
 		return { count };

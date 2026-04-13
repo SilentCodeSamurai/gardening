@@ -13,8 +13,8 @@ import {
 	fixtureSpeciesCharacteristics,
 } from "../../../../../helpers/gardening/test-fixtures";
 import {
-	contractTestWorkspaceKey as wk,
-	contractTestWorkspaceKeyB as wkB,
+	contractTestWorkspace as wk,
+	contractTestWorkspaceB as wkB,
 } from "../../shared/test-workspace-keys";
 import { resolveGardeningRepositoryPorts } from "./resolve-gardening-repository-ports";
 
@@ -41,19 +41,19 @@ export function registerGardeningEventRepositoryContract(
 		});
 
 		async function plantFixture() {
-			const cat = await speciesCategory.createOne({ workspaceKey: wk, title: "C" });
+			const cat = await speciesCategory.createOne({ workspace: wk, title: "C" });
 			const sp = await species.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				categoryId: cat.id,
 				characteristics: fixtureSpeciesCharacteristics(),
 			});
 			const cv = await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics(),
 			});
 			const p = await plant.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: "p",
 				description: null,
 				cultivarId: cv.id,
@@ -63,13 +63,13 @@ export function registerGardeningEventRepositoryContract(
 
 		it("createOne, createMany, getOne, getMany", async () => {
 			const a = await gardeningEvent.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				action: fixtureNoteAction({ content: "a" }),
 			});
 			const { count } = await gardeningEvent.createMany({
 				items: [
-					{ workspaceKey: wk, action: fixtureNoteAction({ content: "b" }) },
-					{ workspaceKey: wk, action: fixtureNoteAction({ content: "c" }) },
+					{ workspace: wk, action: fixtureNoteAction({ content: "b" }) },
+					{ workspace: wk, action: fixtureNoteAction({ content: "c" }) },
 				],
 			});
 			expect(count).toBe(2);
@@ -82,7 +82,7 @@ export function registerGardeningEventRepositoryContract(
 		});
 
 		it("getOne OR filters", async () => {
-			const ev = await gardeningEvent.createOne({ workspaceKey: wk, action: fixtureNoteAction() });
+			const ev = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction() });
 			const got = await gardeningEvent.getOne({
 				filters: [{ id: gardeningEventId("00000000-0000-4000-8000-00000000bad") }, { id: ev.id }],
 			});
@@ -91,11 +91,11 @@ export function registerGardeningEventRepositoryContract(
 
 		it("updateOne patches action; updateMany applies to matches", async () => {
 			const e1 = await gardeningEvent.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				action: fixtureNoteAction({ content: "old1" }),
 			});
 			const e2 = await gardeningEvent.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				action: fixtureNoteAction({ content: "old2" }),
 			});
 			const u = await gardeningEvent.updateOne({
@@ -120,8 +120,8 @@ export function registerGardeningEventRepositoryContract(
 		});
 
 		it("deleteOne and deleteMany", async () => {
-			const a = await gardeningEvent.createOne({ workspaceKey: wk, action: fixtureNoteAction() });
-			const b = await gardeningEvent.createOne({ workspaceKey: wk, action: fixtureNoteAction() });
+			const a = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction() });
+			const b = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction() });
 			await gardeningEvent.deleteOne({ filters: [{ id: a.id }] });
 			await expect(gardeningEvent.getOne({ filters: [{ id: a.id }] })).rejects.toBeInstanceOf(
 				RepositoryNotFoundError,
@@ -139,10 +139,10 @@ export function registerGardeningEventRepositoryContract(
 
 		it("bindToPlantOne and getManyForPlant", async () => {
 			const { plant: p } = await plantFixture();
-			const ev = await gardeningEvent.createOne({ workspaceKey: wk, action: fixtureNoteAction() });
+			const ev = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction() });
 			await gardeningEvent.bindToPlantOne({ filters: [{ id: ev.id }], plantId: p.id });
 			const { items } = await gardeningEvent.getManyForPlant({
-				filters: [{ plantId: p.id, workspaceKey: wk }],
+				filters: [{ plantId: p.id, workspace: wk }],
 			});
 			expect(items).toHaveLength(1);
 			expect(items[0]?.id).toEqual(ev.id);
@@ -151,7 +151,7 @@ export function registerGardeningEventRepositoryContract(
 		it("getManyForPlant returns empty when plant has no bindings", async () => {
 			const { plant: p } = await plantFixture();
 			const { items } = await gardeningEvent.getManyForPlant({
-				filters: [{ plantId: p.id, workspaceKey: wk }],
+				filters: [{ plantId: p.id, workspace: wk }],
 			});
 			expect(items).toHaveLength(0);
 		});
@@ -159,19 +159,19 @@ export function registerGardeningEventRepositoryContract(
 		it("getManyForPlant OR merges distinct events", async () => {
 			const { plant: p } = await plantFixture();
 			const e1 = await gardeningEvent.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				action: fixtureNoteAction({ content: "e1" }),
 			});
 			const e2 = await gardeningEvent.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				action: fixtureNoteAction({ content: "e2" }),
 			});
 			await gardeningEvent.bindToPlantOne({ filters: [{ id: e1.id }], plantId: p.id });
 			await gardeningEvent.bindToPlantOne({ filters: [{ id: e2.id }], plantId: p.id });
 			const { items } = await gardeningEvent.getManyForPlant({
 				filters: [
-					{ plantId: p.id, workspaceKey: wk },
-					{ plantId: p.id, workspaceKey: wk },
+					{ plantId: p.id, workspace: wk },
+					{ plantId: p.id, workspace: wk },
 				],
 			});
 			const ids = new Set(items.map((x) => x.id as string));
@@ -179,27 +179,27 @@ export function registerGardeningEventRepositoryContract(
 		});
 
 		it("bindToLocationOne and getManyForLocation", async () => {
-			const loc = await locationRepo.createOne({ workspaceKey: wk, name: "GH" });
-			const ev = await gardeningEvent.createOne({ workspaceKey: wk, action: fixtureNoteAction() });
+			const loc = await locationRepo.createOne({ workspace: wk, name: "GH" });
+			const ev = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction() });
 			await gardeningEvent.bindToLocationOne({ filters: [{ id: ev.id }], locationId: loc.id });
 			const { items } = await gardeningEvent.getManyForLocation({
-				filters: [{ locationId: loc.id, workspaceKey: wk }],
+				filters: [{ locationId: loc.id, workspace: wk }],
 			});
 			expect(items).toHaveLength(1);
 		});
 
 		it("getManyForLocation returns empty when location has no bindings", async () => {
-			const loc = await locationRepo.createOne({ workspaceKey: wk, name: "Iso" });
+			const loc = await locationRepo.createOne({ workspace: wk, name: "Iso" });
 			const { items } = await gardeningEvent.getManyForLocation({
-				filters: [{ locationId: loc.id, workspaceKey: wk }],
+				filters: [{ locationId: loc.id, workspace: wk }],
 			});
 			expect(items).toHaveLength(0);
 		});
 
 		it("getBindingsOne returns linked plants and locations", async () => {
 			const { plant: p } = await plantFixture();
-			const loc = await locationRepo.createOne({ workspaceKey: wk, name: "Bed" });
-			const ev = await gardeningEvent.createOne({ workspaceKey: wk, action: fixtureNoteAction() });
+			const loc = await locationRepo.createOne({ workspace: wk, name: "Bed" });
+			const ev = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction() });
 			await gardeningEvent.bindToPlantOne({ filters: [{ id: ev.id }], plantId: p.id });
 			await gardeningEvent.bindToLocationOne({ filters: [{ id: ev.id }], locationId: loc.id });
 			const b = await gardeningEvent.getBindingsOne({ filters: [{ id: ev.id }] });
@@ -208,7 +208,7 @@ export function registerGardeningEventRepositoryContract(
 		});
 
 		it("getBindingsOne empty arrays when no links", async () => {
-			const ev = await gardeningEvent.createOne({ workspaceKey: wk, action: fixtureNoteAction() });
+			const ev = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction() });
 			const b = await gardeningEvent.getBindingsOne({ filters: [{ id: ev.id }] });
 			expect(b.plantIds).toHaveLength(0);
 			expect(b.locationIds).toHaveLength(0);
@@ -230,7 +230,7 @@ export function registerGardeningEventRepositoryContract(
 					plantId: p.id,
 				}),
 			).rejects.toBeInstanceOf(RepositoryNotFoundError);
-			const ev = await gardeningEvent.createOne({ workspaceKey: wk, action: fixtureNoteAction() });
+			const ev = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction() });
 			await expect(
 				gardeningEvent.bindToPlantOne({
 					filters: [{ id: ev.id }],
@@ -241,23 +241,23 @@ export function registerGardeningEventRepositoryContract(
 
 		it("deleteOne clears junction links", async () => {
 			const { plant: p } = await plantFixture();
-			const loc = await locationRepo.createOne({ workspaceKey: wk, name: "B" });
-			const ev = await gardeningEvent.createOne({ workspaceKey: wk, action: fixtureNoteAction() });
+			const loc = await locationRepo.createOne({ workspace: wk, name: "B" });
+			const ev = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction() });
 			await gardeningEvent.bindToPlantOne({ filters: [{ id: ev.id }], plantId: p.id });
 			await gardeningEvent.bindToLocationOne({ filters: [{ id: ev.id }], locationId: loc.id });
 			await gardeningEvent.deleteOne({ filters: [{ id: ev.id }] });
 			const forPlant = await gardeningEvent.getManyForPlant({
-				filters: [{ plantId: p.id, workspaceKey: wk }],
+				filters: [{ plantId: p.id, workspace: wk }],
 			});
 			const forLoc = await gardeningEvent.getManyForLocation({
-				filters: [{ locationId: loc.id, workspaceKey: wk }],
+				filters: [{ locationId: loc.id, workspace: wk }],
 			});
 			expect(forPlant.items).toHaveLength(0);
 			expect(forLoc.items).toHaveLength(0);
 		});
 
 		it("bindToLocationOne throws when location missing", async () => {
-			const ev = await gardeningEvent.createOne({ workspaceKey: wk, action: fixtureNoteAction() });
+			const ev = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction() });
 			await expect(
 				gardeningEvent.bindToLocationOne({
 					filters: [{ id: ev.id }],
@@ -268,7 +268,7 @@ export function registerGardeningEventRepositoryContract(
 
 		it("getMany single-field filter by id", async () => {
 			const ev = await gardeningEvent.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				action: fixtureNoteAction({ content: "gm-id" }),
 			});
 			const { items } = await gardeningEvent.getMany({ filters: [{ id: ev.id }] });
@@ -277,18 +277,18 @@ export function registerGardeningEventRepositoryContract(
 		});
 
 		it("getMany multi-field AND: wrong workspaceKey excludes row", async () => {
-			const ev = await gardeningEvent.createOne({ workspaceKey: wk, action: fixtureNoteAction() });
-			const { items } = await gardeningEvent.getMany({ filters: [{ id: ev.id, workspaceKey: wkB }] });
+			const ev = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction() });
+			const { items } = await gardeningEvent.getMany({ filters: [{ id: ev.id, workspace: wkB }] });
 			expect(items).toHaveLength(0);
 		});
 
 		it("getMany OR unions two events by id", async () => {
 			const e1 = await gardeningEvent.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				action: fixtureNoteAction({ content: "gm-or-1" }),
 			});
 			const e2 = await gardeningEvent.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				action: fixtureNoteAction({ content: "gm-or-2" }),
 			});
 			const { items } = await gardeningEvent.getMany({ filters: [{ id: e1.id }, { id: e2.id }] });
@@ -297,7 +297,7 @@ export function registerGardeningEventRepositoryContract(
 
 		it("updateOne OR filters", async () => {
 			const ev = await gardeningEvent.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				action: fixtureNoteAction({ content: "uo-or" }),
 			});
 			const u = await gardeningEvent.updateOne({
@@ -308,8 +308,8 @@ export function registerGardeningEventRepositoryContract(
 		});
 
 		it("updateMany OR patches multiple events; count 0 when no match", async () => {
-			const a = await gardeningEvent.createOne({ workspaceKey: wk, action: fixtureNoteAction({ content: "um-a" }) });
-			const b = await gardeningEvent.createOne({ workspaceKey: wk, action: fixtureNoteAction({ content: "um-b" }) });
+			const a = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction({ content: "um-a" }) });
+			const b = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction({ content: "um-b" }) });
 			const { count } = await gardeningEvent.updateMany({
 				filters: [{ id: a.id }, { id: b.id }],
 				dto: { action: fixtureNoteAction({ content: "um-both" }) },
@@ -323,7 +323,7 @@ export function registerGardeningEventRepositoryContract(
 		});
 
 		it("deleteOne OR filters", async () => {
-			const ev = await gardeningEvent.createOne({ workspaceKey: wk, action: fixtureNoteAction() });
+			const ev = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction() });
 			await gardeningEvent.deleteOne({
 				filters: [{ id: gardeningEventId("00000000-0000-4000-8000-00000000bad") }, { id: ev.id }],
 			});
@@ -332,15 +332,15 @@ export function registerGardeningEventRepositoryContract(
 
 		it("deleteMany OR by id and by action content match", async () => {
 			const a = await gardeningEvent.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				action: fixtureNoteAction({ content: "dm-ge-a" }),
 			});
 			await gardeningEvent.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				action: fixtureNoteAction({ content: "dm-ge-b" }),
 			});
 			const { count } = await gardeningEvent.deleteMany({
-				filters: [{ id: a.id }, { action: fixtureNoteAction({ content: "dm-ge-b" }), workspaceKey: wk }],
+				filters: [{ id: a.id }, { action: fixtureNoteAction({ content: "dm-ge-b" }), workspace: wk }],
 			});
 			expect(count).toBe(2);
 		});
@@ -348,14 +348,14 @@ export function registerGardeningEventRepositoryContract(
 		it("getManyForPlant OR merges events across two plants", async () => {
 			const { plant: p1 } = await plantFixture();
 			const { plant: p2 } = await plantFixture();
-			const e1 = await gardeningEvent.createOne({ workspaceKey: wk, action: fixtureNoteAction({ content: "p1" }) });
-			const e2 = await gardeningEvent.createOne({ workspaceKey: wk, action: fixtureNoteAction({ content: "p2" }) });
+			const e1 = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction({ content: "p1" }) });
+			const e2 = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction({ content: "p2" }) });
 			await gardeningEvent.bindToPlantOne({ filters: [{ id: e1.id }], plantId: p1.id });
 			await gardeningEvent.bindToPlantOne({ filters: [{ id: e2.id }], plantId: p2.id });
 			const { items } = await gardeningEvent.getManyForPlant({
 				filters: [
-					{ plantId: p1.id, workspaceKey: wk },
-					{ plantId: p2.id, workspaceKey: wk },
+					{ plantId: p1.id, workspace: wk },
+					{ plantId: p2.id, workspace: wk },
 				],
 			});
 			const ids = new Set(items.map((x) => x.id as string));
@@ -364,42 +364,42 @@ export function registerGardeningEventRepositoryContract(
 
 		it("getManyForPlant multi-field AND: wrong workspace excludes bindings", async () => {
 			const { plant: p } = await plantFixture();
-			const ev = await gardeningEvent.createOne({ workspaceKey: wk, action: fixtureNoteAction() });
+			const ev = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction() });
 			await gardeningEvent.bindToPlantOne({ filters: [{ id: ev.id }], plantId: p.id });
 			const { items } = await gardeningEvent.getManyForPlant({
-				filters: [{ plantId: p.id, workspaceKey: wkB }],
+				filters: [{ plantId: p.id, workspace: wkB }],
 			});
 			expect(items).toHaveLength(0);
 		});
 
 		it("getManyForLocation OR merges events across two locations", async () => {
-			const l1 = await locationRepo.createOne({ workspaceKey: wk, name: "L-or-1" });
-			const l2 = await locationRepo.createOne({ workspaceKey: wk, name: "L-or-2" });
-			const e1 = await gardeningEvent.createOne({ workspaceKey: wk, action: fixtureNoteAction({ content: "loc1" }) });
-			const e2 = await gardeningEvent.createOne({ workspaceKey: wk, action: fixtureNoteAction({ content: "loc2" }) });
+			const l1 = await locationRepo.createOne({ workspace: wk, name: "L-or-1" });
+			const l2 = await locationRepo.createOne({ workspace: wk, name: "L-or-2" });
+			const e1 = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction({ content: "loc1" }) });
+			const e2 = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction({ content: "loc2" }) });
 			await gardeningEvent.bindToLocationOne({ filters: [{ id: e1.id }], locationId: l1.id });
 			await gardeningEvent.bindToLocationOne({ filters: [{ id: e2.id }], locationId: l2.id });
 			const { items } = await gardeningEvent.getManyForLocation({
 				filters: [
-					{ locationId: l1.id, workspaceKey: wk },
-					{ locationId: l2.id, workspaceKey: wk },
+					{ locationId: l1.id, workspace: wk },
+					{ locationId: l2.id, workspace: wk },
 				],
 			});
 			expect(new Set(items.map((x) => x.id as string)).size).toBe(2);
 		});
 
 		it("getManyForLocation multi-field AND: wrong workspace excludes bindings", async () => {
-			const loc = await locationRepo.createOne({ workspaceKey: wk, name: "L-ws" });
-			const ev = await gardeningEvent.createOne({ workspaceKey: wk, action: fixtureNoteAction() });
+			const loc = await locationRepo.createOne({ workspace: wk, name: "L-ws" });
+			const ev = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction() });
 			await gardeningEvent.bindToLocationOne({ filters: [{ id: ev.id }], locationId: loc.id });
 			const { items } = await gardeningEvent.getManyForLocation({
-				filters: [{ locationId: loc.id, workspaceKey: wkB }],
+				filters: [{ locationId: loc.id, workspace: wkB }],
 			});
 			expect(items).toHaveLength(0);
 		});
 
 		it("getBindingsOne OR filters: first clause misses, second hits", async () => {
-			const ev = await gardeningEvent.createOne({ workspaceKey: wk, action: fixtureNoteAction() });
+			const ev = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction() });
 			const bindings = await gardeningEvent.getBindingsOne({
 				filters: [{ id: gardeningEventId("00000000-0000-4000-8000-00000000bad") }, { id: ev.id }],
 			});

@@ -1,3 +1,4 @@
+import { WorkspaceVO } from "@backend/core/domain/access/workspace.vo";
 import type { GardeningEventEntity } from "@backend/core/domain/gardening/entities";
 import type { ItemsContainer } from "@backend/shared/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -188,7 +189,7 @@ export function useGardeningEventCreateForLocationMutation() {
 				if (!workspaceKey) return { snapshots, pendingId: undefined as string | undefined };
 				const pendingId = makePendingId("gardening-event");
 				const pending: CachedGardeningEvent = {
-					workspaceKey,
+					workspace: WorkspaceVO.fromKey(workspaceKey),
 					id: pendingId as GardeningEventEntity["id"],
 					action: variables.action,
 					createdAt: new Date(),
@@ -236,7 +237,7 @@ export function useGardeningEventCreateMutation() {
 				if (!workspaceKey) return { snapshots, pendingId: undefined as string | undefined };
 				const pendingId = makePendingId("gardening-event");
 				const pending: CachedGardeningEvent = {
-					workspaceKey,
+					workspace: WorkspaceVO.fromKey(workspaceKey),
 					id: pendingId as GardeningEventEntity["id"],
 					action: variables.action,
 					createdAt: new Date(),
@@ -282,7 +283,7 @@ export function useGardeningEventCreateForPlantListMutation() {
 				if (!workspaceKey) return { snapshots, pendingId: undefined as string | undefined };
 				const pendingId = makePendingId("gardening-event");
 				const pending: CachedGardeningEvent = {
-					workspaceKey,
+					workspace: WorkspaceVO.fromKey(workspaceKey),
 					id: pendingId as GardeningEventEntity["id"],
 					action: variables.action,
 					createdAt: new Date(),

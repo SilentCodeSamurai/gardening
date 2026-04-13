@@ -2,9 +2,9 @@ import type {
 	WorkspaceRoleAssignmentEntity,
 	WorkspaceRoleAssignmentEntityId,
 } from "@backend/core/domain/access/entities";
-import type { SubjectKey } from "@backend/core/domain/access/subject.vo";
+import type { SubjectVO } from "@backend/core/domain/access/subject.vo";
 import type { AccessRole } from "@backend/core/domain/access/types";
-import type { WorkspaceKey } from "@backend/core/domain/access/workspace.vo";
+import type { WorkspaceVO } from "@backend/core/domain/access/workspace.vo";
 import type { ItemsContainer } from "@backend/shared/types";
 import type {
 	RepositoryCreateManyPort,
@@ -47,10 +47,10 @@ export type WorkspaceRoleAssignmentRepositoryDeleteOutputDTO = WorkspaceRoleAssi
 
 export type WorkspaceRoleAssignmentRepositoryDeleteManyOutputDTO = { count: number };
 
-/** Insert or update the single row for `(subjectKey, workspaceKey)`. */
+/** Insert or update the single row for `(subject, workspace)`. */
 export type WorkspaceRoleAssignmentRepositoryUpsertInputDTO = {
-	readonly subjectKey: SubjectKey;
-	readonly workspaceKey: WorkspaceKey;
+	readonly subject: SubjectVO;
+	readonly workspace: WorkspaceVO;
 	readonly role: AccessRole;
 	readonly grantSource?: string;
 };
@@ -59,7 +59,7 @@ export type WorkspaceRoleAssignmentRepositoryUpsertOutputDTO = WorkspaceRoleAssi
 
 /**
  * Workspace role assignment persistence (v2): same CRUD contract as gardening v2 repositories;
- * rows are unique per `(subjectKey, workspaceKey)` in the in-memory adapter.
+ * rows are unique per `(subject, workspace)` in the in-memory adapter.
  */
 export interface WorkspaceRoleAssignmentRepositoryPort
 	extends RepositoryCreateOnePort<

@@ -7,8 +7,8 @@ import type { DependencyContainer } from "tsyringe";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import {
-	contractTestWorkspaceKey as wk,
-	contractTestWorkspaceKeyB as wkB,
+	contractTestWorkspace as wk,
+	contractTestWorkspaceB as wkB,
 } from "../../shared/test-workspace-keys";
 import { resolveGardeningRepositoryPorts } from "./resolve-gardening-repository-ports";
 
@@ -27,7 +27,7 @@ export function registerSpeciesCategoryRepositoryContract(
 		});
 
 		it("createOne, getOne by id, getMany without filters, updateOne, deleteOne", async () => {
-			const row = await speciesCategory.createOne({ workspaceKey: wk, title: "Herbs" });
+			const row = await speciesCategory.createOne({ workspace: wk, title: "Herbs" });
 			expect(row.title).toBe("Herbs");
 
 			const got = await speciesCategory.getOne({ filters: [{ id: row.id }] });
@@ -52,9 +52,9 @@ export function registerSpeciesCategoryRepositoryContract(
 		it("createMany returns total inserted count", async () => {
 			const { count } = await speciesCategory.createMany({
 				items: [
-					{ workspaceKey: wk, title: "A" },
-					{ workspaceKey: wk, title: "B" },
-					{ workspaceKey: wk, title: "C" },
+					{ workspace: wk, title: "A" },
+					{ workspace: wk, title: "B" },
+					{ workspace: wk, title: "C" },
 				],
 			});
 			expect(count).toBe(3);
@@ -62,9 +62,9 @@ export function registerSpeciesCategoryRepositoryContract(
 			expect(items.filter((x) => ["A", "B", "C"].includes(x.title)).length).toBe(3);
 		});
 
-		it("getOne uses OR filters — first miss, second hit", async () => {
-			const a = await speciesCategory.createOne({ workspaceKey: wk, title: "Alpha" });
-			const { items } = await speciesCategory.getMany({ filters: [{ title: "Alpha", workspaceKey: wk }] });
+		it("getOne uses OR filters вЂ” first miss, second hit", async () => {
+			const a = await speciesCategory.createOne({ workspace: wk, title: "Alpha" });
+			const { items } = await speciesCategory.getMany({ filters: [{ title: "Alpha", workspace: wk }] });
 			expect(items).toHaveLength(1);
 			const ghost = speciesCategoryId("00000000-0000-4000-8000-00000000dead");
 			const got = await speciesCategory.getOne({
@@ -74,19 +74,19 @@ export function registerSpeciesCategoryRepositoryContract(
 		});
 
 		it("getMany with filters: [] returns empty container", async () => {
-			await speciesCategory.createOne({ workspaceKey: wk, title: "Only" });
+			await speciesCategory.createOne({ workspace: wk, title: "Only" });
 			const { items } = await speciesCategory.getMany({ filters: [] });
 			expect(items).toHaveLength(0);
 		});
 
 		it("getMany with OR filters unions matching rows (by title)", async () => {
-			const x = await speciesCategory.createOne({ workspaceKey: wk, title: "match-x" });
-			const y = await speciesCategory.createOne({ workspaceKey: wk, title: "match-y" });
-			await speciesCategory.createOne({ workspaceKey: wk, title: "other" });
+			const x = await speciesCategory.createOne({ workspace: wk, title: "match-x" });
+			const y = await speciesCategory.createOne({ workspace: wk, title: "match-y" });
+			await speciesCategory.createOne({ workspace: wk, title: "other" });
 			const { items } = await speciesCategory.getMany({
 				filters: [
-					{ title: "match-x", workspaceKey: wk },
-					{ title: "match-y", workspaceKey: wk },
+					{ title: "match-x", workspace: wk },
+					{ title: "match-y", workspace: wk },
 				],
 			});
 			const ids = new Set(items.map((i) => i.id as string));
@@ -115,27 +115,27 @@ export function registerSpeciesCategoryRepositoryContract(
 		it("updateMany patches every row matching OR filters and returns count", async () => {
 			await speciesCategory.createMany({
 				items: [
-					{ workspaceKey: wk, title: "batch-1" },
-					{ workspaceKey: wk, title: "batch-2" },
+					{ workspace: wk, title: "batch-1" },
+					{ workspace: wk, title: "batch-2" },
 				],
 			});
 			const { count } = await speciesCategory.updateMany({
 				filters: [
-					{ title: "batch-1", workspaceKey: wk },
-					{ title: "batch-2", workspaceKey: wk },
+					{ title: "batch-1", workspace: wk },
+					{ title: "batch-2", workspace: wk },
 				],
 				dto: { title: "renamed" },
 			});
 			expect(count).toBe(2);
 			const { items } = await speciesCategory.getMany({
-				filters: [{ title: "renamed", workspaceKey: wk }],
+				filters: [{ title: "renamed", workspace: wk }],
 			});
 			expect(items).toHaveLength(2);
 		});
 
 		it("updateMany returns count 0 when nothing matches", async () => {
 			const { count } = await speciesCategory.updateMany({
-				filters: [{ title: "nonexistent-title-xyz", workspaceKey: wk }],
+				filters: [{ title: "nonexistent-title-xyz", workspace: wk }],
 				dto: { title: "still-none" },
 			});
 			expect(count).toBe(0);
@@ -143,7 +143,7 @@ export function registerSpeciesCategoryRepositoryContract(
 
 		it("updateOne can set presentation", async () => {
 			const row = await speciesCategory.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: "WithPres",
 				presentation: { iconColor: "#111" },
 			});
@@ -156,9 +156,9 @@ export function registerSpeciesCategoryRepositoryContract(
 		});
 
 		it("deleteOne blocks when species reference category", async () => {
-			const cat = await speciesCategory.createOne({ workspaceKey: wk, title: "C" });
+			const cat = await speciesCategory.createOne({ workspace: wk, title: "C" });
 			await species.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				categoryId: cat.id,
 				characteristics: { name: "S", description: null },
 			});
@@ -176,10 +176,10 @@ export function registerSpeciesCategoryRepositoryContract(
 		});
 
 		it("deleteMany removes all matching rows; skips categories blocked by species", async () => {
-			const free = await speciesCategory.createOne({ workspaceKey: wk, title: "free" });
-			const blocked = await speciesCategory.createOne({ workspaceKey: wk, title: "blocked" });
+			const free = await speciesCategory.createOne({ workspace: wk, title: "free" });
+			const blocked = await speciesCategory.createOne({ workspace: wk, title: "blocked" });
 			await species.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				categoryId: blocked.id,
 				characteristics: { name: "holds", description: null },
 			});
@@ -195,30 +195,30 @@ export function registerSpeciesCategoryRepositoryContract(
 
 		it("deleteMany returns 0 when filters match nothing", async () => {
 			const { count } = await speciesCategory.deleteMany({
-				filters: [{ title: "no-such-category-999", workspaceKey: wk }],
+				filters: [{ title: "no-such-category-999", workspace: wk }],
 			});
 			expect(count).toBe(0);
 		});
 
 		it("getMany single-field filter by id", async () => {
-			const row = await speciesCategory.createOne({ workspaceKey: wk, title: "by-id-cat" });
+			const row = await speciesCategory.createOne({ workspace: wk, title: "by-id-cat" });
 			const { items } = await speciesCategory.getMany({ filters: [{ id: row.id }] });
 			expect(items).toHaveLength(1);
 			expect(items[0]?.title).toBe("by-id-cat");
 		});
 
 		it("getMany multi-field AND: wrong workspaceKey excludes row", async () => {
-			const row = await speciesCategory.createOne({ workspaceKey: wk, title: "ws-and" });
-			const { items } = await speciesCategory.getMany({ filters: [{ id: row.id, workspaceKey: wkB }] });
+			const row = await speciesCategory.createOne({ workspace: wk, title: "ws-and" });
+			const { items } = await speciesCategory.getMany({ filters: [{ id: row.id, workspace: wkB }] });
 			expect(items).toHaveLength(0);
 		});
 
 		it("getMany OR combines id miss with title hit", async () => {
-			const row = await speciesCategory.createOne({ workspaceKey: wk, title: "or-title-cat" });
+			const row = await speciesCategory.createOne({ workspace: wk, title: "or-title-cat" });
 			const { items } = await speciesCategory.getMany({
 				filters: [
 					{ id: speciesCategoryId("00000000-0000-4000-8000-00000000bad") },
-					{ title: "or-title-cat", workspaceKey: wk },
+					{ title: "or-title-cat", workspace: wk },
 				],
 			});
 			expect(items).toHaveLength(1);
@@ -226,7 +226,7 @@ export function registerSpeciesCategoryRepositoryContract(
 		});
 
 		it("updateOne OR filters", async () => {
-			const row = await speciesCategory.createOne({ workspaceKey: wk, title: "uo-or" });
+			const row = await speciesCategory.createOne({ workspace: wk, title: "uo-or" });
 			const u = await speciesCategory.updateOne({
 				filters: [{ id: speciesCategoryId("00000000-0000-4000-8000-00000000bad") }, { id: row.id }],
 				dto: { title: "uo-or-done" },
@@ -235,22 +235,22 @@ export function registerSpeciesCategoryRepositoryContract(
 		});
 
 		it("updateMany OR by id; count 0 when no match", async () => {
-			const a = await speciesCategory.createOne({ workspaceKey: wk, title: "sc-um-a" });
-			const b = await speciesCategory.createOne({ workspaceKey: wk, title: "sc-um-b" });
+			const a = await speciesCategory.createOne({ workspace: wk, title: "sc-um-a" });
+			const b = await speciesCategory.createOne({ workspace: wk, title: "sc-um-b" });
 			const { count } = await speciesCategory.updateMany({
 				filters: [{ id: a.id }, { id: b.id }],
 				dto: { title: "sc-um-both" },
 			});
 			expect(count).toBe(2);
 			const z = await speciesCategory.updateMany({
-				filters: [{ title: "missing-cat-xyz", workspaceKey: wk }],
+				filters: [{ title: "missing-cat-xyz", workspace: wk }],
 				dto: { title: "nope" },
 			});
 			expect(z.count).toBe(0);
 		});
 
 		it("deleteOne OR filters", async () => {
-			const row = await speciesCategory.createOne({ workspaceKey: wk, title: "del-one-or" });
+			const row = await speciesCategory.createOne({ workspace: wk, title: "del-one-or" });
 			await speciesCategory.deleteOne({
 				filters: [{ id: speciesCategoryId("00000000-0000-4000-8000-00000000bad") }, { id: row.id }],
 			});
@@ -260,10 +260,10 @@ export function registerSpeciesCategoryRepositoryContract(
 		});
 
 		it("deleteMany OR by id and by title", async () => {
-			const a = await speciesCategory.createOne({ workspaceKey: wk, title: "dm-a" });
-			const b = await speciesCategory.createOne({ workspaceKey: wk, title: "dm-b" });
+			const a = await speciesCategory.createOne({ workspace: wk, title: "dm-a" });
+			const b = await speciesCategory.createOne({ workspace: wk, title: "dm-b" });
 			const { count } = await speciesCategory.deleteMany({
-				filters: [{ id: a.id }, { title: "dm-b", workspaceKey: wk }],
+				filters: [{ id: a.id }, { title: "dm-b", workspace: wk }],
 			});
 			expect(count).toBe(2);
 		});

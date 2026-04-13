@@ -18,7 +18,7 @@ import type {
 } from "@backend/core/application/ports/repositories/gardening/gardening-event.repository.port";
 import { BaseRepositoryErrors } from "@backend/core/application/ports/repositories/shared/base-repository.errors";
 import type { GardeningEventEntity, LocationEntityId, PlantEntityId } from "@backend/core/domain/gardening/entities";
-import { workspaceKeysEqual } from "@backend/infrastructure/adapters/repositories/shared/workspace-key";
+import { workspacesEqual } from "@backend/infrastructure/adapters/repositories/shared/workspace-key";
 import {
 	findFirstRowMatchingAnyClause,
 	findRowsMatchingAnyClause,
@@ -50,7 +50,7 @@ export class GardeningEventInMemoryRepository extends BaseRepositoryErrors imple
 	): GardeningEventEntity {
 		return {
 			...existing,
-			workspaceKey: dto.workspaceKey !== undefined ? dto.workspaceKey : existing.workspaceKey,
+			workspace: dto.workspace !== undefined ? dto.workspace : existing.workspace,
 			action: dto.action !== undefined ? dto.action : existing.action,
 			updatedAt: new Date(),
 		};
@@ -151,7 +151,7 @@ export class GardeningEventInMemoryRepository extends BaseRepositoryErrors imple
 			for (const eid of eventIds) {
 				const row = this.store.gardeningEvents.get(eid);
 				if (!row) continue;
-				if (!workspaceKeysEqual(row.workspaceKey, clause.workspaceKey)) continue;
+				if (!workspacesEqual(row.workspace, clause.workspace)) continue;
 				const k = idKey(row.id);
 				if (seen.has(k)) continue;
 				seen.add(k);
@@ -172,7 +172,7 @@ export class GardeningEventInMemoryRepository extends BaseRepositoryErrors imple
 			for (const eid of eventIds) {
 				const row = this.store.gardeningEvents.get(eid);
 				if (!row) continue;
-				if (!workspaceKeysEqual(row.workspaceKey, clause.workspaceKey)) continue;
+				if (!workspacesEqual(row.workspace, clause.workspace)) continue;
 				const k = idKey(row.id);
 				if (seen.has(k)) continue;
 				seen.add(k);
@@ -190,11 +190,11 @@ export class GardeningEventInMemoryRepository extends BaseRepositoryErrors imple
 		const row = this.resolveStoredFromFilters(input.filters);
 		const plant = this.store.plants.get(idKey(input.plantId));
 		if (!plant) this.throwNotFoundError("Plant", input.plantId);
-		if (!workspaceKeysEqual(plant.workspaceKey, row.workspaceKey)) {
+		if (!workspacesEqual(plant.workspace, row.workspace)) {
 			this.throwValidationError({
 				operation: "bindToPlant",
 				validationCode: "plant-workspace-mismatch",
-				context: { plantId: input.plantId, eventWorkspaceKey: row.workspaceKey },
+				context: { plantId: input.plantId, eventWorkspaceKey: row.workspace.toKey() },
 			});
 		}
 		this.store.linkEventToPlant(row.id, input.plantId);
@@ -208,11 +208,11 @@ export class GardeningEventInMemoryRepository extends BaseRepositoryErrors imple
 		const row = this.resolveStoredFromFilters(input.filters);
 		const location = this.store.locations.get(idKey(input.locationId));
 		if (!location) this.throwNotFoundError("Location", input.locationId);
-		if (!workspaceKeysEqual(location.workspaceKey, row.workspaceKey)) {
+		if (!workspacesEqual(location.workspace, row.workspace)) {
 			this.throwValidationError({
 				operation: "bindToLocation",
 				validationCode: "location-workspace-mismatch",
-				context: { locationId: input.locationId, eventWorkspaceKey: row.workspaceKey },
+				context: { locationId: input.locationId, eventWorkspaceKey: row.workspace.toKey() },
 			});
 		}
 		this.store.linkEventToLocation(row.id, input.locationId);

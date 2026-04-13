@@ -8,7 +8,7 @@ import { workspaceRoleAssignmentId } from "@backend/infrastructure/integrations/
 import type { DependencyContainer } from "tsyringe";
 
 function compositeKey(subjectKey: SubjectKey, workspaceKey: WorkspaceKey): `${SubjectKey}|${WorkspaceKey}` {
-	return `${subjectKey}|${workspaceKey}` as const;
+	return `${subjectKey}|${workspaceKey}` as `${SubjectKey}|${WorkspaceKey}`;
 }
 
 /**
@@ -16,19 +16,20 @@ function compositeKey(subjectKey: SubjectKey, workspaceKey: WorkspaceKey): `${Su
  */
 export function seedTestsLocalAccessPermissions(c: DependencyContainer): void {
 	const store = c.resolve<InMemoryStore>(TOKENS.InMemoryStore);
-	const subjectKey = testsLocalServiceAccount.toKey();
+	const subject = testsLocalServiceAccount;
+	const subjectKey = subject.toKey();
 	const now = new Date();
-	const seeds: readonly { workspaceKey: WorkspaceKey; grantSource: string }[] = [
-		{ workspaceKey: WorkspaceVO.org("workspace").toKey(), grantSource: "seed-tests-local-workspace-root" },
-		{ workspaceKey: WorkspaceVO.globalShared().toKey(), grantSource: "seed-tests-local-system" },
+	const seeds: readonly { workspace: ReturnType<typeof WorkspaceVO.org>; grantSource: string }[] = [
+		{ workspace: WorkspaceVO.org("workspace"), grantSource: "seed-tests-local-workspace-root" },
+		{ workspace: WorkspaceVO.globalShared(), grantSource: "seed-tests-local-system" },
 	];
-	for (const { workspaceKey, grantSource } of seeds) {
-		const mapKey = compositeKey(subjectKey, workspaceKey);
+	for (const { workspace, grantSource } of seeds) {
+		const mapKey = compositeKey(subjectKey, workspace.toKey());
 		const id = workspaceRoleAssignmentId();
 		const row: WorkspaceRoleAssignmentEntity = {
 			id,
-			subjectKey,
-			workspaceKey,
+			subject,
+			workspace,
 			role: "admin",
 			grantSource,
 			createdAt: now,

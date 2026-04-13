@@ -1,7 +1,12 @@
 import { WorkspaceVO } from "@backend/core/domain/access/workspace.vo";
 
-/** Stable workspace key for repository contract tests (v2 + v1 adapters). */
-export const contractTestWorkspaceKey = WorkspaceVO.globalShared().toKey();
+/** Stable workspace scope for repository contract tests. */
+export const contractTestWorkspace = WorkspaceVO.globalShared();
 
 /** Second workspace for cross-workspace filter / AND-clause contract tests. */
-export const contractTestWorkspaceKeyB = WorkspaceVO.org("repo-contract-ws-b").toKey();
+export const contractTestWorkspaceB = WorkspaceVO.org("repo-contract-ws-b");
+
+/** Persisted key shape for adapters/tests that assert on string keys. */
+export const contractTestWorkspaceKey = contractTestWorkspace.toKey();
+
+export const contractTestWorkspaceKeyB = contractTestWorkspaceB.toKey();

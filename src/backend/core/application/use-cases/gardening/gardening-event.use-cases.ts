@@ -27,8 +27,8 @@ export class GardeningEventGetAllUseCase
 
 	public async execute(input: GardeningEventGetAllUseCaseInput): Promise<GardeningEventGetAllUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "read" });
-		const wk = input.context.activeWorkspaceScope.toKey();
-		return this.gardeningEventRepository.getMany({ filters: [{ workspaceKey: wk }] });
+		const scope = input.context.activeWorkspaceScope;
+		return this.gardeningEventRepository.getMany({ filters: [{ workspace: scope }] });
 	}
 }
 
@@ -45,8 +45,8 @@ export class GardeningEventGetByIdUseCase
 
 	public async execute(input: GardeningEventGetByIdUseCaseInput): Promise<GardeningEventGetByIdUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "read" });
-		const wk = input.context.activeWorkspaceScope.toKey();
-		return this.gardeningEventRepository.getOne({ filters: [{ id: input.dto.id, workspaceKey: wk }] });
+		const scope = input.context.activeWorkspaceScope;
+		return this.gardeningEventRepository.getOne({ filters: [{ id: input.dto.id, workspace: scope }] });
 	}
 }
 
@@ -66,10 +66,10 @@ export class GardeningEventUpdateUseCase
 
 	public async execute(input: GardeningEventUpdateUseCaseInput): Promise<GardeningEventUpdateUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "update" });
-		const wk = input.context.activeWorkspaceScope.toKey();
+		const scope = input.context.activeWorkspaceScope;
 		const { id, ...patch } = input.dto;
 		return this.gardeningEventRepository.updateOne({
-			filters: [{ id, workspaceKey: wk }],
+			filters: [{ id, workspace: scope }],
 			dto: patch,
 		});
 	}
@@ -88,9 +88,9 @@ export class GardeningEventDeleteUseCase
 
 	public async execute(input: GardeningEventDeleteUseCaseInput): Promise<GardeningEventDeleteUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "delete" });
-		const wk = input.context.activeWorkspaceScope.toKey();
+		const scope = input.context.activeWorkspaceScope;
 		return this.gardeningEventRepository.deleteOne({
-			filters: [{ id: input.dto.id, workspaceKey: wk }],
+			filters: [{ id: input.dto.id, workspace: scope }],
 		});
 	}
 }
@@ -112,7 +112,7 @@ export class GardeningEventCreateUseCase
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "create" });
 		return this.gardeningEventRepository.createOne({
 			action: input.dto.action,
-			workspaceKey: input.context.activeWorkspaceScope.toKey(),
+			workspace: input.context.activeWorkspaceScope,
 		});
 	}
 }
@@ -139,23 +139,23 @@ export class GardeningEventCreateForLocationUseCase
 	): Promise<GardeningEventCreateForLocationUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "create" });
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "read" });
-		const wk = input.context.activeWorkspaceScope.toKey();
-		await this.locationRepository.getOne({ filters: [{ id: input.dto.locationId, workspaceKey: wk }] });
+		const scope = input.context.activeWorkspaceScope;
+		await this.locationRepository.getOne({ filters: [{ id: input.dto.locationId, workspace: scope }] });
 		const gardeningEvent = await this.gardeningEventRepository.createOne({
 			action: input.dto.action,
-			workspaceKey: input.context.activeWorkspaceScope.toKey(),
+			workspace: input.context.activeWorkspaceScope,
 		});
-		const activeKey = input.context.activeWorkspaceScope.toKey();
+		const activeScope = input.context.activeWorkspaceScope;
 		try {
 			const locationNode = await this.spatialNodeRepository.getOneByRef({
 				filters: [
 					{
 						ref: { entity: "location", entityId: String(input.dto.locationId) },
-						workspaceKey: activeKey,
+						workspace: activeScope,
 					},
 				],
 			});
-			const allNodes = await this.spatialNodeRepository.getMany({ filters: [{ workspaceKey: activeKey }] });
+			const allNodes = await this.spatialNodeRepository.getMany({ filters: [{ workspace: activeScope }] });
 			const directPlantIds = allNodes.items
 				.filter(
 					(n) =>
@@ -167,13 +167,13 @@ export class GardeningEventCreateForLocationUseCase
 			const plants =
 				directPlantIds.length > 0
 					? await this.plantRepository.getMany({
-							filters: directPlantIds.map((id) => ({ id, workspaceKey: activeKey })),
+							filters: directPlantIds.map((id) => ({ id, workspace: activeScope })),
 						})
 					: { items: [] };
 			await Promise.all(
 				plants.items.map((plant) =>
 					this.gardeningEventRepository.bindToPlantOne({
-						filters: [{ id: gardeningEvent.id, workspaceKey: gardeningEvent.workspaceKey }],
+						filters: [{ id: gardeningEvent.id, workspace: gardeningEvent.workspace }],
 						plantId: plant.id,
 					}),
 				),
@@ -182,7 +182,7 @@ export class GardeningEventCreateForLocationUseCase
 			// Spatial mapping is optional during bootstrap/reset states.
 		}
 		await this.gardeningEventRepository.bindToLocationOne({
-			filters: [{ id: gardeningEvent.id, workspaceKey: gardeningEvent.workspaceKey }],
+			filters: [{ id: gardeningEvent.id, workspace: gardeningEvent.workspace }],
 			locationId: input.dto.locationId,
 		});
 		return gardeningEvent;
@@ -211,17 +211,17 @@ export class GardeningEventCreateForPlantListUseCase
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "read" });
 		const gardeningEvent = await this.gardeningEventRepository.createOne({
 			action: input.dto.action,
-			workspaceKey: input.context.activeWorkspaceScope.toKey(),
+			workspace: input.context.activeWorkspaceScope,
 		});
-		const activeKey = input.context.activeWorkspaceScope.toKey();
+		const activeScope = input.context.activeWorkspaceScope;
 		const plants = await this.plantRepository.getMany({
-			filters: input.dto.plantIds.map((id) => ({ id, workspaceKey: activeKey })),
+			filters: input.dto.plantIds.map((id) => ({ id, workspace: activeScope })),
 		});
 		const promises = [];
 		for (const plant of plants.items) {
 			promises.push(
 				this.gardeningEventRepository.bindToPlantOne({
-					filters: [{ id: gardeningEvent.id, workspaceKey: gardeningEvent.workspaceKey }],
+					filters: [{ id: gardeningEvent.id, workspace: gardeningEvent.workspace }],
 					plantId: plant.id,
 				}),
 			);
@@ -247,10 +247,10 @@ export class GardeningEventGetForPlantUseCase
 		input: GardeningEventGetForPlantUseCaseInput,
 	): Promise<GardeningEventGetForPlantUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "read" });
-		const activeKey = input.context.activeWorkspaceScope.toKey();
-		await this.plantRepository.getOne({ filters: [{ id: input.dto.plantId, workspaceKey: activeKey }] });
+		const activeScope = input.context.activeWorkspaceScope;
+		await this.plantRepository.getOne({ filters: [{ id: input.dto.plantId, workspace: activeScope }] });
 		return this.gardeningEventRepository.getManyForPlant({
-			filters: [{ plantId: input.dto.plantId, workspaceKey: activeKey }],
+			filters: [{ plantId: input.dto.plantId, workspace: activeScope }],
 		});
 	}
 }
@@ -271,10 +271,10 @@ export class GardeningEventGetForLocationUseCase
 		input: GardeningEventGetForLocationUseCaseInput,
 	): Promise<GardeningEventGetForLocationUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "read" });
-		const activeKey = input.context.activeWorkspaceScope.toKey();
-		await this.locationRepository.getOne({ filters: [{ id: input.dto.locationId, workspaceKey: activeKey }] });
+		const activeScope = input.context.activeWorkspaceScope;
+		await this.locationRepository.getOne({ filters: [{ id: input.dto.locationId, workspace: activeScope }] });
 		return this.gardeningEventRepository.getManyForLocation({
-			filters: [{ locationId: input.dto.locationId, workspaceKey: activeKey }],
+			filters: [{ locationId: input.dto.locationId, workspace: activeScope }],
 		});
 	}
 }
@@ -297,10 +297,10 @@ export class GardeningEventGetBindingsForEventUseCase
 		input: GardeningEventGetBindingsForEventUseCaseInput,
 	): Promise<GardeningEventGetBindingsForEventUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "read" });
-		const wk = input.context.activeWorkspaceScope.toKey();
-		await this.gardeningEventRepository.getOne({ filters: [{ id: input.dto.id, workspaceKey: wk }] });
+		const scope = input.context.activeWorkspaceScope;
+		await this.gardeningEventRepository.getOne({ filters: [{ id: input.dto.id, workspace: scope }] });
 		return this.gardeningEventRepository.getBindingsOne({
-			filters: [{ id: input.dto.id, workspaceKey: wk }],
+			filters: [{ id: input.dto.id, workspace: scope }],
 		});
 	}
 }

@@ -25,7 +25,7 @@ export type PlantHydratedWithCatalogSpecies = HydratedPlantEntity & {
 	cultivar: HydratedCultivarEntity & { species: SpeciesWithSystemCatalog };
 };
 
-type PlantCreatePayload = Omit<PlantRepositoryCreateInputDTO, "workspaceKey">;
+type PlantCreatePayload = Omit<PlantRepositoryCreateInputDTO, "workspace">;
 export type PlantCreateUseCaseInput = UseCaseRequest<PlantCreatePayload>;
 export type PlantCreateUseCaseOutput = PlantHydratedWithCatalogSpecies;
 
@@ -36,7 +36,7 @@ function enrichPlantSpeciesCatalogFlags(plant: HydratedPlantEntity): PlantHydrat
 			...plant.cultivar,
 			species: {
 				...plant.cultivar.species,
-				systemCatalog: WorkspaceVO.isGlobalSharedKey(plant.cultivar.species.workspaceKey),
+				systemCatalog: WorkspaceVO.isGlobalShared(plant.cultivar.species.workspace),
 			},
 		},
 	};
@@ -55,7 +55,7 @@ export class PlantCreateUseCase implements IUseCase<PlantCreateUseCaseInput, Pla
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "create" });
 		const created = await this.plantRepository.createOne({
 			...input.dto,
-			workspaceKey: input.context.activeWorkspaceScope.toKey(),
+			workspace: input.context.activeWorkspaceScope,
 		});
 		return enrichPlantSpeciesCatalogFlags(created);
 	}
@@ -83,11 +83,11 @@ export class PlantCreateManyUseCase implements IUseCase<PlantCreateManyUseCaseIn
 				message: "createMany rows must be at least 1.",
 			});
 		}
-		const wk = input.context.activeWorkspaceScope.toKey();
+		const scope = input.context.activeWorkspaceScope;
 		const created = await this.plantRepository.createMany({
 			items: input.dto.rows.map((row) => ({
 				...row,
-				workspaceKey: wk,
+				workspace: scope,
 			})),
 		});
 		return { items: created.items.map(enrichPlantSpeciesCatalogFlags) };
@@ -104,8 +104,8 @@ export class PlantGetAllUseCase implements IUseCase<PlantGetAllUseCaseInput, Pla
 	) {}
 	public async execute(input: PlantGetAllUseCaseInput): Promise<PlantGetAllUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "read" });
-		const wk = input.context.activeWorkspaceScope.toKey();
-		const all = await this.plantRepository.getMany({ filters: [{ workspaceKey: wk }] });
+		const scope = input.context.activeWorkspaceScope;
+		const all = await this.plantRepository.getMany({ filters: [{ workspace: scope }] });
 		return {
 			items: all.items.map(enrichPlantSpeciesCatalogFlags),
 		};
@@ -122,8 +122,8 @@ export class PlantGetByIdUseCase implements IUseCase<PlantGetByIdUseCaseInput, P
 	) {}
 	public async execute(input: PlantGetByIdUseCaseInput): Promise<PlantGetByIdUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "read" });
-		const wk = input.context.activeWorkspaceScope.toKey();
-		const row = await this.plantRepository.getOne({ filters: [{ id: input.dto.id, workspaceKey: wk }] });
+		const scope = input.context.activeWorkspaceScope;
+		const row = await this.plantRepository.getOne({ filters: [{ id: input.dto.id, workspace: scope }] });
 		return enrichPlantSpeciesCatalogFlags(row);
 	}
 }
@@ -138,10 +138,10 @@ export class PlantUpdateUseCase implements IUseCase<PlantUpdateUseCaseInput, Pla
 	) {}
 	public async execute(input: PlantUpdateUseCaseInput): Promise<PlantUpdateUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "update" });
-		const wk = input.context.activeWorkspaceScope.toKey();
+		const scope = input.context.activeWorkspaceScope;
 		const { id, ...patch } = input.dto;
 		const updated = await this.plantRepository.updateOne({
-			filters: [{ id, workspaceKey: wk }],
+			filters: [{ id, workspace: scope }],
 			dto: patch,
 		});
 		return enrichPlantSpeciesCatalogFlags(updated);
@@ -179,20 +179,20 @@ export class PlantDeleteUseCase implements IUseCase<PlantDeleteUseCaseInput, Pla
 	) {}
 	public async execute(input: PlantDeleteUseCaseInput): Promise<PlantDeleteUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "delete" });
-		const wk = input.context.activeWorkspaceScope.toKey();
+		const scope = input.context.activeWorkspaceScope;
 		const placement = await this.spatialOperationsService.getPlacementStatusByRef({
 			ref: { entity: "plant", entityId: String(input.dto.id) },
-			workspaceKeys: [wk],
+			workspaces: [scope],
 		});
 		if (placement.isPlaced) {
 			throw new PlantDeleteUseCasePlacedEntityError({ id: String(input.dto.id) });
 		}
 		const deletedId = await this.plantRepository.deleteOne({
-			filters: [{ id: input.dto.id, workspaceKey: wk }],
+			filters: [{ id: input.dto.id, workspace: scope }],
 		});
 		await this.spatialOperationsService.deleteUnplacedNodeByRef({
 			ref: { entity: "plant", entityId: String(deletedId) },
-			workspaceKeys: [wk],
+			workspaces: [scope],
 		});
 		return deletedId;
 	}
@@ -219,19 +219,19 @@ export class PlantDeleteManyUseCase implements IUseCase<PlantDeleteManyUseCaseIn
 				message: "deleteMany ids must be at least 1.",
 			});
 		}
-		const wk = input.context.activeWorkspaceScope.toKey();
+		const scope = input.context.activeWorkspaceScope;
 		const placedIdSet = new Set<string>();
 		for (const id of input.dto.ids) {
 			const placement = await this.spatialOperationsService.getPlacementStatusByRef({
 				ref: { entity: "plant", entityId: String(id) },
-				workspaceKeys: [wk],
+				workspaces: [scope],
 			});
 			if (placement.isPlaced) placedIdSet.add(String(id));
 		}
 		if (placedIdSet.size > 0) {
 			throw new PlantDeleteManyUseCasePlacedEntityError({ ids: [...placedIdSet].sort() });
 		}
-		const filters = input.dto.ids.map((id) => ({ id, workspaceKey: wk }));
+		const filters = input.dto.ids.map((id) => ({ id, workspace: scope }));
 		const { count } = await this.plantRepository.deleteMany({ filters });
 		if (count !== input.dto.ids.length) {
 			throw new RepositoryValidationError({
@@ -244,7 +244,7 @@ export class PlantDeleteManyUseCase implements IUseCase<PlantDeleteManyUseCaseIn
 		for (const deletedId of input.dto.ids) {
 			await this.spatialOperationsService.deleteUnplacedNodeByRef({
 				ref: { entity: "plant", entityId: String(deletedId) },
-				workspaceKeys: [wk],
+				workspaces: [scope],
 			});
 		}
 		return { deletedIds: input.dto.ids };

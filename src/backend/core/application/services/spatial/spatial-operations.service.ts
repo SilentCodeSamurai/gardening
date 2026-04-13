@@ -13,16 +13,16 @@ export class SpatialOperationsService {
 
 	public async getPlacementStatusByRef(params: {
 		ref: SpatialNodeEntityRef;
-		workspaceKeys: readonly SpatialNodeEntity["workspaceKey"][];
+		workspaces: readonly SpatialNodeEntity["workspace"][];
 	}): Promise<{
 		node: SpatialNodeEntity | null;
 		isPlaced: boolean;
 	}> {
-		const { ref, workspaceKeys } = params;
+		const { ref, workspaces } = params;
 		let node: SpatialNodeEntity | null = null;
 		try {
 			node = await this.spatialRepo.getOneByRef({
-				filters: workspaceKeys.map((workspaceKey) => ({ ref, workspaceKey })),
+				filters: workspaces.map((workspace) => ({ ref, workspace })),
 			});
 		} catch (e) {
 			if (!(e instanceof RepositoryNotFoundError)) throw e;
@@ -31,7 +31,7 @@ export class SpatialOperationsService {
 			return { node: null, isPlaced: false };
 		}
 		const all = await this.spatialRepo.getMany({
-			filters: workspaceKeys.map((workspaceKey) => ({ workspaceKey })),
+			filters: workspaces.map((workspace) => ({ workspace })),
 		});
 		const hasChildren = all.items.some((item) => String(item.parentId) === String(node.id));
 		const isPlaced = node.parentId !== null || hasChildren;
@@ -40,23 +40,23 @@ export class SpatialOperationsService {
 
 	public async deleteUnplacedNodeByRef(params: {
 		ref: SpatialNodeEntityRef;
-		workspaceKeys: readonly SpatialNodeEntity["workspaceKey"][];
+		workspaces: readonly SpatialNodeEntity["workspace"][];
 	}): Promise<void> {
 		const placement = await this.getPlacementStatusByRef(params);
 		if (!placement.node || placement.isPlaced) return;
 		await this.spatialRepo.deleteOne({
-			filters: [{ id: placement.node.id, workspaceKey: placement.node.workspaceKey }],
+			filters: [{ id: placement.node.id, workspace: placement.node.workspace }],
 		});
 	}
 
 	public async placeNode(input: {
-		workspaceKey: SpatialNodeEntity["workspaceKey"];
+		workspace: SpatialNodeEntity["workspace"];
 		id: SpatialNodeEntityId;
 		parentId: SpatialNodeEntityId | null;
 		rect: SpatialRect;
 	}): Promise<SpatialNodeEntity> {
 		const existing = await this.spatialRepo.getOne({
-			filters: [{ id: input.id, workspaceKey: input.workspaceKey }],
+			filters: [{ id: input.id, workspace: input.workspace }],
 		});
 
 		if (input.parentId !== null) {
@@ -64,10 +64,10 @@ export class SpatialOperationsService {
 				throw new Error("SpatialOperationsService: a node cannot be reparented under itself.");
 			}
 			await this.spatialRepo.getOne({
-				filters: [{ id: input.parentId, workspaceKey: input.workspaceKey }],
+				filters: [{ id: input.parentId, workspace: input.workspace }],
 			});
 			const subtree = await this.spatialRepo.getTreeForRootOne({
-				filters: [{ id: input.id, workspaceKey: input.workspaceKey }],
+				filters: [{ id: input.id, workspace: input.workspace }],
 			});
 			const contains = (node: SpatialNodeTreeNode, targetId: SpatialNodeEntityId): boolean => {
 				if (String(node.id) === String(targetId)) return true;
@@ -82,7 +82,7 @@ export class SpatialOperationsService {
 		}
 
 		return this.spatialRepo.updateOne({
-			filters: [{ id: input.id, workspaceKey: input.workspaceKey }],
+			filters: [{ id: input.id, workspace: input.workspace }],
 			dto: {
 				parentId: input.parentId,
 				rect: input.rect,

@@ -110,4 +110,10 @@ export class SubjectVO {
 	public toKey(): SubjectKey {
 		return `${this.version}:${this.type}:${this.externalId}` as SubjectKey;
 	}
+
+	public equals(other: SubjectVO): boolean {
+		return (
+			this.version === other.version && this.type === other.type && this.externalId === other.externalId
+		);
+	}
 }

@@ -24,8 +24,8 @@ describe("AccessControlApplicationService", () => {
 			const actor = SubjectVO.user("u1");
 			const scope = WorkspaceVO.org("acme");
 			await repo.upsertOne({
-				subjectKey: actor.toKey(),
-				workspaceKey: scope.toKey(),
+				subject: actor,
+				workspace: scope,
 				role: "editor",
 			});
 			const d = await svc.assertCanPerformActionOnWorkspace({
@@ -42,8 +42,8 @@ describe("AccessControlApplicationService", () => {
 			const actor = SubjectVO.user("u1");
 			const scope = WorkspaceVO.user("u1");
 			await repo.upsertOne({
-				subjectKey: actor.toKey(),
-				workspaceKey: scope.toKey(),
+				subject: actor,
+				workspace: scope,
 				role: "viewer",
 			});
 			await expect(
@@ -60,8 +60,8 @@ describe("AccessControlApplicationService", () => {
 			const actor = SubjectVO.user("u-view");
 			const scope = WorkspaceVO.user("u-view");
 			await repo.upsertOne({
-				subjectKey: actor.toKey(),
-				workspaceKey: scope.toKey(),
+				subject: actor,
+				workspace: scope,
 				role: "viewer",
 			});
 			await expect(
@@ -78,8 +78,8 @@ describe("AccessControlApplicationService", () => {
 			const actor = SubjectVO.user("u-c");
 			const scope = WorkspaceVO.user("u-c");
 			await repo.upsertOne({
-				subjectKey: actor.toKey(),
-				workspaceKey: scope.toKey(),
+				subject: actor,
+				workspace: scope,
 				role: "viewer",
 			});
 			await expect(
@@ -132,8 +132,8 @@ describe("AccessControlApplicationService", () => {
 			const other = SubjectVO.user("other");
 			const scope = WorkspaceVO.user("admin");
 			await repo.upsertOne({
-				subjectKey: adminUser.toKey(),
-				workspaceKey: scope.toKey(),
+				subject: adminUser,
+				workspace: scope,
 				role: "admin",
 			});
 			await svc.assignWorkspaceRole({
@@ -156,8 +156,8 @@ describe("AccessControlApplicationService", () => {
 			const other = SubjectVO.user("other");
 			const scope = WorkspaceVO.user("editor");
 			await repo.upsertOne({
-				subjectKey: editor.toKey(),
-				workspaceKey: scope.toKey(),
+				subject: editor,
+				workspace: scope,
 				role: "editor",
 			});
 			await expect(
@@ -176,13 +176,13 @@ describe("AccessControlApplicationService", () => {
 			const other = SubjectVO.user("other");
 			const scope = WorkspaceVO.user("admin");
 			await repo.upsertOne({
-				subjectKey: adminUser.toKey(),
-				workspaceKey: scope.toKey(),
+				subject: adminUser,
+				workspace: scope,
 				role: "admin",
 			});
 			await repo.upsertOne({
-				subjectKey: other.toKey(),
-				workspaceKey: scope.toKey(),
+				subject: other,
+				workspace: scope,
 				role: "viewer",
 			});
 			await svc.revokeWorkspaceRole({

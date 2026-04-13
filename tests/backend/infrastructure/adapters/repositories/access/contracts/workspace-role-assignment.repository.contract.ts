@@ -18,13 +18,13 @@ export function registerWorkspaceRoleAssignmentRepositoryContract(
 	describe(`WorkspaceRoleAssignmentRepositoryPort (${adapterLabel})`, () => {
 		let repo: ReturnType<typeof resolveAccessRepositoryPorts>["workspaceRoleAssignment"];
 
-		const u1 = SubjectVO.user("contract-u1").toKey();
-		const u2 = SubjectVO.user("contract-u2").toKey();
-		const u3 = SubjectVO.user("contract-u3").toKey();
-		const orgSubject = SubjectVO.organization("contract-org").toKey();
-		const wsA = WorkspaceVO.org("contract-ws-a").toKey();
-		const wsB = WorkspaceVO.org("contract-ws-b").toKey();
-		const wsGlobal = WorkspaceVO.globalShared().toKey();
+		const user1 = SubjectVO.user("contract-u1");
+		const user2 = SubjectVO.user("contract-u2");
+		const user3 = SubjectVO.user("contract-u3");
+		const orgSubject = SubjectVO.organization("contract-org");
+		const workspaceA = WorkspaceVO.org("contract-ws-a");
+		const workspaceB = WorkspaceVO.org("contract-ws-b");
+		const workspaceGlobal = WorkspaceVO.globalShared();
 
 		beforeEach(() => {
 			const ports = resolveAccessRepositoryPorts(createContainer());
@@ -33,8 +33,8 @@ export function registerWorkspaceRoleAssignmentRepositoryContract(
 
 		it("createOne with grantSource, full read/update/delete cycle", async () => {
 			const row = await repo.createOne({
-				subjectKey: u1,
-				workspaceKey: wsA,
+				subject: user1,
+				workspace: workspaceA,
 				role: ACCESS_ROLE.VIEWER,
 				grantSource: "seed",
 			});
@@ -60,43 +60,43 @@ export function registerWorkspaceRoleAssignmentRepositoryContract(
 
 		it("createOne without grantSource leaves grantSource undefined", async () => {
 			const row = await repo.createOne({
-				subjectKey: u1,
-				workspaceKey: wsA,
+				subject: user1,
+				workspace: workspaceA,
 				role: ACCESS_ROLE.ADMIN,
 			});
 			expect(row.grantSource).toBeUndefined();
 		});
 
 		it("createOne throws when the same subjectKey and workspaceKey already exists", async () => {
-			await repo.createOne({ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER });
-			const p = repo.createOne({ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.ADMIN });
+			await repo.createOne({ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER });
+			const p = repo.createOne({ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.ADMIN });
 			await expect(p).rejects.toBeInstanceOf(RepositoryConflictError);
 			await expect(p).rejects.toMatchObject({ reason: "duplicate-subject-workspace" });
 		});
 
 		it("upsertOne creates when the pair is missing", async () => {
 			const row = await repo.upsertOne({
-				subjectKey: u1,
-				workspaceKey: wsA,
+				subject: user1,
+				workspace: workspaceA,
 				role: ACCESS_ROLE.VIEWER,
 				grantSource: "first",
 			});
 			expect(row.role).toBe(ACCESS_ROLE.VIEWER);
 			expect(row.grantSource).toBe("first");
-			const got = await repo.getOne({ filters: [{ subjectKey: u1, workspaceKey: wsA }] });
+			const got = await repo.getOne({ filters: [{ subject: user1, workspace: workspaceA }] });
 			expect(got.id).toEqual(row.id);
 		});
 
 		it("upsertOne updates role and grantSource when the pair exists", async () => {
 			await repo.createOne({
-				subjectKey: u1,
-				workspaceKey: wsA,
+				subject: user1,
+				workspace: workspaceA,
 				role: ACCESS_ROLE.VIEWER,
 				grantSource: "seed",
 			});
 			const updated = await repo.upsertOne({
-				subjectKey: u1,
-				workspaceKey: wsA,
+				subject: user1,
+				workspace: workspaceA,
 				role: ACCESS_ROLE.ADMIN,
 				grantSource: "promoted",
 			});
@@ -106,14 +106,14 @@ export function registerWorkspaceRoleAssignmentRepositoryContract(
 
 		it("upsertOne without grantSource updates role only and preserves existing grantSource", async () => {
 			await repo.createOne({
-				subjectKey: u1,
-				workspaceKey: wsA,
+				subject: user1,
+				workspace: workspaceA,
 				role: ACCESS_ROLE.VIEWER,
 				grantSource: "keep-me",
 			});
 			const updated = await repo.upsertOne({
-				subjectKey: u1,
-				workspaceKey: wsA,
+				subject: user1,
+				workspace: workspaceA,
 				role: ACCESS_ROLE.EDITOR,
 			});
 			expect(updated.role).toBe(ACCESS_ROLE.EDITOR);
@@ -123,9 +123,9 @@ export function registerWorkspaceRoleAssignmentRepositoryContract(
 		it("createMany returns count and inserts distinct pairs", async () => {
 			const { count } = await repo.createMany({
 				items: [
-					{ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER },
-					{ subjectKey: u2, workspaceKey: wsA, role: ACCESS_ROLE.EDITOR },
-					{ subjectKey: u1, workspaceKey: wsB, role: ACCESS_ROLE.ADMIN },
+					{ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER },
+					{ subject: user2, workspace: workspaceA, role: ACCESS_ROLE.EDITOR },
+					{ subject: user1, workspace: workspaceB, role: ACCESS_ROLE.ADMIN },
 				],
 			});
 			expect(count).toBe(3);
@@ -139,11 +139,11 @@ export function registerWorkspaceRoleAssignmentRepositoryContract(
 		});
 
 		it("createMany leaves prior rows when a later item duplicates an earlier pair", async () => {
-			await repo.createOne({ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER });
+			await repo.createOne({ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER });
 			const p = repo.createMany({
 				items: [
-					{ subjectKey: u2, workspaceKey: wsA, role: ACCESS_ROLE.EDITOR },
-					{ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.ADMIN },
+					{ subject: user2, workspace: workspaceA, role: ACCESS_ROLE.EDITOR },
+					{ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.ADMIN },
 				],
 			});
 			await expect(p).rejects.toBeInstanceOf(RepositoryConflictError);
@@ -157,8 +157,8 @@ export function registerWorkspaceRoleAssignmentRepositoryContract(
 		it("createMany aborts on duplicate pairs within the same batch after inserting the first row", async () => {
 			const p = repo.createMany({
 				items: [
-					{ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER },
-					{ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.EDITOR },
+					{ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER },
+					{ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.EDITOR },
 				],
 			});
 			await expect(p).rejects.toBeInstanceOf(RepositoryConflictError);
@@ -168,7 +168,7 @@ export function registerWorkspaceRoleAssignmentRepositoryContract(
 		});
 
 		it("getOne uses OR filters — first clause misses, second hits", async () => {
-			const row = await repo.createOne({ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER });
+			const row = await repo.createOne({ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER });
 			const ghost = workspaceRoleAssignmentId("00000000-0000-4000-8000-00000000dead");
 			const got = await repo.getOne({
 				filters: [{ id: ghost }, { id: row.id }],
@@ -179,8 +179,8 @@ export function registerWorkspaceRoleAssignmentRepositoryContract(
 		it("getMany without filters returns every assignment in the store", async () => {
 			await repo.createMany({
 				items: [
-					{ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER },
-					{ subjectKey: u2, workspaceKey: wsB, role: ACCESS_ROLE.EDITOR },
+					{ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER },
+					{ subject: user2, workspace: workspaceB, role: ACCESS_ROLE.EDITOR },
 				],
 			});
 			const { items } = await repo.getMany();
@@ -188,17 +188,17 @@ export function registerWorkspaceRoleAssignmentRepositoryContract(
 		});
 
 		it("getMany with filters: [] returns empty", async () => {
-			await repo.createOne({ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER });
+			await repo.createOne({ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER });
 			const { items } = await repo.getMany({ filters: [] });
 			expect(items).toHaveLength(0);
 		});
 
 		it("getMany OR unions rows matching any clause", async () => {
-			await repo.createOne({ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER });
-			const b = await repo.createOne({ subjectKey: u2, workspaceKey: wsA, role: ACCESS_ROLE.EDITOR });
-			await repo.createOne({ subjectKey: u3, workspaceKey: wsB, role: ACCESS_ROLE.ADMIN });
+			await repo.createOne({ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER });
+			const b = await repo.createOne({ subject: user2, workspace: workspaceA, role: ACCESS_ROLE.EDITOR });
+			await repo.createOne({ subject: user3, workspace: workspaceB, role: ACCESS_ROLE.ADMIN });
 			const { items } = await repo.getMany({
-				filters: [{ subjectKey: u1 }, { subjectKey: u2 }],
+				filters: [{ subject: user1 }, { subject: user2 }],
 			});
 			expect(items).toHaveLength(2);
 			expect(new Set(items.map((i) => i.id as string)).has(b.id as string)).toBe(true);
@@ -222,15 +222,15 @@ export function registerWorkspaceRoleAssignmentRepositoryContract(
 		});
 
 		it("getOne matches composite subjectKey + workspaceKey without id", async () => {
-			await repo.createOne({ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER });
+			await repo.createOne({ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER });
 			const got = await repo.getOne({
-				filters: [{ subjectKey: u1, workspaceKey: wsA }],
+				filters: [{ subject: user1, workspace: workspaceA }],
 			});
 			expect(got.role).toBe(ACCESS_ROLE.VIEWER);
 		});
 
 		it("updateOne preserves id and createdAt when patching role", async () => {
-			const row = await repo.createOne({ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER });
+			const row = await repo.createOne({ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER });
 			const createdAt = row.createdAt.getTime();
 			const updated = await repo.updateOne({
 				filters: [{ id: row.id }],
@@ -242,27 +242,27 @@ export function registerWorkspaceRoleAssignmentRepositoryContract(
 		});
 
 		it("updateOne can change subjectKey when the new pair is unoccupied", async () => {
-			const row = await repo.createOne({ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER });
+			const row = await repo.createOne({ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER });
 			const updated = await repo.updateOne({
 				filters: [{ id: row.id }],
-				dto: { subjectKey: u2 },
+				dto: { subject: user2 },
 			});
-			expect(updated.subjectKey).toBe(u2);
+			expect(updated.subject.equals(user2)).toBe(true);
 			const got = await repo.getOne({ filters: [{ id: row.id }] });
-			expect(got.subjectKey).toBe(u2);
+			expect(got.subject.equals(user2)).toBe(true);
 		});
 
 		it("updateOne can change workspaceKey when the new pair is unoccupied", async () => {
-			const row = await repo.createOne({ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER });
+			const row = await repo.createOne({ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER });
 			const updated = await repo.updateOne({
 				filters: [{ id: row.id }],
-				dto: { workspaceKey: wsB },
+				dto: { workspace: workspaceB },
 			});
-			expect(updated.workspaceKey).toBe(wsB);
+			expect(updated.workspace.equals(workspaceB)).toBe(true);
 		});
 
 		it("updateOne with empty dto still refreshes updatedAt", async () => {
-			const row = await repo.createOne({ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER });
+			const row = await repo.createOne({ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER });
 			const before = row.updatedAt.getTime();
 			const updated = await repo.updateOne({
 				filters: [{ id: row.id }],
@@ -272,24 +272,24 @@ export function registerWorkspaceRoleAssignmentRepositoryContract(
 		});
 
 		it("after updateOne relocates map entry, old subject+workspace pair no longer resolves", async () => {
-			await repo.createOne({ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER });
+			await repo.createOne({ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER });
 			await repo.updateOne({
-				filters: [{ subjectKey: u1, workspaceKey: wsA }],
-				dto: { subjectKey: u2 },
+				filters: [{ subject: user1, workspace: workspaceA }],
+				dto: { subject: user2 },
 			});
 			await expect(
-				repo.getOne({ filters: [{ subjectKey: u1, workspaceKey: wsA }] }),
+				repo.getOne({ filters: [{ subject: user1, workspace: workspaceA }] }),
 			).rejects.toBeInstanceOf(RepositoryNotFoundError);
-			const moved = await repo.getOne({ filters: [{ subjectKey: u2, workspaceKey: wsA }] });
+			const moved = await repo.getOne({ filters: [{ subject: user2, workspace: workspaceA }] });
 			expect(moved.role).toBe(ACCESS_ROLE.VIEWER);
 		});
 
 		it("updateOne throws when moving onto a subject+workspace pair owned by another row", async () => {
-			await repo.createOne({ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER });
-			const second = await repo.createOne({ subjectKey: u2, workspaceKey: wsA, role: ACCESS_ROLE.EDITOR });
+			await repo.createOne({ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER });
+			const second = await repo.createOne({ subject: user2, workspace: workspaceA, role: ACCESS_ROLE.EDITOR });
 			const p = repo.updateOne({
 				filters: [{ id: second.id }],
-				dto: { subjectKey: u1 },
+				dto: { subject: user1 },
 			});
 			await expect(p).rejects.toBeInstanceOf(RepositoryConflictError);
 			await expect(p).rejects.toMatchObject({ reason: "duplicate-subject-workspace" });
@@ -298,8 +298,8 @@ export function registerWorkspaceRoleAssignmentRepositoryContract(
 		it("updateMany applies the same patch to every row matching OR filters", async () => {
 			await repo.createMany({
 				items: [
-					{ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER },
-					{ subjectKey: u2, workspaceKey: wsB, role: ACCESS_ROLE.VIEWER },
+					{ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER },
+					{ subject: user2, workspace: workspaceB, role: ACCESS_ROLE.VIEWER },
 				],
 			});
 			const { count } = await repo.updateMany({
@@ -313,7 +313,7 @@ export function registerWorkspaceRoleAssignmentRepositoryContract(
 
 		it("updateMany returns count 0 when nothing matches", async () => {
 			const { count } = await repo.updateMany({
-				filters: [{ subjectKey: u3 }],
+				filters: [{ subject: user3 }],
 				dto: { role: ACCESS_ROLE.ADMIN },
 			});
 			expect(count).toBe(0);
@@ -322,18 +322,18 @@ export function registerWorkspaceRoleAssignmentRepositoryContract(
 		it("updateMany throws when the shared patch would collide after the first row is moved", async () => {
 			await repo.createMany({
 				items: [
-					{ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER },
-					{ subjectKey: u2, workspaceKey: wsA, role: ACCESS_ROLE.EDITOR },
+					{ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER },
+					{ subject: user2, workspace: workspaceA, role: ACCESS_ROLE.EDITOR },
 				],
 			});
 			const p = repo.updateMany({
-				filters: [{ workspaceKey: wsA }],
-				dto: { subjectKey: u3 },
+				filters: [{ workspace: workspaceA }],
+				dto: { subject: user3 },
 			});
 			await expect(p).rejects.toBeInstanceOf(RepositoryConflictError);
 			const { items } = await repo.getMany();
 			expect(items).toHaveLength(2);
-			expect(items.every((i) => i.subjectKey === u3)).toBe(false);
+			expect(items.every((i) => i.subject.equals(user3))).toBe(false);
 		});
 
 		it("deleteOne throws when the target is missing", async () => {
@@ -347,12 +347,12 @@ export function registerWorkspaceRoleAssignmentRepositoryContract(
 		it("deleteMany removes all rows matching any clause and reports count", async () => {
 			await repo.createMany({
 				items: [
-					{ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER },
-					{ subjectKey: u2, workspaceKey: wsB, role: ACCESS_ROLE.EDITOR },
+					{ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER },
+					{ subject: user2, workspace: workspaceB, role: ACCESS_ROLE.EDITOR },
 				],
 			});
 			const { count } = await repo.deleteMany({
-				filters: [{ subjectKey: u1 }, { subjectKey: u2 }],
+				filters: [{ subject: user1 }, { subject: user2 }],
 			});
 			expect(count).toBe(2);
 			const { items } = await repo.getMany();
@@ -361,61 +361,61 @@ export function registerWorkspaceRoleAssignmentRepositoryContract(
 
 		it("deleteMany returns 0 when filters match nothing", async () => {
 			const { count } = await repo.deleteMany({
-				filters: [{ subjectKey: u3 }],
+				filters: [{ subject: user3 }],
 			});
 			expect(count).toBe(0);
 		});
 
 		it("supports organization subject and globalShared workspace keys", async () => {
 			const row = await repo.createOne({
-				subjectKey: orgSubject,
-				workspaceKey: wsGlobal,
+				subject: orgSubject,
+				workspace: workspaceGlobal,
 				role: ACCESS_ROLE.ADMIN,
 				grantSource: "bootstrap",
 			});
 			const got = await repo.getOne({
-				filters: [{ subjectKey: orgSubject, workspaceKey: wsGlobal }],
+				filters: [{ subject: orgSubject, workspace: workspaceGlobal }],
 			});
 			expect(got.id).toEqual(row.id);
 		});
 
 		it("serviceAccount subject keys round-trip", async () => {
-			const sa = SubjectVO.serviceAccount("contract-bot").toKey();
+			const serviceAccountBot = SubjectVO.serviceAccount("contract-bot");
 			const row = await repo.createOne({
-				subjectKey: sa,
-				workspaceKey: wsA,
+				subject: serviceAccountBot,
+				workspace: workspaceA,
 				role: ACCESS_ROLE.EDITOR,
 			});
-			const { items } = await repo.getMany({ filters: [{ subjectKey: sa }] });
+			const { items } = await repo.getMany({ filters: [{ subject: serviceAccountBot }] });
 			expect(items).toHaveLength(1);
 			expect(items[0]?.id).toEqual(row.id);
 		});
 
 		it("getMany single-field filter by workspaceKey", async () => {
-			await repo.createOne({ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER });
-			await repo.createOne({ subjectKey: u2, workspaceKey: wsB, role: ACCESS_ROLE.ADMIN });
-			const { items } = await repo.getMany({ filters: [{ workspaceKey: wsA }] });
-			expect(items.every((i) => i.workspaceKey === wsA)).toBe(true);
-			expect(items.some((i) => i.subjectKey === u1)).toBe(true);
+			await repo.createOne({ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER });
+			await repo.createOne({ subject: user2, workspace: workspaceB, role: ACCESS_ROLE.ADMIN });
+			const { items } = await repo.getMany({ filters: [{ workspace: workspaceA }] });
+			expect(items.every((i) => i.workspace.equals(workspaceA))).toBe(true);
+			expect(items.some((i) => i.subject.equals(user1))).toBe(true);
 		});
 
 		it("getMany multi-field AND: wrong workspaceKey excludes row", async () => {
-			const row = await repo.createOne({ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER });
-			const { items } = await repo.getMany({ filters: [{ id: row.id, workspaceKey: wsB }] });
+			const row = await repo.createOne({ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER });
+			const { items } = await repo.getMany({ filters: [{ id: row.id, workspace: workspaceB }] });
 			expect(items).toHaveLength(0);
 		});
 
 		it("getMany OR combines id miss with subjectKey hit", async () => {
-			const row = await repo.createOne({ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER });
+			const row = await repo.createOne({ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER });
 			const { items } = await repo.getMany({
-				filters: [{ id: workspaceRoleAssignmentId("00000000-0000-4000-8000-00000000bad") }, { subjectKey: u1 }],
+				filters: [{ id: workspaceRoleAssignmentId("00000000-0000-4000-8000-00000000bad") }, { subject: user1 }],
 			});
 			expect(items).toHaveLength(1);
 			expect(items[0]?.id).toEqual(row.id);
 		});
 
 		it("updateOne OR filters", async () => {
-			const row = await repo.createOne({ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER });
+			const row = await repo.createOne({ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER });
 			const u = await repo.updateOne({
 				filters: [{ id: workspaceRoleAssignmentId("00000000-0000-4000-8000-00000000bad") }, { id: row.id }],
 				dto: { role: ACCESS_ROLE.ADMIN },
@@ -424,7 +424,7 @@ export function registerWorkspaceRoleAssignmentRepositoryContract(
 		});
 
 		it("deleteOne OR filters", async () => {
-			const row = await repo.createOne({ subjectKey: u2, workspaceKey: wsB, role: ACCESS_ROLE.VIEWER });
+			const row = await repo.createOne({ subject: user2, workspace: workspaceB, role: ACCESS_ROLE.VIEWER });
 			await repo.deleteOne({
 				filters: [{ id: workspaceRoleAssignmentId("00000000-0000-4000-8000-00000000bad") }, { id: row.id }],
 			});
@@ -432,10 +432,10 @@ export function registerWorkspaceRoleAssignmentRepositoryContract(
 		});
 
 		it("deleteMany OR by id and by workspaceKey", async () => {
-			const a = await repo.createOne({ subjectKey: u1, workspaceKey: wsA, role: ACCESS_ROLE.VIEWER });
-			await repo.createOne({ subjectKey: u2, workspaceKey: wsB, role: ACCESS_ROLE.EDITOR });
+			const a = await repo.createOne({ subject: user1, workspace: workspaceA, role: ACCESS_ROLE.VIEWER });
+			await repo.createOne({ subject: user2, workspace: workspaceB, role: ACCESS_ROLE.EDITOR });
 			const { count } = await repo.deleteMany({
-				filters: [{ id: a.id }, { workspaceKey: wsB, subjectKey: u2 }],
+				filters: [{ id: a.id }, { workspace: workspaceB, subject: user2 }],
 			});
 			expect(count).toBe(2);
 		});

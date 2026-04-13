@@ -19,7 +19,7 @@ import {
 	findFirstRowMatchingAnyClause,
 	findRowsMatchingAnyClause,
 } from "@backend/infrastructure/adapters/repositories/shared/in-memory-entity-filter";
-import { workspaceKeysEqual } from "@backend/infrastructure/adapters/repositories/shared/workspace-key";
+import { workspacesEqual } from "@backend/infrastructure/adapters/repositories/shared/workspace-key";
 import type { InMemoryStore } from "@backend/infrastructure/integrations/in-memory-database/client";
 import { idKey, plantId } from "@backend/infrastructure/integrations/shared/database-ids";
 
@@ -47,11 +47,11 @@ export class PlantInMemoryRepository extends BaseRepositoryErrors implements Pla
 		if (!cultivarRow) {
 			this.throwNotFoundError("Cultivar", dto.cultivarId);
 		}
-		if (!workspaceKeysEqual(cultivarRow.workspaceKey, dto.workspaceKey)) {
+		if (!workspacesEqual(cultivarRow.workspace, dto.workspace)) {
 			this.throwValidationError({
 				operation: "create",
 				validationCode: "cultivar-workspace-mismatch",
-				context: { cultivarId: dto.cultivarId, workspaceKey: dto.workspaceKey },
+				context: { cultivarId: dto.cultivarId, workspaceKey: dto.workspace.toKey() },
 			});
 		}
 		const now = new Date();
@@ -67,11 +67,11 @@ export class PlantInMemoryRepository extends BaseRepositoryErrors implements Pla
 	}
 
 	private patchStored(existing: PlantEntity, dto: PlantRepositoryUpdatePatchDTO): PlantEntity {
-		const nextWorkspaceKey = dto.workspaceKey !== undefined ? dto.workspaceKey : existing.workspaceKey;
+		const nextWorkspace = dto.workspace !== undefined ? dto.workspace : existing.workspace;
 		const nextCultivarId = dto.cultivarId !== undefined ? dto.cultivarId : existing.cultivarId;
 		return {
 			...existing,
-			workspaceKey: nextWorkspaceKey,
+			workspace: nextWorkspace,
 			title: dto.title !== undefined ? dto.title : existing.title,
 			description: dto.description !== undefined ? dto.description : existing.description,
 			cultivarId: nextCultivarId,
@@ -81,15 +81,15 @@ export class PlantInMemoryRepository extends BaseRepositoryErrors implements Pla
 
 	private assertCultivarMatchesWorkspace(
 		cultivarId: PlantEntity["cultivarId"],
-		workspaceKey: PlantEntity["workspaceKey"],
+		workspace: PlantEntity["workspace"],
 	): void {
 		const cultivarRow = this.store.cultivars.get(idKey(cultivarId));
 		if (!cultivarRow) this.throwNotFoundError("Cultivar", cultivarId);
-		if (!workspaceKeysEqual(cultivarRow.workspaceKey, workspaceKey)) {
+		if (!workspacesEqual(cultivarRow.workspace, workspace)) {
 			this.throwValidationError({
 				operation: "update",
 				validationCode: "cultivar-workspace-mismatch",
-				context: { cultivarId, workspaceKey },
+				context: { cultivarId, workspaceKey: workspace.toKey() },
 			});
 		}
 	}
@@ -132,7 +132,7 @@ export class PlantInMemoryRepository extends BaseRepositoryErrors implements Pla
 		const row = findFirstRowMatchingAnyClause(this.store.plants.values(), input.filters);
 		if (!row) this.throwNotFoundError("Plant", input.filters);
 		const updated = this.patchStored(row, input.dto);
-		this.assertCultivarMatchesWorkspace(updated.cultivarId, updated.workspaceKey);
+		this.assertCultivarMatchesWorkspace(updated.cultivarId, updated.workspace);
 		this.store.plants.set(idKey(updated.id), updated);
 		return this.hydrate(updated);
 	}
@@ -145,7 +145,7 @@ export class PlantInMemoryRepository extends BaseRepositoryErrors implements Pla
 		let count = 0;
 		for (const row of rows) {
 			const updated = this.patchStored(row, input.dto);
-			this.assertCultivarMatchesWorkspace(updated.cultivarId, updated.workspaceKey);
+			this.assertCultivarMatchesWorkspace(updated.cultivarId, updated.workspace);
 			this.store.plants.set(idKey(updated.id), updated);
 			count += 1;
 		}

@@ -13,7 +13,7 @@ import type { UseCaseRequest } from "../use-case-context";
 
 export type SpeciesWithSystemCatalog = SpeciesEntity & { systemCatalog: boolean };
 
-type SpeciesCreatePayload = Omit<SpeciesRepositoryCreateInputDTO, "workspaceKey">;
+type SpeciesCreatePayload = Omit<SpeciesRepositoryCreateInputDTO, "workspace">;
 export type SpeciesCreateUseCaseInput = UseCaseRequest<SpeciesCreatePayload>;
 export type SpeciesCreateUseCaseOutput = SpeciesWithSystemCatalog;
 
@@ -27,9 +27,9 @@ export class SpeciesCreateUseCase implements IUseCase<SpeciesCreateUseCaseInput,
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "create" });
 		const created = await this.speciesRepository.createOne({
 			...input.dto,
-			workspaceKey: input.context.activeWorkspaceScope.toKey(),
+			workspace: input.context.activeWorkspaceScope,
 		});
-		return { ...created, systemCatalog: WorkspaceVO.isGlobalSharedKey(created.workspaceKey) };
+		return { ...created, systemCatalog: WorkspaceVO.isGlobalShared(created.workspace) };
 	}
 }
 
@@ -44,9 +44,9 @@ export class SpeciesGetByIdUseCase implements IUseCase<SpeciesGetByIdUseCaseInpu
 
 	public async execute(input: SpeciesGetByIdUseCaseInput): Promise<SpeciesGetByIdUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "read" });
-		const wk = input.context.activeWorkspaceScope.toKey();
-		const row = await this.speciesRepository.getOne({ filters: [{ id: input.dto.id, workspaceKey: wk }] });
-		return { ...row, systemCatalog: WorkspaceVO.isGlobalSharedKey(row.workspaceKey) };
+		const scope = input.context.activeWorkspaceScope;
+		const row = await this.speciesRepository.getOne({ filters: [{ id: input.dto.id, workspace: scope }] });
+		return { ...row, systemCatalog: WorkspaceVO.isGlobalShared(row.workspace) };
 	}
 }
 
@@ -64,14 +64,14 @@ export class SpeciesGetAllUseCase implements IUseCase<SpeciesGetAllUseCaseInput,
 			...input.context,
 			action: "read",
 		});
-		const active = input.context.activeWorkspaceScope.toKey();
-		const global = WorkspaceVO.globalShared().toKey();
+		const active = input.context.activeWorkspaceScope;
+		const global = WorkspaceVO.globalShared();
 		const all = await this.speciesRepository.getMany({
-			filters: [{ workspaceKey: active }, { workspaceKey: global }],
+			filters: [{ workspace: active }, { workspace: global }],
 		});
 		const enriched = all.items.map((item) => ({
 			...item,
-			systemCatalog: WorkspaceVO.isGlobalSharedKey(item.workspaceKey),
+			systemCatalog: WorkspaceVO.isGlobalShared(item.workspace),
 		}));
 		return { items: enriched };
 	}
@@ -88,13 +88,13 @@ export class SpeciesUpdateUseCase implements IUseCase<SpeciesUpdateUseCaseInput,
 
 	public async execute(input: SpeciesUpdateUseCaseInput): Promise<SpeciesUpdateUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "update" });
-		const wk = input.context.activeWorkspaceScope.toKey();
+		const scope = input.context.activeWorkspaceScope;
 		const { id, ...patch } = input.dto;
 		const updated = await this.speciesRepository.updateOne({
-			filters: [{ id, workspaceKey: wk }],
+			filters: [{ id, workspace: scope }],
 			dto: patch,
 		});
-		return { ...updated, systemCatalog: WorkspaceVO.isGlobalSharedKey(updated.workspaceKey) };
+		return { ...updated, systemCatalog: WorkspaceVO.isGlobalShared(updated.workspace) };
 	}
 }
 
@@ -109,9 +109,9 @@ export class SpeciesDeleteUseCase implements IUseCase<SpeciesDeleteUseCaseInput,
 
 	public async execute(input: SpeciesDeleteUseCaseInput): Promise<SpeciesDeleteUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "delete" });
-		const wk = input.context.activeWorkspaceScope.toKey();
+		const scope = input.context.activeWorkspaceScope;
 		return this.speciesRepository.deleteOne({
-			filters: [{ id: input.dto.id, workspaceKey: wk }],
+			filters: [{ id: input.dto.id, workspace: scope }],
 		});
 	}
 }

@@ -14,11 +14,11 @@ import type { UseCaseRequest } from "#/backend/core/application/use-cases/use-ca
 
 async function getSpatialNodeOrNull(
 	repo: SpatialNodeRepositoryPort,
-	workspaceKey: SpatialNodeEntity["workspaceKey"],
+	workspace: SpatialNodeEntity["workspace"],
 	id: SpatialNodeEntityId,
 ): Promise<SpatialNodeEntity | null> {
 	try {
-		return await repo.getOne({ filters: [{ id, workspaceKey }] });
+		return await repo.getOne({ filters: [{ id, workspace }] });
 	} catch (e) {
 		if (e instanceof RepositoryNotFoundError) return null;
 		throw e;
@@ -43,7 +43,7 @@ export class SpatialNodeCreateUseCase
 	public async execute(input: SpatialNodeCreateUseCaseInput): Promise<SpatialNodeCreateUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "create" });
 		return this.repo.createOne({
-			workspaceKey: input.context.activeWorkspaceScope.toKey(),
+			workspace: input.context.activeWorkspaceScope,
 			parentId: input.dto.parentId,
 			rect: input.dto.rect,
 			kind: input.dto.kind,
@@ -64,8 +64,8 @@ export class SpatialNodeGetAllUseCase
 	) {}
 	public async execute(input: SpatialNodeGetAllUseCaseInput): Promise<SpatialNodeGetAllUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "read" });
-		const wk = input.context.activeWorkspaceScope.toKey();
-		return this.repo.getMany({ filters: [{ workspaceKey: wk }] });
+		const scope = input.context.activeWorkspaceScope;
+		return this.repo.getMany({ filters: [{ workspace: scope }] });
 	}
 }
 
@@ -83,9 +83,9 @@ export class SpatialNodeGetTreeForRootIdUseCase
 		input: SpatialNodeGetTreeForRootIdUseCaseInput,
 	): Promise<SpatialNodeGetTreeForRootIdUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "read" });
-		const wk = input.context.activeWorkspaceScope.toKey();
-		await this.repo.getOne({ filters: [{ id: input.dto.id, workspaceKey: wk }] });
-		return this.repo.getTreeForRootOne({ filters: [{ id: input.dto.id, workspaceKey: wk }] });
+		const scope = input.context.activeWorkspaceScope;
+		await this.repo.getOne({ filters: [{ id: input.dto.id, workspace: scope }] });
+		return this.repo.getTreeForRootOne({ filters: [{ id: input.dto.id, workspace: scope }] });
 	}
 }
 
@@ -101,9 +101,9 @@ export class SpatialNodeDeleteUseCase
 	) {}
 	public async execute(input: SpatialNodeDeleteUseCaseInput): Promise<SpatialNodeDeleteUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "delete" });
-		const wk = input.context.activeWorkspaceScope.toKey();
+		const scope = input.context.activeWorkspaceScope;
 		return this.repo.deleteOne({
-			filters: [{ id: input.dto.id, workspaceKey: wk }],
+			filters: [{ id: input.dto.id, workspace: scope }],
 		});
 	}
 }
@@ -125,8 +125,8 @@ export class SpatialNodeRestoreUseCase
 		private readonly repo: SpatialNodeRepositoryPort,
 	) {}
 	public async execute(input: SpatialNodeRestoreUseCaseInput): Promise<SpatialNodeRestoreUseCaseOutput> {
-		const wk = input.context.activeWorkspaceScope.toKey();
-		const existing = await getSpatialNodeOrNull(this.repo, wk, input.dto.id);
+		const scope = input.context.activeWorkspaceScope;
+		const existing = await getSpatialNodeOrNull(this.repo, scope, input.dto.id);
 		if (existing === null) {
 			await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "create" });
 		} else {
@@ -134,7 +134,7 @@ export class SpatialNodeRestoreUseCase
 		}
 		return this.repo.restoreOne({
 			id: input.dto.id,
-			workspaceKey: wk,
+			workspace: scope,
 			parentId: input.dto.parentId,
 			rect: input.dto.rect,
 			kind: input.dto.kind,
@@ -165,11 +165,11 @@ export class SpatialApplyOperationsUseCase
 	public async execute(input: SpatialApplyOperationsUseCaseInput): Promise<SpatialApplyOperationsUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "update" });
 		const results: SpatialNodeEntity[] = [];
-		const wk = input.context.activeWorkspaceScope.toKey();
+		const scope = input.context.activeWorkspaceScope;
 		for (const op of input.dto.operations) {
 			results.push(
 				await this.opsService.placeNode({
-					workspaceKey: wk,
+					workspace: scope,
 					id: op.id,
 					parentId: op.parentId,
 					rect: op.rect,

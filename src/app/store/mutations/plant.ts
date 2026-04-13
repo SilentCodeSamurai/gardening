@@ -1,3 +1,4 @@
+import { WorkspaceVO } from "@backend/core/domain/access/workspace.vo";
 import type { CultivarEntity, HydratedPlantEntity } from "@backend/core/domain/gardening/entities";
 import type { SpatialNodeEntity, SpatialNodeTreeNode } from "@backend/core/domain/spatial/entities";
 import type { ItemsContainer } from "@backend/shared/types";
@@ -62,7 +63,7 @@ export function usePlantCreateMutation() {
 				if (!cultivar || !workspaceKey) return { snapshots };
 				const pendingId = makePendingId("plant");
 				const pending: CachedHydratedPlant = {
-					workspaceKey,
+					workspace: WorkspaceVO.fromKey(workspaceKey),
 					id: pendingId as HydratedPlantEntity["id"],
 					title: variables.title ?? null,
 					description: variables.description ?? null,
@@ -132,7 +133,7 @@ export function usePlantCreateManyMutation() {
 					if (!cultivar) continue;
 					const pendingId = makePendingId(`plant-many-${i}`);
 					pendingItems.push({
-						workspaceKey,
+						workspace: WorkspaceVO.fromKey(workspaceKey),
 						id: pendingId as HydratedPlantEntity["id"],
 						title: row.title ?? null,
 						description: row.description ?? null,

@@ -60,15 +60,15 @@ export class AccessControlApplicationService {
 		}
 		const grantSource = `WORKSPACE_ROLE_ASSIGNMENT: ${input.actorSubject.toKey()} -> ${input.targetSubject.toKey()}`;
 		const assignment = await this.workspaceRoleRepository.upsertOne({
-			subjectKey: input.targetSubject.toKey(),
-			workspaceKey: input.activeWorkspaceScope.toKey(),
+			subject: input.targetSubject,
+			workspace: input.activeWorkspaceScope,
 			role: input.role,
 			grantSource,
 		});
 		this.audit?.recordRoleAssigned({
-			actorSubjectKey: input.actorSubject.toKey(),
-			targetSubjectKey: input.targetSubject.toKey(),
-			workspaceKey: assignment.workspaceKey,
+			actorSubject: input.actorSubject,
+			targetSubject: input.targetSubject,
+			workspace: assignment.workspace,
 			role: assignment.role,
 			grantSource,
 		});
@@ -93,15 +93,15 @@ export class AccessControlApplicationService {
 		await this.workspaceRoleRepository.deleteOne({
 			filters: [
 				{
-					subjectKey: input.targetSubject.toKey(),
-					workspaceKey: input.activeWorkspaceScope.toKey(),
+					subject: input.targetSubject,
+					workspace: input.activeWorkspaceScope,
 				},
 			],
 		});
 		this.audit?.recordRoleRevoked({
-			actorSubjectKey: input.actorSubject.toKey(),
-			targetSubjectKey: input.targetSubject.toKey(),
-			workspaceKey: input.activeWorkspaceScope.toKey(),
+			actorSubject: input.actorSubject,
+			targetSubject: input.targetSubject,
+			workspace: input.activeWorkspaceScope,
 			role: input.role,
 		});
 		return { success: true };
@@ -143,8 +143,8 @@ export class AccessControlApplicationService {
 		const { items: assignments } = await this.workspaceRoleRepository.getMany({
 			filters: [
 				{
-					subjectKey: params.actorSubject.toKey(),
-					workspaceKey: params.activeWorkspaceScope.toKey(),
+					subject: params.actorSubject,
+					workspace: params.activeWorkspaceScope,
 				},
 			],
 		});

@@ -22,8 +22,8 @@ export async function grantDefaultPermissionsOnOrganizationCreated(data: {
 		TOKENS.WorkspaceRoleAssignmentRepositoryPort,
 	);
 	await repository.upsertOne({
-		subjectKey: creatorSubject.toKey(),
-		workspaceKey: orgWorkspace.toKey(),
+		subject: creatorSubject,
+		workspace: orgWorkspace,
 		role: "admin",
 		grantSource: "organization-created-default-creator-org-workspace-admin",
 	});

@@ -117,7 +117,7 @@ export interface RepositoryCreateManyPort<TCreateManyInputDTO, TCreateManyOutput
 
 export interface RepositoryGetOnePort<TFilterClause, TGetOneOutputDTO> {
 	/**
-	 * Load exactly one row. Input is **only** required OR `filters` (e.g. `[{ id, workspaceKey }]`).
+	 * Load exactly one row. Input is **only** required OR `filters` (e.g. `[{ id, workspace }]`).
 	 *
 	 * @throws error {@link RepositoryNotFoundError} when no row matches any clause (unless the adapter documents otherwise).
 	 * @param input - {@link WithRequiredRepositoryFilters}

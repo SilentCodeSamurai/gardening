@@ -18,7 +18,7 @@ import type {
 	SpatialNodeRepositoryUpdatePatchDTO,
 } from "@backend/core/application/ports/repositories/spatial/spatial-node.repository.port";
 import type { SpatialNodeEntity, SpatialNodeTreeNode } from "@backend/core/domain/spatial/entities";
-import { workspaceKeysEqual } from "@backend/infrastructure/adapters/repositories/shared/workspace-key";
+import { workspacesEqual } from "@backend/infrastructure/adapters/repositories/shared/workspace-key";
 import {
 	findFirstRowMatchingAnyClause,
 	findRowsMatchingAnyClause,
@@ -35,11 +35,11 @@ export class SpatialNodeInMemoryRepository extends BaseRepositoryErrors implemen
 		if (dto.parentId !== null) {
 			const parent = this.store.spatialNodes.get(idKey(dto.parentId));
 			if (!parent) this.throwNotFoundError("SpatialNode", dto.parentId);
-			if (!workspaceKeysEqual(parent.workspaceKey, dto.workspaceKey)) {
+			if (!workspacesEqual(parent.workspace, dto.workspace)) {
 				this.throwValidationError({
 					operation: "create",
 					validationCode: "parent-workspace-mismatch",
-					context: { parentId: dto.parentId, workspaceKey: dto.workspaceKey },
+					context: { parentId: dto.parentId, workspaceKey: dto.workspace.toKey() },
 				});
 			}
 		}
@@ -55,11 +55,11 @@ export class SpatialNodeInMemoryRepository extends BaseRepositoryErrors implemen
 	}
 
 	private patchStored(existing: SpatialNodeEntity, dto: SpatialNodeRepositoryUpdatePatchDTO): SpatialNodeEntity {
-		const nextWorkspaceKey = dto.workspaceKey !== undefined ? dto.workspaceKey : existing.workspaceKey;
+		const nextWorkspace = dto.workspace !== undefined ? dto.workspace : existing.workspace;
 		const nextParent = dto.parentId !== undefined ? dto.parentId : existing.parentId;
 		return {
 			...existing,
-			workspaceKey: nextWorkspaceKey,
+			workspace: nextWorkspace,
 			parentId: nextParent,
 			rect: dto.rect !== undefined ? dto.rect : existing.rect,
 			kind: dto.kind !== undefined ? dto.kind : existing.kind,
@@ -72,7 +72,7 @@ export class SpatialNodeInMemoryRepository extends BaseRepositoryErrors implemen
 		return (
 			row.ref.entity === clause.ref.entity &&
 			row.ref.entityId === clause.ref.entityId &&
-			workspaceKeysEqual(row.workspaceKey, clause.workspaceKey)
+			workspacesEqual(row.workspace, clause.workspace)
 		);
 	}
 
@@ -131,7 +131,7 @@ export class SpatialNodeInMemoryRepository extends BaseRepositoryErrors implemen
 		if (updated.parentId !== null) {
 			const parent = this.store.spatialNodes.get(idKey(updated.parentId));
 			if (!parent) this.throwNotFoundError("SpatialNode", updated.parentId);
-			if (!workspaceKeysEqual(parent.workspaceKey, updated.workspaceKey)) {
+			if (!workspacesEqual(parent.workspace, updated.workspace)) {
 				this.throwValidationError({
 					operation: "update",
 					validationCode: "parent-workspace-mismatch",
@@ -154,7 +154,7 @@ export class SpatialNodeInMemoryRepository extends BaseRepositoryErrors implemen
 			if (updated.parentId !== null) {
 				const parent = this.store.spatialNodes.get(idKey(updated.parentId));
 				if (!parent) this.throwNotFoundError("SpatialNode", updated.parentId);
-				if (!workspaceKeysEqual(parent.workspaceKey, updated.workspaceKey)) {
+				if (!workspacesEqual(parent.workspace, updated.workspace)) {
 					this.throwValidationError({
 						operation: "updateMany",
 						validationCode: "parent-workspace-mismatch",
@@ -178,7 +178,7 @@ export class SpatialNodeInMemoryRepository extends BaseRepositoryErrors implemen
 			if (
 				n.parentId !== null &&
 				idKey(n.parentId) === key &&
-				workspaceKeysEqual(n.workspaceKey, row.workspaceKey)
+				workspacesEqual(n.workspace, row.workspace)
 			) {
 				this.throwConflictError({
 					operation: "delete",
@@ -207,7 +207,7 @@ export class SpatialNodeInMemoryRepository extends BaseRepositoryErrors implemen
 				(n) =>
 					n.parentId !== null &&
 					idKey(n.parentId) === key &&
-					workspaceKeysEqual(n.workspaceKey, row.workspaceKey),
+					workspacesEqual(n.workspace, row.workspace),
 			);
 			if (hasChild) continue;
 			if (this.store.spatialNodes.delete(key)) count += 1;
@@ -221,7 +221,7 @@ export class SpatialNodeInMemoryRepository extends BaseRepositoryErrors implemen
 		if (input.parentId !== null) {
 			const parent = this.store.spatialNodes.get(idKey(input.parentId));
 			if (!parent) this.throwNotFoundError("SpatialNode", input.parentId);
-			if (!workspaceKeysEqual(parent.workspaceKey, input.workspaceKey)) {
+			if (!workspacesEqual(parent.workspace, input.workspace)) {
 				this.throwValidationError({
 					operation: "restore",
 					validationCode: "parent-workspace-mismatch",
@@ -247,14 +247,14 @@ export class SpatialNodeInMemoryRepository extends BaseRepositoryErrors implemen
 				? undefined
 				: [...this.store.spatialNodes.values()].find((n) =>
 						input.filters.some(
-							(c) => idKey(n.id) === idKey(c.id) && workspaceKeysEqual(n.workspaceKey, c.workspaceKey),
+							(c) => idKey(n.id) === idKey(c.id) && workspacesEqual(n.workspace, c.workspace),
 						),
 					);
 		if (!root) this.throwNotFoundError("SpatialNode", input.filters);
 
 		const byParent = new Map<string, SpatialNodeEntity[]>();
 		for (const n of this.store.spatialNodes.values()) {
-			if (!workspaceKeysEqual(n.workspaceKey, root.workspaceKey)) continue;
+			if (!workspacesEqual(n.workspace, root.workspace)) continue;
 			const pkey = n.parentId ? idKey(n.parentId) : "__root__";
 			const arr = byParent.get(pkey) ?? [];
 			arr.push(n);

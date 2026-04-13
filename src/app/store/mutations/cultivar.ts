@@ -1,3 +1,4 @@
+import { WorkspaceVO } from "@backend/core/domain/access/workspace.vo";
 import type { CultivarEntity, CultivarEntityId, SpeciesEntityId } from "@backend/core/domain/gardening/entities";
 import { type QueryClient, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -43,7 +44,7 @@ export function useCultivarCreateMutation() {
 				if (!workspaceKey) return { snapshots, pendingId: undefined as string | undefined };
 				const pendingId = makePendingId("cultivar") as CultivarEntity["id"];
 				const pending: CachedCultivar = {
-					workspaceKey,
+					workspace: WorkspaceVO.fromKey(workspaceKey),
 					id: pendingId,
 					speciesId: variables.speciesId as SpeciesEntityId,
 					characteristics: variables.characteristics,

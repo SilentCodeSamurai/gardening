@@ -9,8 +9,8 @@ import {
 	fixtureSpeciesCharacteristics,
 } from "../../../../../helpers/gardening/test-fixtures";
 import {
-	contractTestWorkspaceKey as wk,
-	contractTestWorkspaceKeyB as wkB,
+	contractTestWorkspace as wk,
+	contractTestWorkspaceB as wkB,
 } from "../../shared/test-workspace-keys";
 import { resolveGardeningRepositoryPorts } from "./resolve-gardening-repository-ports";
 
@@ -35,14 +35,14 @@ export function registerPlantRepositoryContract(
 		});
 
 		async function seedCultivar() {
-			const cat = await speciesCategory.createOne({ workspaceKey: wk, title: "C" });
+			const cat = await speciesCategory.createOne({ workspace: wk, title: "C" });
 			const sp = await species.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				categoryId: cat.id,
 				characteristics: fixtureSpeciesCharacteristics(),
 			});
 			return cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics(),
 			});
@@ -52,7 +52,7 @@ export function registerPlantRepositoryContract(
 			await seedCultivar();
 			await expect(
 				plant.createOne({
-					workspaceKey: wk,
+					workspace: wk,
 					title: null,
 					description: null,
 					cultivarId: cultivarId("00000000-0000-4000-8000-00000000dead"),
@@ -64,8 +64,8 @@ export function registerPlantRepositoryContract(
 			const cv = await seedCultivar();
 			const { items } = await plant.createMany({
 				items: [
-					{ workspaceKey: wk, title: null, description: null, cultivarId: cv.id },
-					{ workspaceKey: wk, title: null, description: null, cultivarId: cv.id },
+					{ workspace: wk, title: null, description: null, cultivarId: cv.id },
+					{ workspace: wk, title: null, description: null, cultivarId: cv.id },
 				],
 			});
 			expect(items).toHaveLength(2);
@@ -76,7 +76,7 @@ export function registerPlantRepositoryContract(
 		it("getMany without filters lists all plants", async () => {
 			const cv = await seedCultivar();
 			await plant.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: "listed",
 				description: null,
 				cultivarId: cv.id,
@@ -88,7 +88,7 @@ export function registerPlantRepositoryContract(
 		it("getMany filters: [] returns empty", async () => {
 			const cv = await seedCultivar();
 			await plant.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: null,
 				description: null,
 				cultivarId: cv.id,
@@ -100,27 +100,27 @@ export function registerPlantRepositoryContract(
 		it("getMany OR by id and filter by cultivarId", async () => {
 			const cv = await seedCultivar();
 			const p1 = await plant.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: "p1",
 				description: null,
 				cultivarId: cv.id,
 			});
 			const p2 = await plant.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: "p2",
 				description: null,
 				cultivarId: cv.id,
 			});
 			const byIds = await plant.getMany({ filters: [{ id: p1.id }, { id: p2.id }] });
 			expect(byIds.items).toHaveLength(2);
-			const byCv = await plant.getMany({ filters: [{ cultivarId: cv.id, workspaceKey: wk }] });
+			const byCv = await plant.getMany({ filters: [{ cultivarId: cv.id, workspace: wk }] });
 			expect(byCv.items.length).toBeGreaterThanOrEqual(2);
 		});
 
 		it("getOne OR filters", async () => {
 			const cv = await seedCultivar();
 			const p = await plant.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: "or",
 				description: null,
 				cultivarId: cv.id,
@@ -134,7 +134,7 @@ export function registerPlantRepositoryContract(
 		it("updateOne patches title; updateMany sets title on all matches", async () => {
 			const cv = await seedCultivar();
 			const a = await plant.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: "a",
 				description: null,
 				cultivarId: cv.id,
@@ -145,13 +145,13 @@ export function registerPlantRepositoryContract(
 			});
 			expect(u.title).toBe("a-patched");
 			const b = await plant.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: "b",
 				description: null,
 				cultivarId: cv.id,
 			});
 			const { count } = await plant.updateMany({
-				filters: [{ title: "b", workspaceKey: wk }],
+				filters: [{ title: "b", workspace: wk }],
 				dto: { title: "b-many" },
 			});
 			expect(count).toBe(1);
@@ -171,7 +171,7 @@ export function registerPlantRepositoryContract(
 		it("updateOne with invalid cultivarId throws", async () => {
 			const cv = await seedCultivar();
 			const p = await plant.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: null,
 				description: null,
 				cultivarId: cv.id,
@@ -184,15 +184,15 @@ export function registerPlantRepositoryContract(
 			).rejects.toBeInstanceOf(RepositoryNotFoundError);
 		});
 
-		it("deleteOne clears event↔plant links", async () => {
+		it("deleteOne clears eventв†”plant links", async () => {
 			const cv = await seedCultivar();
 			const p = await plant.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: null,
 				description: null,
 				cultivarId: cv.id,
 			});
-			const ev = await gardeningEvent.createOne({ workspaceKey: wk, action: fixtureNoteAction() });
+			const ev = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction() });
 			await gardeningEvent.bindToPlantOne({ filters: [{ id: ev.id }], plantId: p.id });
 			const before = await gardeningEvent.getBindingsOne({ filters: [{ id: ev.id }] });
 			expect(before.plantIds.map(String)).toContain(String(p.id));
@@ -212,13 +212,13 @@ export function registerPlantRepositoryContract(
 		it("deleteMany removes rows matching OR filters", async () => {
 			const cv = await seedCultivar();
 			const a = await plant.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: "da",
 				description: null,
 				cultivarId: cv.id,
 			});
 			const b = await plant.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: "db",
 				description: null,
 				cultivarId: cv.id,
@@ -229,7 +229,7 @@ export function registerPlantRepositoryContract(
 
 		it("deleteMany count 0 when nothing matches", async () => {
 			const { count } = await plant.deleteMany({
-				filters: [{ title: "nonexistent-plant-title-xyz", workspaceKey: wk }],
+				filters: [{ title: "nonexistent-plant-title-xyz", workspace: wk }],
 			});
 			expect(count).toBe(0);
 		});
@@ -243,7 +243,7 @@ export function registerPlantRepositoryContract(
 		it("createOne succeeds with valid cultivar", async () => {
 			const cv = await seedCultivar();
 			const p = await plant.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: "created-ok",
 				description: null,
 				cultivarId: cv.id,
@@ -255,7 +255,7 @@ export function registerPlantRepositoryContract(
 		it("getMany single-field filter by id", async () => {
 			const cv = await seedCultivar();
 			const p = await plant.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: "gmid",
 				description: null,
 				cultivarId: cv.id,
@@ -268,25 +268,25 @@ export function registerPlantRepositoryContract(
 		it("getMany multi-field AND: wrong workspaceKey excludes row", async () => {
 			const cv = await seedCultivar();
 			const p = await plant.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: null,
 				description: null,
 				cultivarId: cv.id,
 			});
-			const { items } = await plant.getMany({ filters: [{ id: p.id, workspaceKey: wkB }] });
+			const { items } = await plant.getMany({ filters: [{ id: p.id, workspace: wkB }] });
 			expect(items).toHaveLength(0);
 		});
 
 		it("getMany OR combines id miss with title hit", async () => {
 			const cv = await seedCultivar();
 			const p = await plant.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: "title-or-only",
 				description: null,
 				cultivarId: cv.id,
 			});
 			const { items } = await plant.getMany({
-				filters: [{ id: plantId("00000000-0000-4000-8000-00000000bad") }, { title: "title-or-only", workspaceKey: wk }],
+				filters: [{ id: plantId("00000000-0000-4000-8000-00000000bad") }, { title: "title-or-only", workspace: wk }],
 			});
 			expect(items).toHaveLength(1);
 			expect(items[0]?.id).toEqual(p.id);
@@ -295,13 +295,13 @@ export function registerPlantRepositoryContract(
 		it("updateMany OR matches multiple plants", async () => {
 			const cv = await seedCultivar();
 			const a = await plant.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: "uma",
 				description: null,
 				cultivarId: cv.id,
 			});
 			const b = await plant.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: "umb",
 				description: null,
 				cultivarId: cv.id,
@@ -315,7 +315,7 @@ export function registerPlantRepositoryContract(
 
 		it("updateMany count 0 when filters match nothing", async () => {
 			const { count } = await plant.updateMany({
-				filters: [{ title: "nonexistent-plant-um-0", workspaceKey: wk }],
+				filters: [{ title: "nonexistent-plant-um-0", workspace: wk }],
 				dto: { title: "x" },
 			});
 			expect(count).toBe(0);
@@ -324,19 +324,19 @@ export function registerPlantRepositoryContract(
 		it("deleteMany OR by id merges distinct rows", async () => {
 			const cv = await seedCultivar();
 			const a = await plant.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: "dma",
 				description: null,
 				cultivarId: cv.id,
 			});
 			const b = await plant.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: "dmb",
 				description: null,
 				cultivarId: cv.id,
 			});
 			const { count } = await plant.deleteMany({
-				filters: [{ id: a.id }, { title: "dmb", workspaceKey: wk }],
+				filters: [{ id: a.id }, { title: "dmb", workspace: wk }],
 			});
 			expect(count).toBe(2);
 		});

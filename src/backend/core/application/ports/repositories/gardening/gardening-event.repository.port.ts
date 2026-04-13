@@ -51,13 +51,13 @@ export type GardeningEventRepositoryDeleteManyOutputDTO = { count: number };
 /** OR branch for events linked to a plant (junction semantics; adapter resolves). */
 export type GardeningEventRepositoryForPlantFilterClause = {
 	plantId: PlantEntity["id"];
-	workspaceKey: PlantEntity["workspaceKey"];
+	workspace: PlantEntity["workspace"];
 };
 
 /** OR branch for events linked to a location (junction semantics; adapter resolves). */
 export type GardeningEventRepositoryForLocationFilterClause = {
 	locationId: LocationEntity["id"];
-	workspaceKey: LocationEntity["workspaceKey"];
+	workspace: LocationEntity["workspace"];
 };
 
 export type GardeningEventRepositoryGetBindingsOutputDTO = {

@@ -11,8 +11,8 @@ import {
 	fixtureSpeciesCharacteristics,
 } from "../../../../../helpers/gardening/test-fixtures";
 import {
-	contractTestWorkspaceKey as wk,
-	contractTestWorkspaceKeyB as wkB,
+	contractTestWorkspace as wk,
+	contractTestWorkspaceB as wkB,
 } from "../../shared/test-workspace-keys";
 import { resolveGardeningRepositoryPorts } from "./resolve-gardening-repository-ports";
 
@@ -35,9 +35,9 @@ export function registerCultivarRepositoryContract(
 		});
 
 		async function seedSpecies() {
-			const cat = await speciesCategory.createOne({ workspaceKey: wk, title: "C" });
+			const cat = await speciesCategory.createOne({ workspace: wk, title: "C" });
 			return species.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				categoryId: cat.id,
 				characteristics: fixtureSpeciesCharacteristics(),
 			});
@@ -46,7 +46,7 @@ export function registerCultivarRepositoryContract(
 		it("createOne requires species", async () => {
 			await expect(
 				cultivar.createOne({
-					workspaceKey: wk,
+					workspace: wk,
 					speciesId: speciesId("00000000-0000-4000-8000-000000000001"),
 					characteristics: fixtureCultivarCharacteristics(),
 				}),
@@ -58,12 +58,12 @@ export function registerCultivarRepositoryContract(
 			const { count } = await cultivar.createMany({
 				items: [
 					{
-						workspaceKey: wk,
+						workspace: wk,
 						speciesId: sp.id,
 						characteristics: fixtureCultivarCharacteristics({ name: "c1" }),
 					},
 					{
-						workspaceKey: wk,
+						workspace: wk,
 						speciesId: sp.id,
 						characteristics: fixtureCultivarCharacteristics({ name: "c2" }),
 					},
@@ -75,7 +75,7 @@ export function registerCultivarRepositoryContract(
 		it("getOne and getFullOne by id", async () => {
 			const sp = await seedSpecies();
 			const cv = await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics({ name: "Genovese" }),
 			});
@@ -88,7 +88,7 @@ export function registerCultivarRepositoryContract(
 		it("getFullOne OR filters", async () => {
 			const sp = await seedSpecies();
 			const cv = await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics({ name: "OR-test" }),
 			});
@@ -107,7 +107,7 @@ export function registerCultivarRepositoryContract(
 		it("getMany without filters and with [] / OR", async () => {
 			const sp = await seedSpecies();
 			await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics({ name: "g1" }),
 			});
@@ -120,23 +120,23 @@ export function registerCultivarRepositoryContract(
 		it("getMany filters by speciesId", async () => {
 			const sp = await seedSpecies();
 			const cv = await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics(),
 			});
-			const { items } = await cultivar.getMany({ filters: [{ speciesId: sp.id, workspaceKey: wk }] });
+			const { items } = await cultivar.getMany({ filters: [{ speciesId: sp.id, workspace: wk }] });
 			expect(items.some((x) => x.id === cv.id)).toBe(true);
 		});
 
 		it("updateOne and updateMany", async () => {
 			const sp = await seedSpecies();
 			const a = await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics({ name: "u1" }),
 			});
 			const b = await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics({ name: "u2" }),
 			});
@@ -164,7 +164,7 @@ export function registerCultivarRepositoryContract(
 		it("updateOne throws for invalid speciesId", async () => {
 			const sp = await seedSpecies();
 			const cv = await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics(),
 			});
@@ -179,7 +179,7 @@ export function registerCultivarRepositoryContract(
 		it("deleteOne removes row", async () => {
 			const sp = await seedSpecies();
 			const cv = await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics(),
 			});
@@ -190,12 +190,12 @@ export function registerCultivarRepositoryContract(
 		it("deleteOne blocks when plants reference cultivar", async () => {
 			const sp = await seedSpecies();
 			const cv = await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics(),
 			});
 			await plant.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: null,
 				description: null,
 				cultivarId: cv.id,
@@ -208,17 +208,17 @@ export function registerCultivarRepositoryContract(
 		it("deleteMany removes only unblocked cultivars", async () => {
 			const sp = await seedSpecies();
 			const free = await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics({ name: "free-c" }),
 			});
 			const blocked = await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics({ name: "blocked-c" }),
 			});
 			await plant.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				title: null,
 				description: null,
 				cultivarId: blocked.id,
@@ -231,7 +231,7 @@ export function registerCultivarRepositoryContract(
 		it("getOne OR filters", async () => {
 			const sp = await seedSpecies();
 			const cv = await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics({ name: "go-or" }),
 			});
@@ -250,12 +250,12 @@ export function registerCultivarRepositoryContract(
 		it("getMany OR unions rows by two ids", async () => {
 			const sp = await seedSpecies();
 			const a = await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics({ name: "or-a" }),
 			});
 			const b = await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics({ name: "or-b" }),
 			});
@@ -266,25 +266,25 @@ export function registerCultivarRepositoryContract(
 		it("getMany multi-field AND: wrong workspaceKey excludes row", async () => {
 			const sp = await seedSpecies();
 			const cv = await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics({ name: "ws-and-cv" }),
 			});
-			const { items } = await cultivar.getMany({ filters: [{ id: cv.id, workspaceKey: wkB }] });
+			const { items } = await cultivar.getMany({ filters: [{ id: cv.id, workspace: wkB }] });
 			expect(items).toHaveLength(0);
 		});
 
 		it("getMany OR id miss with characteristics name hit", async () => {
 			const sp = await seedSpecies();
 			const cv = await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics({ name: "cv-or-name" }),
 			});
 			const { items } = await cultivar.getMany({
 				filters: [
 					{ id: cultivarId("00000000-0000-4000-8000-00000000bad") },
-					{ characteristics: fixtureCultivarCharacteristics({ name: "cv-or-name" }), workspaceKey: wk },
+					{ characteristics: fixtureCultivarCharacteristics({ name: "cv-or-name" }), workspace: wk },
 				],
 			});
 			expect(items).toHaveLength(1);
@@ -294,7 +294,7 @@ export function registerCultivarRepositoryContract(
 		it("updateOne OR filters", async () => {
 			const sp = await seedSpecies();
 			const cv = await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics({ name: "uo-or-cv" }),
 			});
@@ -308,12 +308,12 @@ export function registerCultivarRepositoryContract(
 		it("updateMany OR by id; count 0 when no match", async () => {
 			const sp = await seedSpecies();
 			const a = await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics({ name: "um-cv-a" }),
 			});
 			const b = await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics({ name: "um-cv-b" }),
 			});
@@ -323,7 +323,7 @@ export function registerCultivarRepositoryContract(
 			});
 			expect(count).toBe(2);
 			const z = await cultivar.updateMany({
-				filters: [{ characteristics: fixtureCultivarCharacteristics({ name: "missing-cv-xyz" }), workspaceKey: wk }],
+				filters: [{ characteristics: fixtureCultivarCharacteristics({ name: "missing-cv-xyz" }), workspace: wk }],
 				dto: { characteristics: fixtureCultivarCharacteristics({ name: "nope" }) },
 			});
 			expect(z.count).toBe(0);
@@ -332,7 +332,7 @@ export function registerCultivarRepositoryContract(
 		it("deleteOne OR filters", async () => {
 			const sp = await seedSpecies();
 			const cv = await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics({ name: "del-or-cv" }),
 			});
@@ -345,21 +345,21 @@ export function registerCultivarRepositoryContract(
 		it("deleteMany OR by id and by name; count 0 when nothing matches", async () => {
 			const sp = await seedSpecies();
 			const a = await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics({ name: "dm-cv-a" }),
 			});
 			const b = await cultivar.createOne({
-				workspaceKey: wk,
+				workspace: wk,
 				speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics({ name: "dm-cv-b" }),
 			});
 			const { count } = await cultivar.deleteMany({
-				filters: [{ id: a.id }, { characteristics: fixtureCultivarCharacteristics({ name: "dm-cv-b" }), workspaceKey: wk }],
+				filters: [{ id: a.id }, { characteristics: fixtureCultivarCharacteristics({ name: "dm-cv-b" }), workspace: wk }],
 			});
 			expect(count).toBe(2);
 			const z = await cultivar.deleteMany({
-				filters: [{ characteristics: fixtureCultivarCharacteristics({ name: "missing-dm-cv" }), workspaceKey: wk }],
+				filters: [{ characteristics: fixtureCultivarCharacteristics({ name: "missing-dm-cv" }), workspace: wk }],
 			});
 			expect(z.count).toBe(0);
 		});

@@ -1,4 +1,4 @@
-import type { WorkspaceKey } from "@backend/core/domain/access/workspace.vo";
+import type { WorkspaceVO } from "@backend/core/domain/access/workspace.vo";
 import type { BaseEntity, BaseEntityId } from "../shared/entities";
 import type {
 	CultivarCharacteristics,
@@ -20,7 +20,7 @@ export type LocationEntityId = BaseEntityId<string, "Location">;
  * Whether a row is the populate-managed shared catalog is determined from access-control metadata, not stored here.
  */
 export type SpeciesCategoryEntity = BaseEntity<SpeciesCategoryEntityId> & {
-	workspaceKey: WorkspaceKey;
+	workspace: WorkspaceVO;
 	title: string;
 	presentation?: ItemPresentationValueObject;
 };
@@ -33,7 +33,7 @@ export type SpeciesCategoryEntity = BaseEntity<SpeciesCategoryEntityId> & {
  * Edits here should propagate to linked plants.
  */
 export type SpeciesEntity = BaseEntity<SpeciesEntityId> & {
-	workspaceKey: WorkspaceKey;
+	workspace: WorkspaceVO;
 	categoryId: SpeciesCategoryEntityId;
 	characteristics: SpeciesCharacteristics;
 	presentation?: ItemPresentationValueObject;
@@ -45,7 +45,7 @@ export type SpeciesEntity = BaseEntity<SpeciesEntityId> & {
  * `speciesId` - link to the {@link SpeciesEntity} that this cultivar belongs to.
  */
 export type CultivarEntity = BaseEntity<CultivarEntityId> & {
-	workspaceKey: WorkspaceKey;
+	workspace: WorkspaceVO;
 	speciesId: SpeciesEntityId;
 	characteristics: CultivarCharacteristics;
 	presentation?: ItemPresentationValueObject;
@@ -61,7 +61,7 @@ export type HydratedCultivarEntity = CultivarEntity & {
  * When an action is anchored to a {@link LocationEntity}, the application should also link the event to every {@link PlantEntity} that occupied that location at event creation time. If a plant moves later, those links do not change.
  */
 export type GardeningEventEntity = BaseEntity<GardeningEventEntityId> & {
-	workspaceKey: WorkspaceKey;
+	workspace: WorkspaceVO;
 	action: GardeningAction;
 };
 
@@ -71,7 +71,7 @@ export type GardeningEventEntity = BaseEntity<GardeningEventEntityId> & {
  * `locationId` - link to the {@link LocationEntity} that this plant is placed in. May be null when the plant is not placed in a location.
  */
 export type PlantEntity = BaseEntity<PlantEntityId> & {
-	workspaceKey: WorkspaceKey;
+	workspace: WorkspaceVO;
 	title: string | null;
 	description: string | null;
 	cultivarId: CultivarEntityId;
@@ -87,7 +87,7 @@ export type HydratedPlantEntity = PlantEntity & {
  * 'parentId' - link to the {@link LocationEntity} that this location is a child of. `null` when this location is the root location.
  */
 export type LocationEntity = BaseEntity<LocationEntityId> & {
-	workspaceKey: WorkspaceKey;
+	workspace: WorkspaceVO;
 	name: string;
 	/** Optional UI presentation (icon, colors) for the layout editor and lists. */
 	presentation?: ItemPresentationValueObject;

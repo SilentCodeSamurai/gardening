@@ -66,9 +66,8 @@ export class PopulateDefaultCatalogUseCase
 			action: "create",
 		});
 
-		const catalogWorkspaceKey = globalShared.toKey();
 		const existing = await this.speciesCategoryRepository.getMany({
-			filters: [{ workspaceKey: catalogWorkspaceKey }],
+			filters: [{ workspace: globalShared }],
 		});
 		if (existing.items.length > 0) {
 			return { status: "skipped", reason: "catalog-not-empty" };
@@ -83,7 +82,7 @@ export class PopulateDefaultCatalogUseCase
 			const { slug, ...categoryCreate } = row;
 			const created = await this.speciesCategoryRepository.createOne({
 				...categoryCreate,
-				workspaceKey: catalogWorkspaceKey,
+				workspace: globalShared,
 			});
 			createdCategories.push(created);
 			slugToCategoryId.set(slug, created.id);
@@ -101,7 +100,7 @@ export class PopulateDefaultCatalogUseCase
 			const created = await this.speciesRepository.createOne({
 				categoryId,
 				...speciesCreate,
-				workspaceKey: catalogWorkspaceKey,
+				workspace: globalShared,
 			});
 			createdSpecies.push(created);
 		}

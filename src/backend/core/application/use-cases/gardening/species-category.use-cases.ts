@@ -1,9 +1,9 @@
 import { WorkspaceVO } from "@backend/core/domain/access/workspace.vo";
 import type { SpeciesCategoryEntity, SpeciesCategoryEntityId } from "@backend/core/domain/gardening/entities";
 import type {
-	SpeciesCategoryRepositoryPort,
 	SpeciesCategoryRepositoryCreateInputDTO,
 	SpeciesCategoryRepositoryDeleteOutputDTO,
+	SpeciesCategoryRepositoryPort,
 	SpeciesCategoryRepositoryUpdateOutputDTO,
 	SpeciesCategoryRepositoryUpdatePatchDTO,
 } from "../../ports/repositories/gardening/species-category.repository.port";
@@ -13,7 +13,7 @@ import type { UseCaseRequest } from "../use-case-context";
 
 export type SpeciesCategoryWithSystemCatalog = SpeciesCategoryEntity & { systemCatalog: boolean };
 
-type SpeciesCategoryCreatePayload = Omit<SpeciesCategoryRepositoryCreateInputDTO, "workspaceKey">;
+type SpeciesCategoryCreatePayload = Omit<SpeciesCategoryRepositoryCreateInputDTO, "workspace">;
 export type SpeciesCategoryCreateUseCaseInput = UseCaseRequest<SpeciesCategoryCreatePayload>;
 export type SpeciesCategoryCreateUseCaseOutput = SpeciesCategoryWithSystemCatalog;
 
@@ -29,9 +29,9 @@ export class SpeciesCategoryCreateUseCase
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "create" });
 		const created = await this.speciesCategoryRepository.createOne({
 			...input.dto,
-			workspaceKey: input.context.activeWorkspaceScope.toKey(),
+			workspace: input.context.activeWorkspaceScope,
 		});
-		return { ...created, systemCatalog: WorkspaceVO.isGlobalSharedKey(created.workspaceKey) };
+		return { ...created, systemCatalog: WorkspaceVO.isGlobalShared(created.workspace) };
 	}
 }
 
@@ -48,11 +48,11 @@ export class SpeciesCategoryGetByIdUseCase
 
 	public async execute(input: SpeciesCategoryGetByIdUseCaseInput): Promise<SpeciesCategoryGetByIdUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "read" });
-		const wk = input.context.activeWorkspaceScope.toKey();
+		const scope = input.context.activeWorkspaceScope;
 		const row = await this.speciesCategoryRepository.getOne({
-			filters: [{ id: input.dto.id, workspaceKey: wk }],
+			filters: [{ id: input.dto.id, workspace: scope }],
 		});
-		return { ...row, systemCatalog: WorkspaceVO.isGlobalSharedKey(row.workspaceKey) };
+		return { ...row, systemCatalog: WorkspaceVO.isGlobalShared(row.workspace) };
 	}
 }
 
@@ -73,14 +73,14 @@ export class SpeciesCategoryGetAllUseCase
 			...input.context,
 			action: "read",
 		});
-		const active = input.context.activeWorkspaceScope.toKey();
-		const global = WorkspaceVO.globalShared().toKey();
+		const active = input.context.activeWorkspaceScope;
+		const global = WorkspaceVO.globalShared();
 		const all = await this.speciesCategoryRepository.getMany({
-			filters: [{ workspaceKey: active }, { workspaceKey: global }],
+			filters: [{ workspace: active }, { workspace: global }],
 		});
 		const enriched = all.items.map((item) => ({
 			...item,
-			systemCatalog: WorkspaceVO.isGlobalSharedKey(item.workspaceKey),
+			systemCatalog: WorkspaceVO.isGlobalShared(item.workspace),
 		}));
 		return { items: enriched };
 	}
@@ -100,13 +100,13 @@ export class SpeciesCategoryUpdateUseCase
 	) {}
 	public async execute(input: SpeciesCategoryUpdateUseCaseInput): Promise<SpeciesCategoryUpdateUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "update" });
-		const wk = input.context.activeWorkspaceScope.toKey();
+		const scope = input.context.activeWorkspaceScope;
 		const { id, ...patch } = input.dto;
 		const updated = await this.speciesCategoryRepository.updateOne({
-			filters: [{ id, workspaceKey: wk }],
+			filters: [{ id, workspace: scope }],
 			dto: patch,
 		});
-		return { ...updated, systemCatalog: WorkspaceVO.isGlobalSharedKey(updated.workspaceKey) };
+		return { ...updated, systemCatalog: WorkspaceVO.isGlobalShared(updated.workspace) };
 	}
 }
 
@@ -122,9 +122,9 @@ export class SpeciesCategoryDeleteUseCase
 	) {}
 	public async execute(input: SpeciesCategoryDeleteUseCaseInput): Promise<SpeciesCategoryDeleteUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "delete" });
-		const wk = input.context.activeWorkspaceScope.toKey();
+		const scope = input.context.activeWorkspaceScope;
 		return this.speciesCategoryRepository.deleteOne({
-			filters: [{ id: input.dto.id, workspaceKey: wk }],
+			filters: [{ id: input.dto.id, workspace: scope }],
 		});
 	}
 }

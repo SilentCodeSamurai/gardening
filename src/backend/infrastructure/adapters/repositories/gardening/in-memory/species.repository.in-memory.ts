@@ -15,7 +15,7 @@ import type {
 } from "@backend/core/application/ports/repositories/gardening/species.repository.port";
 import { BaseRepositoryErrors } from "@backend/core/application/ports/repositories/shared/base-repository.errors";
 import type { SpeciesEntity } from "@backend/core/domain/gardening/entities";
-import { workspaceKeysEqual } from "@backend/infrastructure/adapters/repositories/shared/workspace-key";
+import { workspacesEqual } from "@backend/infrastructure/adapters/repositories/shared/workspace-key";
 import {
 	findFirstRowMatchingAnyClause,
 	findRowsMatchingAnyClause,
@@ -33,11 +33,11 @@ export class SpeciesInMemoryRepository extends BaseRepositoryErrors implements S
 		if (!cat) {
 			this.throwNotFoundError("SpeciesCategory", dto.categoryId);
 		}
-		if (!workspaceKeysEqual(cat.workspaceKey, dto.workspaceKey)) {
+		if (!workspacesEqual(cat.workspace, dto.workspace)) {
 			this.throwValidationError({
 				operation: "create",
 				validationCode: "category-workspace-mismatch",
-				context: { categoryId: dto.categoryId, workspaceKey: dto.workspaceKey },
+				context: { categoryId: dto.categoryId, workspaceKey: dto.workspace.toKey() },
 			});
 		}
 		const now = new Date();
@@ -53,11 +53,11 @@ export class SpeciesInMemoryRepository extends BaseRepositoryErrors implements S
 	}
 
 	private patchStored(existing: SpeciesEntity, dto: SpeciesRepositoryUpdatePatchDTO): SpeciesEntity {
-		const nextWorkspaceKey = dto.workspaceKey !== undefined ? dto.workspaceKey : existing.workspaceKey;
+		const nextWorkspace = dto.workspace !== undefined ? dto.workspace : existing.workspace;
 		const nextCategoryId = dto.categoryId !== undefined ? dto.categoryId : existing.categoryId;
 		return {
 			...existing,
-			workspaceKey: nextWorkspaceKey,
+			workspace: nextWorkspace,
 			categoryId: nextCategoryId,
 			characteristics: dto.characteristics !== undefined ? dto.characteristics : existing.characteristics,
 			presentation: dto.presentation !== undefined ? dto.presentation : existing.presentation,
@@ -65,14 +65,14 @@ export class SpeciesInMemoryRepository extends BaseRepositoryErrors implements S
 		};
 	}
 
-	private assertCategoryMatchesWorkspace(categoryId: SpeciesEntity["categoryId"], workspaceKey: SpeciesEntity["workspaceKey"]): void {
+	private assertCategoryMatchesWorkspace(categoryId: SpeciesEntity["categoryId"], workspace: SpeciesEntity["workspace"]): void {
 		const cat = this.store.speciesCategories.get(idKey(categoryId));
 		if (!cat) this.throwNotFoundError("SpeciesCategory", categoryId);
-		if (!workspaceKeysEqual(cat.workspaceKey, workspaceKey)) {
+		if (!workspacesEqual(cat.workspace, workspace)) {
 			this.throwValidationError({
 				operation: "update",
 				validationCode: "category-workspace-mismatch",
-				context: { categoryId, workspaceKey },
+				context: { categoryId, workspaceKey: workspace.toKey() },
 			});
 		}
 	}
@@ -116,7 +116,7 @@ export class SpeciesInMemoryRepository extends BaseRepositoryErrors implements S
 		const row = findFirstRowMatchingAnyClause(this.store.species.values(), input.filters);
 		if (!row) this.throwNotFoundError("Species", input.filters);
 		const patchedPreview = this.patchStored(row, input.dto);
-		this.assertCategoryMatchesWorkspace(patchedPreview.categoryId, patchedPreview.workspaceKey);
+		this.assertCategoryMatchesWorkspace(patchedPreview.categoryId, patchedPreview.workspace);
 		const updated = patchedPreview;
 		this.store.species.set(idKey(updated.id), updated);
 		return updated;
@@ -130,7 +130,7 @@ export class SpeciesInMemoryRepository extends BaseRepositoryErrors implements S
 		let count = 0;
 		for (const row of rows) {
 			const updated = this.patchStored(row, input.dto);
-			this.assertCategoryMatchesWorkspace(updated.categoryId, updated.workspaceKey);
+			this.assertCategoryMatchesWorkspace(updated.categoryId, updated.workspace);
 			this.store.species.set(idKey(updated.id), updated);
 			count += 1;
 		}
@@ -144,7 +144,7 @@ export class SpeciesInMemoryRepository extends BaseRepositoryErrors implements S
 		if (!row) this.throwNotFoundError("Species", input.filters);
 		const key = idKey(row.id);
 		for (const c of this.store.cultivars.values()) {
-			if (idKey(c.speciesId) === key && workspaceKeysEqual(c.workspaceKey, row.workspaceKey)) {
+			if (idKey(c.speciesId) === key && workspacesEqual(c.workspace, row.workspace)) {
 				this.throwConflictError({
 					operation: "delete",
 					reason: "cultivar-reference-species",
@@ -169,7 +169,7 @@ export class SpeciesInMemoryRepository extends BaseRepositoryErrors implements S
 		for (const row of rows) {
 			const key = idKey(row.id);
 			const blocked = [...this.store.cultivars.values()].some(
-				(c) => idKey(c.speciesId) === key && workspaceKeysEqual(c.workspaceKey, row.workspaceKey),
+				(c) => idKey(c.speciesId) === key && workspacesEqual(c.workspace, row.workspace),
 			);
 			if (blocked) continue;
 			if (this.store.species.delete(key)) count += 1;

@@ -16,8 +16,9 @@ import type { SubjectKey } from "#/backend/core/domain/access/subject.vo";
 import { idKey, locationId, plantId } from "../shared/database-ids";
 
 /**
- * In-memory persistence (v2): entity maps store v1-shaped gardening/spatial rows (each row carries {@link WorkspaceKey}).
- * Repositories validate FK/workspace alignment; callers scope reads with `workspaceKey` in filter clauses where needed.
+ * In-memory persistence (v2): entity maps store gardening/spatial rows (each row carries {@link WorkspaceVO}).
+ * Repositories validate FK/workspace alignment; callers scope reads with `workspace` in filter clauses where needed.
+ * Composite map keys for role assignments use persisted subject/workspace key strings from `toKey()` on the VOs.
  */
 export class InMemoryStore {
 	/** Workspace↔item link keys (see access in-memory workspace-item repository). */

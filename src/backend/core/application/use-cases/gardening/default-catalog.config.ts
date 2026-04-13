@@ -11,7 +11,7 @@ import { CATALOG_I18N_KEYS } from "./catalog-i18n-keys";
  */
 export type DefaultCatalogCategory = {
 	readonly slug: string;
-} & Omit<SpeciesCategoryRepositoryCreateInputDTO, "workspaceKey">;
+} & Omit<SpeciesCategoryRepositoryCreateInputDTO, "workspace">;
 
 /**
  * Same shape as {@link SpeciesRepositoryCreateInputDTO} except `categoryId` is replaced by
@@ -19,7 +19,7 @@ export type DefaultCatalogCategory = {
  */
 export type DefaultCatalogSpecies<C extends readonly DefaultCatalogCategory[]> = {
 	readonly categorySlug: C[number]["slug"];
-} & Omit<SpeciesRepositoryCreateInputDTO, "categoryId" | "workspaceKey">;
+} & Omit<SpeciesRepositoryCreateInputDTO, "categoryId" | "workspace">;
 
 export type DefaultCatalogDefinition<C extends readonly DefaultCatalogCategory[]> = {
 	readonly categories: C;

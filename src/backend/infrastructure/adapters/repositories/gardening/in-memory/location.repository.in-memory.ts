@@ -43,7 +43,7 @@ export class LocationInMemoryRepository extends BaseRepositoryErrors implements 
 	private patchStored(existing: LocationEntity, dto: LocationRepositoryUpdatePatchDTO): LocationEntity {
 		return {
 			...existing,
-			workspaceKey: dto.workspaceKey !== undefined ? dto.workspaceKey : existing.workspaceKey,
+			workspace: dto.workspace !== undefined ? dto.workspace : existing.workspace,
 			name: dto.name !== undefined ? dto.name : existing.name,
 			presentation: dto.presentation !== undefined ? dto.presentation : existing.presentation,
 			updatedAt: new Date(),

@@ -1,5 +1,10 @@
+import { SubjectVO } from "@backend/core/domain/access/subject.vo";
+import { WorkspaceVO } from "@backend/core/domain/access/workspace.vo";
+
 function valuesEqual(a: unknown, b: unknown): boolean {
 	if (a === b) return true;
+	if (a instanceof SubjectVO && b instanceof SubjectVO) return a.equals(b);
+	if (a instanceof WorkspaceVO && b instanceof WorkspaceVO) return a.equals(b);
 	if (typeof a === "object" && a !== null && typeof b === "object" && b !== null) {
 		return JSON.stringify(a) === JSON.stringify(b);
 	}

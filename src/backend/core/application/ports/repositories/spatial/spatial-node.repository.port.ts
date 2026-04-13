@@ -46,13 +46,13 @@ export type SpatialNodeRepositoryDeleteOutputDTO = SpatialNodeEntityId;
 export type SpatialNodeRepositoryDeleteManyOutputDTO = { count: number };
 
 /** OR branch to resolve a node by domain `ref` scoped to a workspace. */
-export type SpatialNodeRepositoryGetByRefFilterClause = Pick<SpatialNodeEntity, "ref" | "workspaceKey">;
+export type SpatialNodeRepositoryGetByRefFilterClause = Pick<SpatialNodeEntity, "ref" | "workspace">;
 
 /** Restore payload (includes `id` — not a pure filter-only API). */
 export type SpatialNodeRepositoryRestoreInputDTO = { id: SpatialNodeEntityId } & BaseRepositoryCreateInputDTO<SpatialNodeEntity>;
 
 /** OR branch: root id and workspace for tree materialization. */
-export type SpatialNodeRepositoryTreeRootFilterClause = Pick<SpatialNodeEntity, "id" | "workspaceKey">;
+export type SpatialNodeRepositoryTreeRootFilterClause = Pick<SpatialNodeEntity, "id" | "workspace">;
 
 /**
  * Spatial node persistence (v2): standard segregated ports plus ref lookup, soft-restore, and tree read.

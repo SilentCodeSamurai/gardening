@@ -49,7 +49,7 @@ export class SpeciesCategoryInMemoryRepository
 	): SpeciesCategoryEntity {
 		return {
 			...existing,
-			workspaceKey: dto.workspaceKey !== undefined ? dto.workspaceKey : existing.workspaceKey,
+			workspace: dto.workspace !== undefined ? dto.workspace : existing.workspace,
 			title: dto.title !== undefined ? dto.title : existing.title,
 			presentation: dto.presentation !== undefined ? dto.presentation : existing.presentation,
 			updatedAt: new Date(),
@@ -124,7 +124,7 @@ export class SpeciesCategoryInMemoryRepository
 		if (!row) this.throwNotFoundError("SpeciesCategory", input.filters);
 		const key = idKey(row.id);
 		for (const s of this.store.species.values()) {
-			if (idKey(s.categoryId) === key && String(s.workspaceKey) === String(row.workspaceKey)) {
+			if (idKey(s.categoryId) === key && s.workspace.equals(row.workspace)) {
 				this.throwConflictError({
 					operation: "delete",
 					reason: "species-reference-category",
@@ -149,7 +149,7 @@ export class SpeciesCategoryInMemoryRepository
 		for (const row of rows) {
 			const key = idKey(row.id);
 			const blocked = [...this.store.species.values()].some(
-				(s) => idKey(s.categoryId) === key && String(s.workspaceKey) === String(row.workspaceKey),
+				(s) => idKey(s.categoryId) === key && s.workspace.equals(row.workspace),
 			);
 			if (blocked) continue;
 			if (this.store.speciesCategories.delete(key)) count += 1;

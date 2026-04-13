@@ -1,19 +1,19 @@
-import type { SubjectKey } from "@backend/core/domain/access/subject.vo";
-import type { WorkspaceKey } from "@backend/core/domain/access/workspace.vo";
+import type { SubjectVO } from "@backend/core/domain/access/subject.vo";
+import type { WorkspaceVO } from "@backend/core/domain/access/workspace.vo";
 import type { AccessRole } from "#/backend/core/domain/access/types";
 
 export type WorkspaceAccessRoleAssignedAuditEvent = {
-	readonly actorSubjectKey: SubjectKey;
-	readonly targetSubjectKey: SubjectKey;
-	readonly workspaceKey: WorkspaceKey;
+	readonly actorSubject: SubjectVO;
+	readonly targetSubject: SubjectVO;
+	readonly workspace: WorkspaceVO;
 	readonly role: AccessRole;
 	readonly grantSource?: string;
 };
 
 export type WorkspaceAccessRoleRevokedAuditEvent = {
-	readonly actorSubjectKey: SubjectKey;
-	readonly targetSubjectKey: SubjectKey;
-	readonly workspaceKey: WorkspaceKey;
+	readonly actorSubject: SubjectVO;
+	readonly targetSubject: SubjectVO;
+	readonly workspace: WorkspaceVO;
 	readonly role: AccessRole;
 };
 

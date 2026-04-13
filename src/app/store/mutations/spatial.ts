@@ -1,3 +1,4 @@
+import { WorkspaceVO } from "@backend/core/domain/access/workspace.vo";
 import type {
 	SpatialNodeEntity,
 	SpatialNodeEntityId,
@@ -30,7 +31,7 @@ export function useSpatialNodeCreateMutation() {
 
 				const pendingId = makePendingId("spatial") as unknown as SpatialNodeEntityId;
 				const pending: CachedSpatialNode = {
-					workspaceKey,
+					workspace: WorkspaceVO.fromKey(workspaceKey),
 					id: pendingId,
 					parentId: variables.parentId as SpatialNodeEntityId | null,
 					rect: variables.rect,

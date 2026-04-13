@@ -37,8 +37,8 @@ describe("Species category use-cases", () => {
     );
     const stranger = SubjectVO.user("no-assignments");
     await workspaceRepo.upsertOne({
-      subjectKey: stranger.toKey(),
-      workspaceKey: WorkspaceVO.user("no-assignments").toKey(),
+      subject: stranger,
+      workspace: WorkspaceVO.user("no-assignments"),
       role: "viewer",
       grantSource: "test",
     });

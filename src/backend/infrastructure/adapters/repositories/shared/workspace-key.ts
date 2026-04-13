@@ -1,5 +1,5 @@
-import type { WorkspaceKey } from "@backend/core/domain/access/workspace.vo";
+import type { WorkspaceVO } from "@backend/core/domain/access/workspace.vo";
 
-export function workspaceKeysEqual(a: WorkspaceKey, b: WorkspaceKey): boolean {
-	return String(a) === String(b);
+export function workspacesEqual(a: WorkspaceVO, b: WorkspaceVO): boolean {
+	return a.equals(b);
 }
