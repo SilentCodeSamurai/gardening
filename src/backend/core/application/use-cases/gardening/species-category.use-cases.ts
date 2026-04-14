@@ -62,8 +62,9 @@ export class SpeciesCategoryGetByIdUseCase extends BaseUseCase<
 	protected async execute(input: SpeciesCategoryGetByIdUseCaseInput): Promise<SpeciesCategoryGetByIdUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "read" });
 		const scope = input.context.activeWorkspaceScope;
+		const global = WorkspaceVO.globalShared();
 		const row = await this.speciesCategoryRepository.getOne({
-			filters: [{ id: input.dto.id, workspace: scope }],
+			filters: [{ id: input.dto.id, workspace: scope }, { id: input.dto.id, workspace: global }],
 		});
 		return { ...row, systemCatalog: WorkspaceVO.isGlobalShared(row.workspace) };
 	}
