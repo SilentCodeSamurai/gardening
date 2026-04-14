@@ -9,6 +9,8 @@ import { GardeningActionPresentationIcon } from "@/components/gardening/gardenin
 import { GardeningEventUpdateDialog } from "@/components/gardening/gardening-event/gardening-event-update-dialog";
 import { getPlantDisplayTitle } from "@/components/gardening/plant/plant-list-card";
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
+import { ItemNotFound } from "@/components/layout/item-not-found";
+import { PageLoading } from "@/components/layout/page-loading";
 import { Button } from "@/components/ui/button";
 import { ButtonTooltip } from "@/components/ui/button-tooltip";
 import { gardeningActionMessage } from "@/lib/gardening-action-messages";
@@ -54,14 +56,10 @@ function GardeningEventDetailPage() {
 	});
 
 	if (detailQuery.isPending) {
-		return <div className="text-muted-foreground text-sm">{m.common_loading()}</div>;
+		return <PageLoading />;
 	}
 	if (detailQuery.isError || !detailQuery.data) {
-		return (
-			<div className="text-destructive text-sm">
-				{`${m.collections_gardeningEvent_title()} ${m.common_notFound()}`}
-			</div>
-		);
+		return <ItemNotFound resourceLabel={m.collections_gardeningEvent_title()} />;
 	}
 
 	const data = detailQuery.data;
@@ -157,7 +155,7 @@ function GardeningEventDetailPage() {
 							{`${m.common_linked()} ${m.collections_plant_titlePlural().toLowerCase()}`}
 						</h2>
 						{bindingsQuery.isPending ? (
-							<p className="text-muted-foreground text-sm">{m.common_loading()}</p>
+							<PageLoading variant="section" />
 						) : plantIds.length === 0 ? (
 							<p className="rounded-lg border border-border/70 border-dashed bg-muted/10 px-3 py-4 text-muted-foreground text-sm">
 								{m.components_detail_eventBindings_nonePlants()}
@@ -199,7 +197,7 @@ function GardeningEventDetailPage() {
 							{`${m.common_linked()} ${m.collections_location_titlePlural().toLowerCase()}`}
 						</h2>
 						{bindingsQuery.isPending ? (
-							<p className="text-muted-foreground text-sm">{m.common_loading()}</p>
+							<PageLoading variant="section" />
 						) : locationIds.length === 0 ? (
 							<p className="rounded-lg border border-border/70 border-dashed bg-muted/10 px-3 py-4 text-muted-foreground text-sm">
 								{m.components_detail_eventBindings_noneLocations()}

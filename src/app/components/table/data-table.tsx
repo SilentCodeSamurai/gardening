@@ -1,12 +1,11 @@
 import { type Column, flexRender, type RowData, type Table as TanstackTable } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ReactNode } from "react";
-import { useCallback, useRef } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { PageLoading } from "@/components/layout/page-loading";
 import { TABLE_LIST_SELECT_COLUMN_WIDTH_PX } from "@/components/table/table-list-column-sizes";
-
 import { Input } from "@/components/ui/input";
 import { pendingItemSurfaceClassName } from "@/components/ui/pending-item-surface";
-import { Spinner } from "@/components/ui/spinner";
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages.js";
@@ -38,6 +37,9 @@ type ColumnMeta<TData extends RowData> =
 	| undefined;
 
 const virtualTableClass = "w-full caption-bottom text-xs";
+
+/** Extra rows rendered above/below the viewport (TanStack Virtual `overscan`). Higher = smoother fast scroll, more DOM work. */
+const TABLE_ROW_OVERSCAN = 20;
 
 const defaultLeafColumnWidth = { min: 20, size: 150, max: Number.MAX_SAFE_INTEGER };
 
@@ -86,13 +88,15 @@ export function DataTable<TData extends RowData>({
 	selectedActions,
 	highlightPendingRows = false,
 }: DataTableProps<TData>) {
-	const selectedCount = table.getFilteredSelectedRowModel().rows.length;
 	const rows = table.getRowModel().rows;
 	const rowCount = rows.length;
-	const leafHeaders = table.getHeaderGroups().at(-1)?.headers ?? [];
 	const headerScrollRef = useRef<HTMLDivElement>(null);
 	const bodyScrollRef = useRef<HTMLDivElement>(null);
 	const scrollParentRef = bodyScrollRef;
+	const rowsRef = useRef(rows);
+	rowsRef.current = rows;
+
+	const getItemKey = useCallback((index: number) => rowsRef.current[index]?.id ?? index, []);
 
 	const syncHorizontalScroll = useCallback((source: HTMLDivElement) => {
 		const headerEl = headerScrollRef.current;
@@ -105,18 +109,60 @@ export function DataTable<TData extends RowData>({
 		}
 	}, []);
 
+	const [showTable, setShowTable] = useState(false);
+	const tableDomReadyRef = useRef(false);
+
+	useLayoutEffect(() => {
+		if (isError || isPending || rowCount === 0) {
+			if (isPending || isError) tableDomReadyRef.current = false;
+			setShowTable(false);
+			return;
+		}
+		if (tableDomReadyRef.current) {
+			setShowTable(true);
+			return;
+		}
+		setShowTable(false);
+		let innerRaf = 0;
+		const outerRaf = requestAnimationFrame(() => {
+			innerRaf = requestAnimationFrame(() => {
+				setShowTable(true);
+				tableDomReadyRef.current = true;
+			});
+		});
+		return () => {
+			cancelAnimationFrame(outerRaf);
+			cancelAnimationFrame(innerRaf);
+		};
+	}, [isPending, isError, rowCount]);
+
 	// eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual scroll sync; compiler skips memoization for this subtree.
 	const rowVirtualizer = useVirtualizer({
 		count: rowCount,
+		enabled: rowCount > 0 && !isPending && !isError && showTable,
 		getScrollElement: () => scrollParentRef.current,
 		estimateSize: () => 49,
-		overscan: 12,
+		overscan: TABLE_ROW_OVERSCAN,
 		useFlushSync: false,
-		getItemKey: (index) => rows[index]?.id ?? index,
+		getItemKey,
 	});
 
 	const virtualRows = rowVirtualizer.getVirtualItems();
 
+	if (isError) {
+		return (
+			<p className="text-destructive text-sm" role="alert">
+				{errorMessage}
+			</p>
+		);
+	}
+
+	if (isPending || (rowCount > 0 && !showTable)) {
+		return <PageLoading showLabel={false} variant="page" />;
+	}
+
+	const selectedCount = table.getFilteredSelectedRowModel().rows.length;
+	const leafHeaders = table.getHeaderGroups().at(-1)?.headers ?? [];
 	const leafColumns = table.getVisibleLeafColumns();
 	const colgroup = (
 		<colgroup>
@@ -180,22 +226,6 @@ export function DataTable<TData extends RowData>({
 			</TableRow>
 		</TableHeader>
 	);
-
-	if (isError) {
-		return (
-			<p className="text-destructive text-sm" role="alert">
-				{errorMessage}
-			</p>
-		);
-	}
-
-	if (isPending) {
-		return (
-			<div className="flex justify-center py-12">
-				<Spinner className="size-8" />
-			</div>
-		);
-	}
 
 	if (rowCount === 0) {
 		return (
@@ -294,7 +324,6 @@ export function DataTable<TData extends RowData>({
 										return (
 											<TableRow
 												key={row.id}
-												ref={rowVirtualizer.measureElement}
 												data-index={virtualRow.index}
 												data-state={row.getIsSelected() ? "selected" : undefined}
 												data-pending={rowPending ? "true" : undefined}

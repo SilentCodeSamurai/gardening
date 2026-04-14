@@ -9,6 +9,8 @@ import { GardeningActionPresentationIcon } from "@/components/gardening/gardenin
 import { LocationUpdateDialog } from "@/components/gardening/location/location-update-dialog";
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
+import { ItemNotFound } from "@/components/layout/item-not-found";
+import { PageLoading } from "@/components/layout/page-loading";
 import { Button } from "@/components/ui/button";
 import { ButtonTooltip } from "@/components/ui/button-tooltip";
 import { gardeningActionMessage } from "@/lib/gardening-action-messages";
@@ -42,12 +44,10 @@ function LocationDetailPage() {
 	});
 
 	if (isPending) {
-		return <div className="text-muted-foreground text-sm">{m.common_loading()}</div>;
+		return <PageLoading />;
 	}
 	if (isError || !data) {
-		return (
-			<div className="text-destructive text-sm">{`${m.collections_location_title()} ${m.common_notFound()}`}</div>
-		);
+		return <ItemNotFound resourceLabel={m.collections_location_title()} />;
 	}
 
 	const events = eventsData?.items ?? [];
@@ -175,7 +175,7 @@ function LocationDetailPage() {
 				<section className="space-y-3">
 					<h2 className="font-medium text-lg">{m.components_detail_eventsSection_title()}</h2>
 					{eventsPending ? (
-						<p className="text-muted-foreground text-sm">{m.components_detail_eventsSection_loading()}</p>
+						<PageLoading variant="section" label={m.components_detail_eventsSection_loading()} />
 					) : events.length === 0 ? (
 						<p className="rounded-lg border border-border/80 border-dashed bg-muted/10 px-4 py-6 text-center text-muted-foreground text-sm">
 							{m.components_detail_eventsSection_empty()}

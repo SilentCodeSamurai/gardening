@@ -5,6 +5,8 @@ import { useMemo } from "react";
 import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
 import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
 import { LocationLayoutEditor } from "@/components/gardening/location/location-layout-editor";
+import { ItemNotFound } from "@/components/layout/item-not-found";
+import { PageLoading } from "@/components/layout/page-loading";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import { resolveRootLocationEntityId } from "@/store/spatial-placement";
@@ -46,12 +48,10 @@ function LocationLayoutPage() {
 		openedQuery.isError || !openedQuery.data || (rootDiffersFromOpened && (rootQuery.isError || !rootQuery.data));
 
 	if (isPending) {
-		return <div className="text-muted-foreground text-sm">{m.common_loading()}</div>;
+		return <PageLoading />;
 	}
 	if (isError || !editorRootLocation) {
-		return (
-			<div className="text-destructive text-sm">{`${m.collections_location_title()} ${m.common_notFound()}`}</div>
-		);
+		return <ItemNotFound resourceLabel={m.collections_location_title()} />;
 	}
 
 	return (

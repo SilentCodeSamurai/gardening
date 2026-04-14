@@ -8,6 +8,8 @@ import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-hea
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
 import { SpeciesUpdateDialog } from "@/components/gardening/species/species-update-dialog";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
+import { ItemNotFound } from "@/components/layout/item-not-found";
+import { PageLoading } from "@/components/layout/page-loading";
 import { Button } from "@/components/ui/button";
 import { ButtonTooltip } from "@/components/ui/button-tooltip";
 import { translateCatalogField } from "@/lib/translate-catalog-field";
@@ -40,12 +42,10 @@ function SpeciesDetailPage() {
 	const { data: cultivarsData } = useQuery({ ...queryKeys.cultivar.all });
 
 	if (isPending) {
-		return <div className="text-muted-foreground text-sm">{m.common_loading()}</div>;
+		return <PageLoading />;
 	}
 	if (isError || !species) {
-		return (
-			<div className="text-destructive text-sm">{`${m.collections_species_title()} ${m.common_notFound()}`}</div>
-		);
+		return <ItemNotFound resourceLabel={m.collections_species_title()} />;
 	}
 
 	const category = categories?.items.find((c) => String(c.id) === String(species.categoryId));

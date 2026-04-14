@@ -8,6 +8,8 @@ import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-hea
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
 import { SpeciesCategoryUpdateDialog } from "@/components/gardening/species-category/species-category-update-dialog";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
+import { ItemNotFound } from "@/components/layout/item-not-found";
+import { PageLoading } from "@/components/layout/page-loading";
 import { Button } from "@/components/ui/button";
 import { ButtonTooltip } from "@/components/ui/button-tooltip";
 import { translateCatalogField } from "@/lib/translate-catalog-field";
@@ -32,14 +34,10 @@ function SpeciesCategoryDetailPage() {
 	const { data: speciesData } = useQuery({ ...queryKeys.species.all });
 
 	if (isPending) {
-		return <div className="text-muted-foreground text-sm">{m.common_loading()}</div>;
+		return <PageLoading />;
 	}
 	if (isError || !data) {
-		return (
-			<div className="text-destructive text-sm">
-				{`${m.collections_speciesCategory_title()} ${m.common_notFound()}`}
-			</div>
-		);
+		return <ItemNotFound resourceLabel={m.collections_speciesCategory_title()} />;
 	}
 
 	const title = translateCatalogField(data.title, data.systemCatalog);
