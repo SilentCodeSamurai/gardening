@@ -3,6 +3,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { AppAuthProvider } from "@/components/auth/app-auth-provider";
+import { NotFoundPage } from "@/components/layout/not-found";
 import { buildThemeInitScript, ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { getLocale } from "@/paraglide/runtime";
@@ -20,6 +21,7 @@ interface MyRouterContext {
 const THEME_INIT_SCRIPT = buildThemeInitScript();
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
+	notFoundComponent: NotFoundPage,
 	beforeLoad: async () => {
 		// Other redirect strategies are possible; see
 		// https://github.com/TanStack/router/tree/main/examples/react/i18n-paraglide#offline-redirect
