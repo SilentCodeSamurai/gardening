@@ -15,6 +15,8 @@ export abstract class TransactionalUseCase<TInput = void, TOutput = void> extend
 		} catch (error) {
 			await this.transactionManager.rollback();
 			throw error;
+		} finally {
+			await this.transactionManager.release();
 		}
 	}
 }

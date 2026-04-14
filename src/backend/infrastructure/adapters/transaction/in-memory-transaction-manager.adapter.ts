@@ -37,4 +37,8 @@ export class InMemoryTransactionManagerAdapter implements TransactionManagerPort
 		this.depth = 0;
 		this.transactionStore = null;
 	}
+
+	async release(): Promise<void> {
+		// No resources to release for in-memory adapter.
+	}
 }

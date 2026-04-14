@@ -125,6 +125,22 @@ Then run migrations:
 bunx --bun @better-auth/cli migrate
 ```
 
+## MongoDB environments
+
+Use separate env files for development, tests, and production.  
+Each environment must provide:
+
+- `MONGODB_URI`
+- `MONGODB_DB`
+
+Loading behavior:
+
+- Vite uses `.env.development.local`, `.env.development`, `.env.local`, `.env`
+- Vitest uses `.env.test.local`, `.env.test`, `.env.local`, `.env`
+- Production uses runtime process env (or `.env.production` if your runtime loads it)
+
+Examples are provided in `.env.development.example`, `.env.test.example`, and `.env.production.example`.
+
 
 
 ## Routing

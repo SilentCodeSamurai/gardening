@@ -6,8 +6,6 @@ import { populateData } from "./populate-data";
  * then {@link populateData}.
  */
 export async function bootstrap(): Promise<void> {
-	// TODO: Connect database, run migrations, wire Drizzle / connection pool, etc.
-
 	const result = await populateData({
 		actorSubject: bootstrapPopulateServiceAccount,
 	});

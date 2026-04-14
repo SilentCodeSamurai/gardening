@@ -4,6 +4,7 @@ export interface TransactionManagerPort {
 	begin(): Promise<void>;
 	commit(): Promise<void>;
 	rollback(): Promise<void>;
+	release(): Promise<void>;
 }
 
 export const TransactionManagerPortToken: InjectionToken<TransactionManagerPort> = Symbol.for("TransactionManagerPort");

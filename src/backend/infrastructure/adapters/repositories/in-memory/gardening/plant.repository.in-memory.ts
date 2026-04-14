@@ -1,0 +1,172 @@
+import type {
+	PlantRepositoryCreateInputDTO,
+	PlantRepositoryCreateManyInputDTO,
+	PlantRepositoryCreateManyOutputDTO,
+	PlantRepositoryCreateOutputDTO,
+	PlantRepositoryDeleteManyOutputDTO,
+	PlantRepositoryDeleteOutputDTO,
+	PlantRepositoryFilterClause,
+	PlantRepositoryGetManyOutputDTO,
+	PlantRepositoryGetOneOutputDTO,
+	PlantRepositoryPort,
+	PlantRepositoryUpdateManyOutputDTO,
+	PlantRepositoryUpdateOutputDTO,
+	PlantRepositoryUpdatePatchDTO,
+} from "@backend/core/application/ports/repositories/gardening/plant.repository.port";
+import { BaseRepositoryErrors } from "@backend/core/application/ports/repositories/shared/base-repository.errors";
+import type { HydratedPlantEntity, PlantEntity, SpeciesEntity } from "@backend/core/domain/gardening/entities";
+import { InMemoryTransactionManagerAdapter } from "@backend/infrastructure/adapters/transaction/in-memory-transaction-manager.adapter";
+import type { InMemoryStore } from "@backend/infrastructure/integrations/in-memory-database/client";
+import { idKey, plantId } from "@backend/infrastructure/integrations/shared/database-ids";
+import { inject, injectable } from "tsyringe";
+import {
+	findFirstRowMatchingAnyClause,
+	findRowsMatchingAnyClause,
+} from "#/backend/infrastructure/adapters/repositories/in-memory/shared/in-memory-entity-filter";
+
+@injectable()
+export class PlantInMemoryRepository extends BaseRepositoryErrors implements PlantRepositoryPort {
+	constructor(
+		@inject(InMemoryTransactionManagerAdapter)
+		private readonly transactionManager: InMemoryTransactionManagerAdapter,
+	) {
+		super();
+	}
+
+	private hydrate(row: PlantEntity): HydratedPlantEntity {
+		if (row.cultivarId === null) {
+			return { ...row, cultivar: null };
+		}
+		const cultivarRow = this.store.cultivars.get(idKey(row.cultivarId));
+		if (!cultivarRow) this.throwNotFoundError("Cultivar", row.cultivarId);
+		let speciesRow: SpeciesEntity | null = null;
+		if (cultivarRow.speciesId !== null) {
+			const s = this.store.species.get(idKey(cultivarRow.speciesId));
+			if (!s) this.throwNotFoundError("Species", cultivarRow.speciesId);
+			speciesRow = s;
+		}
+		return {
+			...row,
+			cultivar: {
+				...cultivarRow,
+				species: speciesRow,
+			},
+		};
+	}
+
+	private insertRow(dto: PlantRepositoryCreateInputDTO): PlantRepositoryCreateOutputDTO {
+		if (dto.cultivarId !== null) this.requireCultivarRow(dto.cultivarId);
+		const now = new Date();
+		const id = plantId();
+		const row: PlantEntity = {
+			...dto,
+			id,
+			createdAt: now,
+			updatedAt: now,
+		};
+		this.store.plants.set(idKey(id), row);
+		return this.hydrate(row);
+	}
+
+	private requireCultivarRow(cultivarId: NonNullable<PlantEntity["cultivarId"]>): void {
+		const cultivar = this.store.cultivars.get(idKey(cultivarId));
+		if (!cultivar) {
+			this.throwNotFoundError("Cultivar", [{ id: cultivarId }]);
+		}
+	}
+
+	private patchStored(existing: PlantEntity, dto: PlantRepositoryUpdatePatchDTO): PlantEntity {
+		const nextWorkspace = dto.workspace !== undefined ? dto.workspace : existing.workspace;
+		const nextCultivarId = dto.cultivarId !== undefined ? dto.cultivarId : existing.cultivarId;
+		return {
+			...existing,
+			workspace: nextWorkspace,
+			title: dto.title !== undefined ? dto.title : existing.title,
+			description: dto.description !== undefined ? dto.description : existing.description,
+			cultivarId: nextCultivarId,
+			updatedAt: new Date(),
+		};
+	}
+
+	async createOne(dto: PlantRepositoryCreateInputDTO): Promise<PlantRepositoryCreateOutputDTO> {
+		return this.insertRow(dto);
+	}
+
+	async createMany(input: PlantRepositoryCreateManyInputDTO): Promise<PlantRepositoryCreateManyOutputDTO> {
+		const items: HydratedPlantEntity[] = [];
+		for (const item of input.items) {
+			items.push(this.insertRow(item));
+		}
+		return { items };
+	}
+
+	async getOne(input: { filters: readonly PlantRepositoryFilterClause[] }): Promise<PlantRepositoryGetOneOutputDTO> {
+		const row = findFirstRowMatchingAnyClause(this.store.plants.values(), input.filters);
+		if (!row) this.throwNotFoundError("Plant", input.filters);
+		return this.hydrate(row);
+	}
+
+	async getMany(input?: {
+		filters?: readonly PlantRepositoryFilterClause[];
+	}): Promise<PlantRepositoryGetManyOutputDTO> {
+		if (input?.filters === undefined) {
+			return { items: [...this.store.plants.values()].map((r) => this.hydrate(r)) };
+		}
+		if (input.filters.length === 0) return { items: [] };
+		const rows = findRowsMatchingAnyClause([...this.store.plants.values()], input.filters);
+		return { items: rows.map((r) => this.hydrate(r)) };
+	}
+
+	async updateOne(input: {
+		filters: readonly PlantRepositoryFilterClause[];
+		dto: PlantRepositoryUpdatePatchDTO;
+	}): Promise<PlantRepositoryUpdateOutputDTO> {
+		const row = findFirstRowMatchingAnyClause(this.store.plants.values(), input.filters);
+		if (!row) this.throwNotFoundError("Plant", input.filters);
+		const updated = this.patchStored(row, input.dto);
+		if (updated.cultivarId !== null) this.requireCultivarRow(updated.cultivarId);
+		this.store.plants.set(idKey(updated.id), updated);
+		return this.hydrate(updated);
+	}
+
+	async updateMany(input: {
+		filters: readonly PlantRepositoryFilterClause[];
+		dto: PlantRepositoryUpdatePatchDTO;
+	}): Promise<PlantRepositoryUpdateManyOutputDTO> {
+		const rows = findRowsMatchingAnyClause([...this.store.plants.values()], input.filters);
+		let count = 0;
+		for (const row of rows) {
+			const updated = this.patchStored(row, input.dto);
+			if (updated.cultivarId !== null) this.requireCultivarRow(updated.cultivarId);
+			this.store.plants.set(idKey(updated.id), updated);
+			count += 1;
+		}
+		return { count };
+	}
+
+	async deleteOne(input: {
+		filters: readonly PlantRepositoryFilterClause[];
+	}): Promise<PlantRepositoryDeleteOutputDTO> {
+		const row = findFirstRowMatchingAnyClause(this.store.plants.values(), input.filters);
+		if (!row) this.throwNotFoundError("Plant", input.filters);
+		this.store.unlinkAllEventsFromPlant(row.id);
+		this.store.plants.delete(idKey(row.id));
+		return row.id;
+	}
+
+	async deleteMany(input: {
+		filters: readonly PlantRepositoryFilterClause[];
+	}): Promise<PlantRepositoryDeleteManyOutputDTO> {
+		const rows = findRowsMatchingAnyClause([...this.store.plants.values()], input.filters);
+		let count = 0;
+		for (const row of rows) {
+			this.store.unlinkAllEventsFromPlant(row.id);
+			if (this.store.plants.delete(idKey(row.id))) count += 1;
+		}
+		return { count };
+	}
+
+	private get store(): InMemoryStore {
+		return this.transactionManager.session;
+	}
+}

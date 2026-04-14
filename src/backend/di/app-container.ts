@@ -6,10 +6,12 @@ import type { IUseCase } from "../core/application/use-cases/shared/use-case.int
 
 import { registerAdapters } from "./register-adapters";
 import { registerApplicationServices } from "./register-application-services";
-import { registerInMemoryRepositories } from "./register-in-memory-repositories";
+// import { registerInMemoryStorage } from "./register-in-memory-storage";
+import { registerMongoDBStorage } from "./register-mongodb-storage";
 import { registerUseCases } from "./register-use-cases";
 
-registerInMemoryRepositories(container);
+// registerInMemoryStorage(container);
+registerMongoDBStorage(container);
 registerAdapters(container);
 registerApplicationServices(container);
 registerUseCases(container);

@@ -6,7 +6,8 @@ import { container } from "tsyringe";
 import { registerAdapters } from "@backend/di/register-adapters";
 import { registerInMemoryStorage } from "@backend/di/register-in-memory-storage";
 
-export function createInMemoryTransactionTestContainer(): DependencyContainer {
+/** Per-test TSyringe child container with a fresh in-memory store. */
+export function createInMemoryAccessTestContainer(): DependencyContainer {
 	const child = container.createChildContainer();
 	registerInMemoryStorage(child);
 	registerAdapters(child);

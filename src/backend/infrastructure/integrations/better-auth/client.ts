@@ -1,20 +1,14 @@
 import { betterAuth } from "better-auth";
+import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { organization } from "better-auth/plugins";
-// import { drizzleAdapter } from "better-auth/adapters/drizzle";
-// import { db } from "#/backend/infrastructure/integrations/drizzle";
-// import * as schema from "#/backend/infrastructure/integrations/drizzle/schema";
-
+import { appContainer } from "#/backend/di/app-container";
+import { MongoDBClient } from "../mongodb/client";
+import { MongoDBDatabaseNameToken } from "../mongodb/injection-tokens";
 import { grantDefaultPermissionsOnOrganizationCreated } from "./grant-default-permissions-on-organization-created";
 import { grantDefaultPermissionsOnUserCreated } from "./grant-default-permissions-on-user-created";
 
 export const betterAuthBackendClient = betterAuth({
-	/**
-	 * TODO: Uncomment this when we have a database.
-	 */
-	// database: drizzleAdapter(db, {
-	// 	provider: "pg",
-	// 	schema,
-	// }),
+	database: mongodbAdapter(appContainer.resolve(MongoDBClient).db(appContainer.resolve(MongoDBDatabaseNameToken))),
 	plugins: [
 		organization({
 			organizationHooks: {

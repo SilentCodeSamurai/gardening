@@ -11,7 +11,7 @@ function compositeKey(subjectKey: SubjectKey, workspaceKey: WorkspaceKey): `${Su
 }
 
 /**
- * Broad workspace admin for `tests-local` service account. Call after `registerAdapters` from test composition roots only.
+ * Broad workspace admin for `tests-local` service account. Call after `registerInMemoryStorage` from test composition roots only.
  */
 export function seedTestsLocalAccessPermissions(c: DependencyContainer): void {
 	const store = c.resolve(InMemoryStoreToken);
