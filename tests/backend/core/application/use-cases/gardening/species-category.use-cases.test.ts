@@ -11,7 +11,7 @@ import {
 import {
   RepositoryNotFoundError,
 } from "@backend/core/application/ports/repositories/shared/base-repository.errors";
-import { bootstrapPopulateServiceAccount } from "#/backend/core/application/service-accounts";
+import { bootstrapServiceAccount } from "#/backend/core/application/service-accounts";
 import { WorkspaceRoleAssignmentRepositoryPortToken } from "#/backend/core/application/ports/repositories/access/workspace-role-assignment.repository.port";
 import { createTestUseCaseContext } from "../create-test-use-case-context";
 import { SubjectVO } from "@backend/core/domain/access/subject.vo";
@@ -48,7 +48,7 @@ describe("Species category use-cases", () => {
     });
     await c.resolve(PopulateDefaultCatalogUseCase).run({
       context: {
-        actorSubject: bootstrapPopulateServiceAccount,
+        actorSubject: bootstrapServiceAccount,
         activeWorkspaceScope: WorkspaceVO.globalShared(),
       },
       dto: {
@@ -126,7 +126,7 @@ describe("Species category use-cases", () => {
     const populate = c.resolve(PopulateDefaultCatalogUseCase);
     await populate.run({
       context: {
-        actorSubject: bootstrapPopulateServiceAccount,
+        actorSubject: bootstrapServiceAccount,
         activeWorkspaceScope: WorkspaceVO.globalShared(),
       },
       dto: { catalog: tinyDefaultCatalog },
@@ -148,7 +148,7 @@ describe("Species category use-cases", () => {
     const populate = c.resolve(PopulateDefaultCatalogUseCase);
     await populate.run({
       context: {
-        actorSubject: bootstrapPopulateServiceAccount,
+        actorSubject: bootstrapServiceAccount,
         activeWorkspaceScope: WorkspaceVO.globalShared(),
       },
       dto: { catalog: tinyDefaultCatalog },

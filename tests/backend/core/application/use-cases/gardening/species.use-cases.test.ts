@@ -10,7 +10,7 @@ import { CultivarGetAllUseCase } from "@backend/core/application/use-cases/garde
 import {
   RepositoryNotFoundError,
 } from "@backend/core/application/ports/repositories/shared/base-repository.errors";
-import { bootstrapPopulateServiceAccount } from "#/backend/core/application/service-accounts";
+import { bootstrapServiceAccount } from "#/backend/core/application/service-accounts";
 import { WorkspaceVO } from "@backend/core/domain/access/workspace.vo";
 import { createTestUseCaseContext } from "../create-test-use-case-context";
 import { PopulateDefaultCatalogUseCase } from "@backend/core/application/use-cases/gardening/populate-default-catalog.use-case";
@@ -150,7 +150,7 @@ describe("Species use-cases", () => {
     const populate = c.resolve(PopulateDefaultCatalogUseCase);
     await populate.run({
       context: {
-        actorSubject: bootstrapPopulateServiceAccount,
+        actorSubject: bootstrapServiceAccount,
         activeWorkspaceScope: WorkspaceVO.globalShared(),
       },
       dto: { catalog: tinyDefaultCatalog },
@@ -173,7 +173,7 @@ describe("Species use-cases", () => {
     const populate = c.resolve(PopulateDefaultCatalogUseCase);
     await populate.run({
       context: {
-        actorSubject: bootstrapPopulateServiceAccount,
+        actorSubject: bootstrapServiceAccount,
         activeWorkspaceScope: WorkspaceVO.globalShared(),
       },
       dto: { catalog: tinyDefaultCatalog },

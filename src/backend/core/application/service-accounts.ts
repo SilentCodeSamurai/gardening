@@ -1,6 +1,6 @@
 import { SubjectVO } from "@backend/core/domain/access/subject.vo";
 
-const bootstrapPopulateServiceAccountId = "bootstrap-populate";
+const bootstrapServiceAccountId = "bootstrap-service-account";
 
 /** Built-in subject for bootstrap - default data population */
-export const bootstrapPopulateServiceAccount = SubjectVO.serviceAccount(bootstrapPopulateServiceAccountId);
+export const bootstrapServiceAccount = SubjectVO.serviceAccount(bootstrapServiceAccountId);

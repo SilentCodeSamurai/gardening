@@ -4,7 +4,7 @@ import {
   PopulateDefaultCatalogUseCaseDuplicateCategorySlugError,
   PopulateDefaultCatalogUseCaseUnknownCategorySlugError,
 } from "@backend/core/application/use-cases/gardening/populate-default-catalog.use-case";
-import { bootstrapPopulateServiceAccount } from "#/backend/core/application/service-accounts";
+import { bootstrapServiceAccount } from "#/backend/core/application/service-accounts";
 import { WorkspaceVO } from "@backend/core/domain/access/workspace.vo";
 import { createTestUseCaseContext } from "../create-test-use-case-context";
 import {
@@ -36,7 +36,7 @@ describe("PopulateDefaultCatalogUseCase", () => {
 
   it("creates categories and species from catalog when store is empty", async () => {
     const context = {
-      actorSubject: bootstrapPopulateServiceAccount,
+      actorSubject: bootstrapServiceAccount,
       activeWorkspaceScope: WorkspaceVO.globalShared(),
     };
     const populate = c.resolve(PopulateDefaultCatalogUseCase);
@@ -72,7 +72,7 @@ describe("PopulateDefaultCatalogUseCase", () => {
     const populate = c.resolve(PopulateDefaultCatalogUseCase);
     const result = await populate.run({
       context: {
-        actorSubject: bootstrapPopulateServiceAccount,
+        actorSubject: bootstrapServiceAccount,
         activeWorkspaceScope: WorkspaceVO.globalShared(),
       },
       dto: { catalog: tinyCatalog },
@@ -86,7 +86,7 @@ describe("PopulateDefaultCatalogUseCase", () => {
 
   it("second run on same populated store skips", async () => {
     const context = {
-      actorSubject: bootstrapPopulateServiceAccount,
+      actorSubject: bootstrapServiceAccount,
       activeWorkspaceScope: WorkspaceVO.globalShared(),
     };
     const populate = c.resolve(PopulateDefaultCatalogUseCase);
@@ -103,7 +103,7 @@ describe("PopulateDefaultCatalogUseCase", () => {
 
   it("throws on duplicate category slugs in config", async () => {
     const context = {
-      actorSubject: bootstrapPopulateServiceAccount,
+      actorSubject: bootstrapServiceAccount,
       activeWorkspaceScope: WorkspaceVO.globalShared(),
     };
     const populate = c.resolve(PopulateDefaultCatalogUseCase);
@@ -127,7 +127,7 @@ describe("PopulateDefaultCatalogUseCase", () => {
 
   it("rolls back created categories when a species references unknown category slug", async () => {
     const context = {
-      actorSubject: bootstrapPopulateServiceAccount,
+      actorSubject: bootstrapServiceAccount,
       activeWorkspaceScope: WorkspaceVO.globalShared(),
     };
     const populate = c.resolve(PopulateDefaultCatalogUseCase);
