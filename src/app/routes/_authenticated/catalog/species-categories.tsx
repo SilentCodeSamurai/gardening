@@ -141,21 +141,6 @@ function SpeciesCategoriesPage() {
 				},
 			}),
 
-			columnHelper.accessor((category) => category.updatedAt.getTime(), {
-				id: "updatedAt",
-				header: ({ column }) => <DataTableColumnHeader column={column} title={m.fields_updatedAt()} />,
-				sortingFn: "datetime",
-				enableColumnFilter: false,
-				enableGlobalFilter: false,
-				cell: ({ row }) => (
-					<span className="text-muted-foreground text-xs">
-						{row.original.updatedAt.toLocaleString(undefined, {
-							dateStyle: "short",
-							timeStyle: "short",
-						})}
-					</span>
-				),
-			}),
 			columnHelper.accessor((category) => (category.systemCatalog ? "default" : "custom"), {
 				id: "isCustom",
 				...tableListColumnSizes.iconFlag,
@@ -202,6 +187,21 @@ function SpeciesCategoriesPage() {
 						</div>
 					);
 				},
+			}),
+			columnHelper.accessor((category) => category.updatedAt.getTime(), {
+				id: "updatedAt",
+				header: ({ column }) => <DataTableColumnHeader column={column} title={m.fields_updatedAt()} />,
+				sortingFn: "datetime",
+				enableColumnFilter: false,
+				enableGlobalFilter: false,
+				cell: ({ row }) => (
+					<span className="text-muted-foreground text-xs">
+						{row.original.updatedAt.toLocaleString(undefined, {
+							dateStyle: "short",
+							timeStyle: "short",
+						})}
+					</span>
+				),
 			}),
 			columnHelper.display({
 				id: "actions",

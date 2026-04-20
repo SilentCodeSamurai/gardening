@@ -42,7 +42,11 @@ export function mapLocationDocToEntity(doc: LocationDoc): LocationEntity {
 }
 
 export function mapGardeningEventDocToEntity(doc: GardeningEventDoc): GardeningEventEntity {
-	return { ...doc, workspace: WorkspaceVO.fromKey(doc.workspaceKey as never) };
+	return {
+		...doc,
+		occurredAt: doc.occurredAt ?? doc.createdAt,
+		workspace: WorkspaceVO.fromKey(doc.workspaceKey as never),
+	};
 }
 
 export function mapSpatialNodeDocToEntity(doc: SpatialNodeDoc): SpatialNodeEntity {

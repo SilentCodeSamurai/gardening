@@ -129,9 +129,9 @@ function GardeningEventDetailPage() {
 							<dd className="wrap-break-word min-w-0 font-mono text-xs">{data.action.type}</dd>
 						</div>
 						<div className="contents">
-							<dt className="text-muted-foreground">{m.components_detail_field_loggedAt()}</dt>
+							<dt className="text-muted-foreground">{m.fields_occurredAt()}</dt>
 							<dd className="wrap-break-word min-w-0">
-								{data.createdAt.toLocaleString(getLocale(), {
+								{data.occurredAt.toLocaleString(getLocale(), {
 									dateStyle: "medium",
 									timeStyle: "short",
 								})}

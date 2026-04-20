@@ -23,7 +23,12 @@ import type {
 } from "../shared/repository-operation-ports";
 import type { BaseRepositoryCreateInputDTO } from "../shared/types";
 
-export type GardeningEventRepositoryCreateInputDTO = BaseRepositoryCreateInputDTO<GardeningEventEntity>;
+export type GardeningEventRepositoryCreateInputDTO = Omit<
+	BaseRepositoryCreateInputDTO<GardeningEventEntity>,
+	"occurredAt"
+> & {
+	occurredAt?: Date;
+};
 export type GardeningEventRepositoryCreateOutputDTO = GardeningEventEntity;
 
 export type GardeningEventRepositoryCreateManyInputDTO = {

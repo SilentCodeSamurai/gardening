@@ -63,6 +63,7 @@ export type HydratedCultivarEntity = CultivarEntity & {
 export type GardeningEventEntity = BaseEntity<GardeningEventEntityId> & {
 	workspace: WorkspaceVO;
 	action: GardeningAction;
+	occurredAt: Date;
 };
 
 /**

@@ -61,19 +61,23 @@ describe("Gardening event use-cases", () => {
   });
 
   it("update changes action and content", async () => {
+    const occurredAt = new Date("2026-04-20T10:00:00.000Z");
     const created = await c.resolve(GardeningEventCreateForPlantListUseCase).run({
       context,
-      dto: { action: fixtureNoteAction({ content: "old" }), plantIds: [] },
+      dto: { action: fixtureNoteAction({ content: "old" }), plantIds: [], occurredAt },
     });
+    const updatedOccurredAt = new Date("2026-04-20T11:30:00.000Z");
     const updated = await c.resolve(GardeningEventUpdateUseCase).run({
       context,
       dto: {
         id: created.id,
         action: fixtureNoteAction({ type: "watering", content: "new body" }),
+        occurredAt: updatedOccurredAt,
       },
     });
     expect(updated.action.type).toBe("watering");
     expect(updated.action.content).toBe("new body");
+    expect(updated.occurredAt.toISOString()).toBe(updatedOccurredAt.toISOString());
   });
 
   it("delete throws when missing", async () => {

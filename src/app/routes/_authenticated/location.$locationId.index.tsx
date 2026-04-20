@@ -198,7 +198,7 @@ function LocationDetailPage() {
 												{gardeningActionMessage(event.action.type)}
 											</div>
 											<div className="text-muted-foreground text-xs">
-												{event.createdAt.toLocaleString(getLocale(), {
+											{event.occurredAt.toLocaleString(getLocale(), {
 													dateStyle: "short",
 													timeStyle: "short",
 												})}

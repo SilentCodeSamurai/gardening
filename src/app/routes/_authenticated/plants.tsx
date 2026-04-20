@@ -19,7 +19,6 @@ import { EllipsisVerticalIcon, PencilIcon, PlusIcon, Trash2Icon, XIcon } from "l
 import { useCallback, useMemo, useState } from "react";
 import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
 import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
-import type { PlantItem } from "#/app/store/cache/collections/plant";
 import {
 	GardeningEventCreateDialog,
 	type GardeningEventCreateDialogInitialValues,
@@ -70,6 +69,7 @@ import { translateCatalogField } from "@/lib/translate-catalog-field";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import { usePlantDeleteManyMutation, usePlantDeleteMutation } from "@/store/mutations";
+import type { CachedHydratedPlant } from "@/store/query-cache-types";
 import { collectPlacedEntityIds } from "@/store/spatial-placement";
 
 export const Route = createFileRoute("/_authenticated/plants")({
@@ -106,24 +106,24 @@ function resolveSpeciesDisplayName(rawSpeciesName: string): string {
 	return trimmed;
 }
 
-function getPlantDisplayTitle(plant: PlantItem): string {
+function getPlantDisplayTitle(plant: CachedHydratedPlant): string {
 	if (plant.title?.trim()) return plant.title.trim();
 	return plant.cultivar?.characteristics.name || m.items_untitled();
 }
 
-function plantCategoryFilterKey(plant: PlantItem, speciesCategoryById: Map<string, string>): string {
+function plantCategoryFilterKey(plant: CachedHydratedPlant, speciesCategoryById: Map<string, string>): string {
 	const sp = plant.cultivar?.species;
 	if (!sp) return CATALOG_FILTER_NO_VALUE;
 	const cat = speciesCategoryById.get(String(sp.id)) ?? "";
 	return cat === "" ? CATALOG_FILTER_NO_VALUE : cat;
 }
 
-function plantSpeciesFilterKey(plant: PlantItem): string {
+function plantSpeciesFilterKey(plant: CachedHydratedPlant): string {
 	if (!plant.cultivar?.species) return CATALOG_FILTER_NO_VALUE;
 	return String(plant.cultivar.species.id);
 }
 
-function plantCultivarFilterKey(plant: PlantItem): string {
+function plantCultivarFilterKey(plant: CachedHydratedPlant): string {
 	if (!plant.cultivar) return CATALOG_FILTER_NO_VALUE;
 	return String(plant.cultivar.id);
 }
@@ -408,7 +408,7 @@ function PlantsPage() {
 		[cultivarById, speciesCategoryById],
 	);
 
-	const columnHelper = useMemo(() => createColumnHelper<PlantItem>(), []);
+	const columnHelper = useMemo(() => createColumnHelper<CachedHydratedPlant>(), []);
 	const columns = useMemo(
 		() => [
 			columnHelper.display({
@@ -506,7 +506,7 @@ function PlantsPage() {
 					matchesCatalogColumnFilter(plantCategoryFilterKey(row.original, speciesCategoryById), filterValue),
 				enableGlobalFilter: false,
 				meta: {
-					filter: ({ column }: { column: Column<PlantItem, unknown> }) => {
+					filter: ({ column }: { column: Column<CachedHydratedPlant, unknown> }) => {
 						const value = String(column.getFilterValue() ?? "");
 						const selected = plantCategoryFilterOptions.find((opt) => opt.value === value) ?? null;
 						return (
@@ -573,13 +573,7 @@ function PlantsPage() {
 					matchesCatalogColumnFilter(plantSpeciesFilterKey(row.original), filterValue),
 				enableGlobalFilter: false,
 				meta: {
-					filter: ({
-						column,
-						table,
-					}: {
-						column: Column<PlantItem, unknown>;
-						table: Table<PlantItem>;
-					}) => {
+					filter: ({ column, table }: { column: Column<CachedHydratedPlant, unknown>; table: Table<CachedHydratedPlant> }) => {
 						const categoryFilter = String(table.getColumn("category")?.getFilterValue() ?? "");
 						const filteredSpeciesOptions =
 							categoryFilter === CATALOG_FILTER_NO_VALUE
@@ -652,13 +646,7 @@ function PlantsPage() {
 					matchesCatalogColumnFilter(plantCultivarFilterKey(row.original), filterValue),
 				enableGlobalFilter: false,
 				meta: {
-					filter: ({
-						column,
-						table,
-					}: {
-						column: Column<PlantItem, unknown>;
-						table: Table<PlantItem>;
-					}) => {
+					filter: ({ column, table }: { column: Column<CachedHydratedPlant, unknown>; table: Table<CachedHydratedPlant> }) => {
 						const categoryFilter = String(table.getColumn("category")?.getFilterValue() ?? "");
 						const speciesFilter = String(table.getColumn("species")?.getFilterValue() ?? "");
 						let filteredCultivarOptions = cultivarComboboxOptions;
@@ -746,21 +734,6 @@ function PlantsPage() {
 					</span>
 				),
 			}),
-			columnHelper.accessor((p) => p.createdAt.getTime(), {
-				id: "createdAt",
-				header: ({ column }) => <DataTableColumnHeader column={column} title={m.sorting_newestFirst()} />,
-				sortingFn: "datetime",
-				enableColumnFilter: false,
-				enableGlobalFilter: false,
-				cell: ({ row }) => (
-					<span className="text-muted-foreground text-xs">
-						{row.original.createdAt.toLocaleString(undefined, {
-							dateStyle: "short",
-							timeStyle: "short",
-						})}
-					</span>
-				),
-			}),
 			columnHelper.accessor(
 				(p) =>
 					plantPlacementFilterToken(
@@ -812,6 +785,21 @@ function PlantsPage() {
 					),
 				},
 			),
+			columnHelper.accessor((p) => p.createdAt.getTime(), {
+				id: "createdAt",
+				header: ({ column }) => <DataTableColumnHeader column={column} title={m.fields_updatedAt()} />,
+				sortingFn: "datetime",
+				enableColumnFilter: false,
+				enableGlobalFilter: false,
+				cell: ({ row }) => (
+					<span className="text-muted-foreground text-xs">
+						{row.original.createdAt.toLocaleString(undefined, {
+							dateStyle: "short",
+							timeStyle: "short",
+						})}
+					</span>
+				),
+			}),
 			columnHelper.display({
 				id: "actions",
 				...tableListColumnSizes.rowActions,
@@ -849,7 +837,7 @@ function PlantsPage() {
 
 	const table = useMemo(
 		() =>
-			createTable<PlantItem>({
+			createTable<CachedHydratedPlant>({
 				data: items,
 				columns,
 				globalFilterFn: fuzzyFilter,
@@ -1007,7 +995,7 @@ function PlantsPage() {
 	);
 }
 
-function PlantRowActions({ plant, isPlaced }: { plant: PlantItem; isPlaced: boolean }) {
+function PlantRowActions({ plant, isPlaced }: { plant: CachedHydratedPlant; isPlaced: boolean }) {
 	const [editOpen, setEditOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [createEventOpen, setCreateEventOpen] = useState(false);

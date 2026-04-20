@@ -843,5 +843,6 @@
   "components_detail_link_plantsForSpecies": "Растения этого вида",
   "components_detail_link_plantsWithCultivar": "Растения с этим сортом",
   "components_detail_eventBindings_nonePlants": "С этим событием не связано ни одного растения.",
-  "components_detail_eventBindings_noneLocations": "С этим событием не связано ни одной локации."
+  "components_detail_eventBindings_noneLocations": "С этим событием не связано ни одной локации.",
+  "fields_occurredAt": "Произошло"
 }

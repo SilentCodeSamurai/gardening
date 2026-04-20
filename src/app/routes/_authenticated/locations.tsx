@@ -15,7 +15,6 @@ import { EllipsisVerticalIcon, PencilIcon, PlusIcon, Trash2Icon, XIcon } from "l
 import { useMemo, useState } from "react";
 import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
 import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
-import type { LocationItem } from "#/app/store/cache/collections/location";
 import {
 	GardeningEventCreateDialog,
 	type GardeningEventCreateDialogInitialValues,
@@ -56,6 +55,7 @@ import { tableSelectionBulkTooltip } from "@/lib/table-selection-tooltips";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import { useLocationDeleteManyMutation, useLocationDeleteMutation } from "@/store/mutations";
+import type { CachedLocation } from "@/store/query-cache-types";
 import { isQueryObjectPending } from "@/store/query-object-status";
 import { collectPlacedEntityIds } from "@/store/spatial-placement";
 
@@ -122,7 +122,7 @@ function LocationsPage() {
 	const [createEventOpen, setCreateEventOpen] = useState(false);
 	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 	const bulkDeleteMany = useLocationDeleteManyMutation();
-	const columnHelper = useMemo(() => createColumnHelper<LocationItem>(), []);
+	const columnHelper = useMemo(() => createColumnHelper<CachedLocation>(), []);
 	const columns = useMemo(
 		() => [
 			columnHelper.display({
@@ -179,21 +179,6 @@ function LocationsPage() {
 					</Link>
 				),
 			}),
-			columnHelper.accessor((location) => location.createdAt.getTime(), {
-				id: "createdAt",
-				header: ({ column }) => <DataTableColumnHeader column={column} title={m.sorting_newestFirst()} />,
-				sortingFn: "datetime",
-				enableColumnFilter: false,
-				enableGlobalFilter: false,
-				cell: ({ row }) => (
-					<span className="text-muted-foreground text-xs">
-						{row.original.createdAt.toLocaleString(undefined, {
-							dateStyle: "short",
-							timeStyle: "short",
-						})}
-					</span>
-				),
-			}),
 			columnHelper.accessor(
 				(loc) =>
 					locationPlacementFilterToken(getLocationPlacementSummary(spatialData?.items ?? [], loc, rootItems)),
@@ -240,6 +225,21 @@ function LocationsPage() {
 					),
 				},
 			),
+			columnHelper.accessor((location) => location.createdAt.getTime(), {
+				id: "createdAt",
+				header: ({ column }) => <DataTableColumnHeader column={column} title={m.fields_updatedAt()} />,
+				sortingFn: "datetime",
+				enableColumnFilter: false,
+				enableGlobalFilter: false,
+				cell: ({ row }) => (
+					<span className="text-muted-foreground text-xs">
+						{row.original.createdAt.toLocaleString(undefined, {
+							dateStyle: "short",
+							timeStyle: "short",
+						})}
+					</span>
+				),
+			}),
 			columnHelper.display({
 				id: "actions",
 				...tableListColumnSizes.rowActions,
@@ -267,7 +267,7 @@ function LocationsPage() {
 	);
 	const table = useMemo(
 		() =>
-			createTable<LocationItem>({
+			createTable<CachedLocation>({
 				data: rootItems,
 				columns,
 				getCoreRowModel: getCoreRowModel(),
@@ -428,7 +428,7 @@ function LocationsPage() {
 	);
 }
 
-function LocationRowActions({ location, isPlaced }: { location: LocationItem; isPlaced: boolean }) {
+function LocationRowActions({ location, isPlaced }: { location: CachedLocation; isPlaced: boolean }) {
 	const [editOpen, setEditOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [createEventOpen, setCreateEventOpen] = useState(false);

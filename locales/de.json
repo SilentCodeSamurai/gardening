@@ -840,5 +840,6 @@
   "components_detail_link_plantsForSpecies": "Pflanzen dieser Art",
   "components_detail_link_plantsWithCultivar": "Pflanzen mit dieser Sorte",
   "components_detail_eventBindings_nonePlants": "Mit diesem Ereignis sind keine Pflanzen verknüpft.",
-  "components_detail_eventBindings_noneLocations": "Mit diesem Ereignis sind keine Standorte verknüpft."
+  "components_detail_eventBindings_noneLocations": "Mit diesem Ereignis sind keine Standorte verknüpft.",
+  "fields_occurredAt": "Ereignet am"
 }

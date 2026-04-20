@@ -41,6 +41,7 @@ export class GardeningEventInMemoryRepository extends BaseRepositoryErrors imple
 		const id = gardeningEventId();
 		const row: GardeningEventEntity = {
 			...dto,
+			occurredAt: dto.occurredAt ?? now,
 			id,
 			createdAt: now,
 			updatedAt: now,
@@ -57,6 +58,7 @@ export class GardeningEventInMemoryRepository extends BaseRepositoryErrors imple
 			...existing,
 			workspace: dto.workspace !== undefined ? dto.workspace : existing.workspace,
 			action: dto.action !== undefined ? dto.action : existing.action,
+			occurredAt: dto.occurredAt !== undefined ? dto.occurredAt : existing.occurredAt,
 			updatedAt: new Date(),
 		};
 	}

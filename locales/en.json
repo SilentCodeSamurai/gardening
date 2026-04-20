@@ -843,5 +843,6 @@
   "components_detail_link_plantsForSpecies": "Plants for this species",
   "components_detail_link_plantsWithCultivar": "Plants with this cultivar",
   "components_detail_eventBindings_nonePlants": "No plants are linked to this event.",
-  "components_detail_eventBindings_noneLocations": "No locations are linked to this event."
+  "components_detail_eventBindings_noneLocations": "No locations are linked to this event.",
+  "fields_occurredAt": "Occurred at"
 }

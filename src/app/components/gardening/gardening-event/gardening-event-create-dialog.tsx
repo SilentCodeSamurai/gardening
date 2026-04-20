@@ -45,6 +45,7 @@ type GardeningEventCreateTargetLocationInitialValues = {
 	locationId: LocationEntityId | null;
 	actionType?: GardeningAction["type"];
 	content?: string;
+	occurredAt?: Date;
 };
 
 type GardeningEventCreateTargetPlantInitialValues = {
@@ -52,12 +53,14 @@ type GardeningEventCreateTargetPlantInitialValues = {
 	plantIds: PlantEntityId[];
 	actionType?: GardeningAction["type"];
 	content?: string;
+	occurredAt?: Date;
 };
 
 type GardeningEventCreateUnboundInitialValues = {
 	target: "none";
 	actionType?: GardeningAction["type"];
 	content?: string;
+	occurredAt?: Date;
 };
 
 export type GardeningEventCreateDialogInitialValues =
@@ -74,6 +77,7 @@ type Props = {
 type FormValues = {
 	actionType: string;
 	content: string;
+	occurredAt: Date;
 	target: "none" | "location" | "plants";
 	locationId: string;
 	plantIds: string[];
@@ -86,10 +90,7 @@ type PlantOption = {
 	presentation?: ItemPresentationValueObject;
 };
 
-type ActionTypeOption = {
-	value: GardeningAction["type"];
-	label: string;
-};
+type ActionTypeOption = { value: GardeningAction["type"]; label: string };
 
 export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }: Props) {
 	const { data: locationData } = useQuery({ ...queryKeys.location.all });
@@ -131,6 +132,7 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 		defaultValues: {
 			actionType: "note",
 			content: "",
+			occurredAt: new Date(),
 			target: "none",
 			locationId: "",
 			plantIds: [],
@@ -145,10 +147,12 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 				type: actionType,
 				content: value.content,
 			};
+			if (!(value.occurredAt instanceof Date) || Number.isNaN(value.occurredAt.getTime())) return;
+			const occurredAt = value.occurredAt;
 
 			if (value.target === "none") {
 				onOpenChange(false);
-				await createMut.mutateAsync({ action });
+				await createMut.mutateAsync({ action, occurredAt });
 			} else if (value.target === "location") {
 				const locationId = typeof value.locationId === "string" ? value.locationId.trim() : "";
 				if (!locationId) return;
@@ -156,6 +160,7 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 				await locationMut.mutateAsync({
 					locationId: locationId as LocationEntityId,
 					action,
+					occurredAt,
 				});
 			} else {
 				const plantIds = (Array.isArray(value.plantIds) ? value.plantIds : []).filter(
@@ -166,6 +171,7 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 				await plantsMut.mutateAsync({
 					plantIds: plantIds as PlantEntityId[],
 					action,
+					occurredAt,
 				});
 			}
 		},
@@ -175,10 +181,12 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 		if (!open) return;
 		const actionType = initialValues?.actionType ?? "note";
 		const content = initialValues?.content ?? "";
+		const occurredAt = initialValues?.occurredAt ?? new Date();
 		if (!initialValues) {
 			form.reset({
 				actionType,
 				content,
+				occurredAt,
 				target: "none",
 				locationId: "",
 				plantIds: [],
@@ -190,6 +198,7 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 			form.reset({
 				actionType,
 				content,
+				occurredAt,
 				target: "none",
 				locationId: "",
 				plantIds: [],
@@ -201,6 +210,7 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 			form.reset({
 				actionType,
 				content,
+				occurredAt,
 				target: "location",
 				locationId: initialValues?.locationId != null ? String(initialValues.locationId) : "",
 				plantIds: [],
@@ -211,6 +221,7 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 		form.reset({
 			actionType,
 			content,
+			occurredAt,
 			target: "plants",
 			locationId: "",
 			plantIds: initialValues.plantIds.map((id) => String(id)),
@@ -440,6 +451,17 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 								);
 							}}
 						</form.Subscribe>
+						<form.AppField
+							name="occurredAt"
+							validators={{
+								onSubmit: ({ value }) => {
+									if (!(value instanceof Date)) return m.fields_required();
+									return Number.isNaN(value.getTime()) ? m.fields_required() : undefined;
+								},
+							}}
+						>
+							{(field) => <field.DatePicker label={m.fields_occurredAt()} />}
+						</form.AppField>
 						<form.AppField
 							name="actionType"
 							validators={{

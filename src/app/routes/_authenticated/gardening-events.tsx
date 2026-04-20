@@ -55,7 +55,7 @@ function GardeningEventsPage() {
 	const items = useMemo(() => data?.items ?? [], [data?.items]);
 	const [createOpen, setCreateOpen] = useState(false);
 
-	const [sorting, setSorting] = useState<SortingState>([{ id: "createdAt", desc: true }]);
+	const [sorting, setSorting] = useState<SortingState>([{ id: "occurredAt", desc: true }]);
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 	const [globalFilter, setGlobalFilter] = useState("");
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -136,15 +136,15 @@ function GardeningEventsPage() {
 					</span>
 				),
 			}),
-			columnHelper.accessor((event) => event.createdAt.getTime(), {
-				id: "createdAt",
-				header: ({ column }) => <DataTableColumnHeader column={column} title={m.sorting_newestFirst()} />,
+			columnHelper.accessor((event) => event.occurredAt.getTime(), {
+				id: "occurredAt",
+				header: ({ column }) => <DataTableColumnHeader column={column} title={m.fields_occurredAt()} />,
 				sortingFn: "basic",
 				enableColumnFilter: false,
 				enableGlobalFilter: false,
 				cell: ({ row }) => (
 					<span className="text-muted-foreground text-xs">
-						{row.original.createdAt.toLocaleString(undefined, {
+						{row.original.occurredAt.toLocaleString(undefined, {
 							dateStyle: "short",
 							timeStyle: "short",
 						})}

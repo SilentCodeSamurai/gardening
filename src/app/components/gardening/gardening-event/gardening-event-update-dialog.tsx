@@ -25,6 +25,7 @@ type Props = {
 type FormValues = {
 	actionType: string;
 	content: string;
+	occurredAt: Date;
 };
 
 export function GardeningEventUpdateDialog({ event, open, onOpenChange }: Props) {
@@ -43,6 +44,7 @@ export function GardeningEventUpdateDialog({ event, open, onOpenChange }: Props)
 		defaultValues: {
 			actionType: event.action.type,
 			content: event.action.content,
+			occurredAt: event.occurredAt,
 		} satisfies FormValues as FormValues,
 		onSubmit: async ({ value }) => {
 			const actionType = value.actionType as GardeningAction["type"];
@@ -52,10 +54,13 @@ export function GardeningEventUpdateDialog({ event, open, onOpenChange }: Props)
 				type: actionType,
 				content: value.content,
 			};
+			if (!(value.occurredAt instanceof Date) || Number.isNaN(value.occurredAt.getTime())) return;
+			const occurredAt = value.occurredAt;
 			onOpenChange(false);
 			await mut.mutateAsync({
 				id: event.id,
 				action,
+				occurredAt,
 			});
 		},
 	});
@@ -65,6 +70,7 @@ export function GardeningEventUpdateDialog({ event, open, onOpenChange }: Props)
 		form.reset({
 			actionType: event.action.type,
 			content: event.action.content,
+			occurredAt: event.occurredAt,
 		});
 	}, [open, event, form]);
 
@@ -88,6 +94,17 @@ export function GardeningEventUpdateDialog({ event, open, onOpenChange }: Props)
 							void form.handleSubmit();
 						}}
 					>
+						<form.AppField
+							name="occurredAt"
+							validators={{
+								onSubmit: ({ value }) => {
+									if (!(value instanceof Date)) return m.fields_required();
+									return Number.isNaN(value.getTime()) ? m.fields_required() : undefined;
+								},
+							}}
+						>
+							{(field) => <field.DatePicker label={m.fields_occurredAt()} />}
+						</form.AppField>
 						<form.AppField
 							name="actionType"
 							validators={{

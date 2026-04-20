@@ -174,19 +174,19 @@
 @keyframes app-pending-item-breathe {
 	0%,
 	100% {
-		background-color: color-mix(in oklch, var(--accent), transparent 72%);
+		background-color: color-mix(in oklch, var(--color-lime-500), transparent 72%);
 	}
 	20% {
-		background-color: color-mix(in oklch, var(--accent), transparent 58%);
+		background-color: color-mix(in oklch, var(--color-lime-500), transparent 58%);
 	}
 	40% {
-		background-color: color-mix(in oklch, var(--accent), transparent 48%);
+		background-color: color-mix(in oklch, var(--color-lime-500), transparent 48%);
 	}
 	60% {
-		background-color: color-mix(in oklch, var(--accent), transparent 48%);
+		background-color: color-mix(in oklch, var(--color-lime-500), transparent 48%);
 	}
 	80% {
-		background-color: color-mix(in oklch, var(--accent), transparent 58%);
+		background-color: color-mix(in oklch, var(--color-lime-500), transparent 58%);
 	}
 }
 
@@ -200,7 +200,7 @@
 	}
 
 	[data-pending="true"] {
-		background-color: color-mix(in oklch, var(--accent), transparent 52%);
+		background-color: color-mix(in oklch, var(--color-lime-500), transparent 52%);
 	}
 }
 

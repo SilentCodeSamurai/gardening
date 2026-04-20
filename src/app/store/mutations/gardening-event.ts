@@ -31,6 +31,15 @@ import {
 
 type Ctx = { snapshots: QuerySnapshot[]; pendingId?: string };
 
+function toDateOrNow(value: unknown): Date {
+	if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+	if (typeof value === "string" || typeof value === "number") {
+		const parsed = new Date(value);
+		if (!Number.isNaN(parsed.getTime())) return parsed;
+	}
+	return new Date();
+}
+
 export function useGardeningEventUpdateMutation() {
 	const qc = useQueryClient();
 	return useMutation(
@@ -48,9 +57,12 @@ export function useGardeningEventUpdateMutation() {
 					previousAll?.items.find((item) => String(item.id) === String(variables.id)) ??
 					null;
 				if (existing && !isQueryObjectPending(existing)) {
+					const occurredAt =
+						"occurredAt" in variables ? toDateOrNow((variables as { occurredAt?: unknown }).occurredAt) : undefined;
 					const optimistic = markQueryObjectPending({
 						...existing,
-						...variables,
+						...(variables.action !== undefined ? { action: variables.action } : {}),
+						...(occurredAt !== undefined ? { occurredAt } : {}),
 						id: existing.id,
 						updatedAt: new Date(),
 					});
@@ -182,6 +194,7 @@ export function useGardeningEventCreateForLocationMutation() {
 					workspace: WorkspaceVO.fromKey(workspaceKey),
 					id: pendingId as GardeningEventEntity["id"],
 					action: variables.action,
+					occurredAt: toDateOrNow(variables.occurredAt),
 					createdAt: new Date(),
 					updatedAt: new Date(),
 					objectStatus: QUERY_OBJECT_PENDING,
@@ -228,6 +241,7 @@ export function useGardeningEventCreateMutation() {
 					workspace: WorkspaceVO.fromKey(workspaceKey),
 					id: pendingId as GardeningEventEntity["id"],
 					action: variables.action,
+					occurredAt: toDateOrNow(variables.occurredAt),
 					createdAt: new Date(),
 					updatedAt: new Date(),
 					objectStatus: QUERY_OBJECT_PENDING,
@@ -272,6 +286,7 @@ export function useGardeningEventCreateForPlantListMutation() {
 					workspace: WorkspaceVO.fromKey(workspaceKey),
 					id: pendingId as GardeningEventEntity["id"],
 					action: variables.action,
+					occurredAt: toDateOrNow(variables.occurredAt),
 					createdAt: new Date(),
 					updatedAt: new Date(),
 					objectStatus: QUERY_OBJECT_PENDING,

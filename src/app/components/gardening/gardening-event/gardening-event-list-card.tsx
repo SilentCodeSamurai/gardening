@@ -20,7 +20,7 @@ type Props = {
 export function GardeningEventListCard({ event }: Props) {
 	const [editOpen, setEditOpen] = useState(false);
 	const actionLabel = gardeningActionMessage(event.action.type);
-	const when = event.createdAt.toLocaleString(getLocale(), {
+	const when = event.occurredAt.toLocaleString(getLocale(), {
 		dateStyle: "short",
 		timeStyle: "short",
 	});

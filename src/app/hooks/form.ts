@@ -3,6 +3,7 @@ import { createFormHook } from "@tanstack/react-form";
 import {
 	CatalogCombobox,
 	ColorPicker,
+	DatePicker,
 	IconPicker,
 	Select,
 	Slider,
@@ -20,6 +21,7 @@ export const { useAppForm, withForm } = createFormHook({
 		CatalogCombobox,
 		IconPicker,
 		ColorPicker,
+		DatePicker,
 		TextArea,
 		Slider,
 		Switch,

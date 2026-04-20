@@ -1,8 +1,13 @@
+import type { ItemPresentationValueObject } from "@backend/core/domain/gardening/value-objects";
 import { useStore } from "@tanstack/react-form";
+import { de, enUS, ru } from "date-fns/locale";
+import { CalendarIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { HexAlphaColorPicker } from "react-colorful";
-
+import { SELECT_NONE } from "@/components/form/select-sentinel";
+import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
 	Combobox,
 	ComboboxContent,
@@ -11,19 +16,18 @@ import {
 	ComboboxItem,
 	ComboboxList,
 } from "@/components/ui/combobox";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import * as ShadcnSelect from "@/components/ui/select";
 import { Slider as ShadcnSlider } from "@/components/ui/slider";
 import { Switch as ShadcnSwitch } from "@/components/ui/switch";
 import { Textarea as ShadcnTextarea } from "@/components/ui/textarea";
-import { SELECT_NONE } from "@/components/form/select-sentinel";
-import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
 import { useFieldContext, useFormContext } from "@/hooks/form-context";
 import { ITEM_PRESENTATION_ICON_KEYS, type ItemPresentationIconKey } from "@/lib/item-presentation";
 import { cn } from "@/lib/utils";
-import type { ItemPresentationValueObject } from "@backend/core/domain/gardening/value-objects";
+import { getLocale } from "@/paraglide/runtime";
 
 export function SubscribeButton({ label }: { label: string }) {
 	const form = useFormContext();
@@ -45,7 +49,7 @@ function ErrorMessages({ errors }: { errors: (string | { message: string })[] })
 			{errors.map((error) => (
 				<li
 					key={typeof error === "string" ? error : error.message}
-					className="text-destructive text-xs font-medium"
+					className="font-medium text-destructive text-xs"
 				>
 					{typeof error === "string" ? error : error.message}
 				</li>
@@ -69,7 +73,7 @@ export function TextField({
 
 	return (
 		<div className={cn("grid gap-1", className)}>
-			<Label htmlFor={inputId} className="text-xs font-medium">
+			<Label htmlFor={inputId} className="font-medium text-xs">
 				{label}
 			</Label>
 			<Input
@@ -92,7 +96,7 @@ export function TextArea({ label, rows = 3, className }: { label: string; rows?:
 
 	return (
 		<div className={cn("grid gap-1", className)}>
-			<Label htmlFor={areaId} className="text-xs font-medium">
+			<Label htmlFor={areaId} className="font-medium text-xs">
 				{label}
 			</Label>
 			<ShadcnTextarea
@@ -103,6 +107,62 @@ export function TextArea({ label, rows = 3, className }: { label: string; rows?:
 				onChange={(e) => field.handleChange(e.target.value)}
 				aria-invalid={errors.length > 0}
 			/>
+			{field.state.meta.isTouched ? <ErrorMessages errors={errors} /> : null}
+		</div>
+	);
+}
+
+export function DatePicker({
+	label,
+	placeholder = "Pick a date",
+	className,
+}: {
+	label: string;
+	placeholder?: string;
+	className?: string;
+}) {
+	const field = useFieldContext<Date>();
+	const errors = useStore(field.store, (state) => state.meta.errors);
+	const triggerId = `${field.form.formId}-${String(field.name)}-date-picker`;
+	const date = field.state.value;
+	const hasValue = date instanceof Date && !Number.isNaN(date.getTime());
+	const locale = getLocale();
+	const calendarLocale = locale === "de" ? de : locale === "ru" ? ru : enUS;
+
+	return (
+		<div className={cn("grid gap-1", className)}>
+			<Label htmlFor={triggerId} className="font-medium text-xs">
+				{label}
+			</Label>
+			<Popover onOpenChange={(open) => !open && field.handleBlur()}>
+				<PopoverTrigger asChild>
+					<Button
+						id={triggerId}
+						type="button"
+						variant="outline"
+						data-empty={!hasValue}
+						className="w-full justify-start text-left font-normal data-[empty=true]:text-muted-foreground"
+						aria-invalid={errors.length > 0}
+					>
+						<CalendarIcon />
+						{hasValue ? (
+							new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(date)
+						) : (
+							<span>{placeholder}</span>
+						)}
+					</Button>
+				</PopoverTrigger>
+				<PopoverContent className="w-auto p-0">
+					<Calendar
+						mode="single"
+						locale={calendarLocale}
+						selected={hasValue ? date : undefined}
+						onSelect={(next) => {
+							if (next) field.handleChange(next);
+						}}
+					/>
+				</PopoverContent>
+			</Popover>
 			{field.state.meta.isTouched ? <ErrorMessages errors={errors} /> : null}
 		</div>
 	);
@@ -125,7 +185,7 @@ export function Select({
 
 	return (
 		<div className={cn("grid gap-1", className)}>
-			<Label htmlFor={triggerId} className="text-xs font-medium">
+			<Label htmlFor={triggerId} className="font-medium text-xs">
 				{label}
 			</Label>
 			<ShadcnSelect.Select
@@ -185,7 +245,7 @@ export function CatalogCombobox({
 
 	return (
 		<div className={cn("grid gap-1", className)}>
-			<Label htmlFor={controlId} className="text-xs font-medium">
+			<Label htmlFor={controlId} className="font-medium text-xs">
 				{label}
 			</Label>
 			<Combobox
@@ -241,7 +301,7 @@ export function Slider({ label, className }: { label: string; className?: string
 
 	return (
 		<div className={cn("grid gap-1", className)}>
-			<Label htmlFor={sliderId} className="text-xs font-medium">
+			<Label htmlFor={sliderId} className="font-medium text-xs">
 				{label}
 			</Label>
 			<ShadcnSlider
@@ -272,7 +332,7 @@ export function Switch({ label, className }: { label: string; className?: string
 					checked={field.state.value}
 					onCheckedChange={(checked) => field.handleChange(checked)}
 				/>
-				<Label htmlFor={switchId} className="cursor-pointer text-xs font-medium">
+				<Label htmlFor={switchId} className="cursor-pointer font-medium text-xs">
 					{label}
 				</Label>
 			</div>
@@ -311,7 +371,7 @@ export function IconPicker({
 
 	return (
 		<div className={cn("grid gap-1", className)}>
-			<Label htmlFor={triggerId} className="text-xs font-medium">
+			<Label htmlFor={triggerId} className="font-medium text-xs">
 				{label}
 			</Label>
 			<DropdownMenu onOpenChange={(open) => !open && field.handleBlur()}>
@@ -326,7 +386,7 @@ export function IconPicker({
 						{selectedPresentation ? (
 							<ItemPresentationIcon presentation={selectedPresentation} />
 						) : (
-							<span className="text-muted-foreground text-[0.625rem] leading-none">--</span>
+							<span className="text-[0.625rem] text-muted-foreground leading-none">--</span>
 						)}
 					</Button>
 				</DropdownMenuTrigger>
@@ -386,7 +446,7 @@ export function ColorPicker({
 
 	return (
 		<div className={cn("grid gap-1", className)}>
-			<Label htmlFor={triggerId} className="text-xs font-medium">
+			<Label htmlFor={triggerId} className="font-medium text-xs">
 				{label}
 			</Label>
 			<DropdownMenu onOpenChange={(open) => !open && field.handleBlur()}>
@@ -405,7 +465,7 @@ export function ColorPicker({
 							aria-hidden
 						/>
 						{!color ? (
-							<span className="text-muted-foreground z-1 text-[0.625rem] leading-none">--</span>
+							<span className="z-1 text-[0.625rem] text-muted-foreground leading-none">--</span>
 						) : null}
 					</Button>
 				</DropdownMenuTrigger>
