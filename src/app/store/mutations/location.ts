@@ -53,18 +53,11 @@ export function useLocationCreateMutation() {
 				queryClient.setQueryData<CachedLocationList>(queryKeys.location.all.queryKey, (prev) =>
 					appendToItemsContainer(prev, pending),
 				);
-				queryClient.setQueryData(queryKeys.location.detail(pending.id).queryKey, pending);
 				return { snapshots, pendingId };
 			},
 			onError: (error, _vars, ctx) => {
 				if (!ctx) return;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
-				if (ctx.pendingId) {
-					queryClient.setQueryData(
-						queryKeys.location.detail(ctx.pendingId as LocationEntity["id"]).queryKey,
-						undefined,
-					);
-				}
 				toast.error(renderError(error, m.collections_location_actionError()));
 			},
 			onSuccess: (entity, _vars, ctx) => {
@@ -72,16 +65,11 @@ export function useLocationCreateMutation() {
 					queryClient.setQueryData<CachedLocationList>(queryKeys.location.all.queryKey, (prev) =>
 						replacePendingInItemsContainer(prev, ctx.pendingId as LocationEntity["id"], entity),
 					);
-					queryClient.setQueryData(
-						queryKeys.location.detail(ctx.pendingId as LocationEntity["id"]).queryKey,
-						undefined,
-					);
 				} else {
 					queryClient.setQueryData<CachedLocationList>(queryKeys.location.all.queryKey, (prev) =>
 						replacePendingInItemsContainer(prev, entity.id, entity),
 					);
 				}
-				queryClient.setQueryData(queryKeys.location.detail(entity.id).queryKey, entity);
 				toast.success(m.collections_location_createSuccess());
 			},
 		}),
@@ -95,16 +83,10 @@ export function useLocationUpdateMutation() {
 		orpc.location.update.mutationOptions({
 			onMutate: async (variables) => {
 				await cancelQueriesByKeys(queryClient, [queryKeys.location.all.queryKey]);
-				const snapshots = snapshotQueries(queryClient, [
-					queryKeys.location.all.queryKey,
-					queryKeys.location.detail(variables.id).queryKey,
-				]);
+				const snapshots = snapshotQueries(queryClient, [queryKeys.location.all.queryKey]);
 				const previousAll = snapshots[0]?.data as CachedLocationList | undefined;
-				const previousDetail = snapshots[1]?.data as CachedLocation | undefined;
 				const base =
-					previousDetail ??
-					previousAll?.items.find((item) => String(item.id) === String(variables.id)) ??
-					null;
+					previousAll?.items.find((item) => String(item.id) === String(variables.id)) ?? null;
 				if (base && !isQueryObjectPending(base)) {
 					const optimistic = markQueryObjectPending({
 						...base,
@@ -115,7 +97,6 @@ export function useLocationUpdateMutation() {
 					queryClient.setQueryData<CachedLocationList>(queryKeys.location.all.queryKey, (prev) =>
 						upsertInItemsContainer(prev, optimistic),
 					);
-					queryClient.setQueryData(queryKeys.location.detail(variables.id).queryKey, optimistic);
 				}
 				return { snapshots };
 			},
@@ -129,7 +110,6 @@ export function useLocationUpdateMutation() {
 				queryClient.setQueryData<CachedLocationList>(queryKeys.location.all.queryKey, (prev) =>
 					upsertInItemsContainer(prev, entity),
 				);
-				queryClient.setQueryData(queryKeys.location.detail(entity.id).queryKey, entity);
 				toast.success(m.collections_location_updateSuccess());
 			},
 		}),
@@ -152,7 +132,6 @@ export function useLocationDeleteMutation() {
 				});
 				const snapshots = snapshotQueries(queryClient, [
 					queryKeys.location.all.queryKey,
-					queryKeys.location.detail(variables.id).queryKey,
 					queryKeys.spatial.allNodes.queryKey,
 				]);
 				const previousAll = snapshots[0]?.data as CachedLocationList | undefined;
@@ -161,8 +140,7 @@ export function useLocationDeleteMutation() {
 				queryClient.setQueryData<CachedLocationList>(queryKeys.location.all.queryKey, (prev) =>
 					removeFromItemsContainer(prev, variables.id),
 				);
-				queryClient.setQueryData(queryKeys.location.detail(variables.id).queryKey, undefined);
-				const previousSpatial = snapshots[2]?.data as ItemsContainer<SpatialNodeEntity> | undefined;
+				const previousSpatial = snapshots[1]?.data as ItemsContainer<SpatialNodeEntity> | undefined;
 				if (previousSpatial) {
 					const placement = getSpatialPlacementStatusByRef(previousSpatial.items, {
 						entity: "location",
@@ -190,7 +168,6 @@ export function useLocationDeleteMutation() {
 				queryClient.setQueryData<CachedLocationList>(queryKeys.location.all.queryKey, (prev) =>
 					dropPendingInItemsContainer(prev, deletedId),
 				);
-				queryClient.setQueryData(queryKeys.location.detail(deletedId).queryKey, undefined);
 				toast.success(m.collections_location_deleteSuccess());
 			},
 		}),
@@ -214,15 +191,11 @@ export function useLocationDeleteManyMutation() {
 				const snapshots = snapshotQueries(queryClient, [
 					queryKeys.location.all.queryKey,
 					queryKeys.spatial.allNodes.queryKey,
-					...variables.ids.map((id: string) => queryKeys.location.detail(id).queryKey),
 				]);
 				queryClient.setQueryData<CachedLocationList>(
 					queryKeys.location.all.queryKey,
 					(prev) => removeManyFromItemsContainer(prev, variables.ids) ?? { items: [] },
 				);
-				for (const id of variables.ids) {
-					queryClient.setQueryData(queryKeys.location.detail(id).queryKey, undefined);
-				}
 				const previousSpatial = snapshots[1]?.data as ItemsContainer<SpatialNodeEntity> | undefined;
 				if (previousSpatial) {
 					const nodeIdsToDrop = new Set<string>();
@@ -259,7 +232,6 @@ export function useLocationDeleteManyMutation() {
 					void queryClient.invalidateQueries({
 						queryKey: queryKeys.gardeningEvent.forLocation(deletedId).queryKey,
 					});
-					queryClient.setQueryData(queryKeys.location.detail(deletedId).queryKey, undefined);
 				}
 				toast.success(m.collections_location_deleteManySuccess());
 			},

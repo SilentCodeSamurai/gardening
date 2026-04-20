@@ -55,7 +55,6 @@ export type QuerySnapshot = { key: QueryKey; data: unknown };
  * ```ts
  * await cancelQueriesByKeys(queryClient, [
  *   queryKeys.plant.all.queryKey,
- *   queryKeys.plant.detail(id).queryKey,
  * ]);
  * ```
  */
@@ -72,7 +71,6 @@ export async function cancelQueriesByKeys(queryClient: QueryClient, keys: readon
  * ```ts
  * const snapshots = snapshotQueries(queryClient, [
  *   queryKeys.location.all.queryKey,
- *   queryKeys.location.detail(id).queryKey,
  * ]);
  * ```
  */

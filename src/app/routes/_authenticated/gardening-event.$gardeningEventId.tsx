@@ -1,5 +1,5 @@
-import type { GardeningEventEntityId, LocationEntityId, PlantEntityId } from "@backend/core/domain/gardening/entities";
-import { useQueries, useQuery } from "@tanstack/react-query";
+import type { GardeningEventEntityId } from "@backend/core/domain/gardening/entities";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
@@ -29,40 +29,29 @@ function GardeningEventDetailPage() {
 	const id = gardeningEventId as GardeningEventEntityId;
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const del = useGardeningEventDeleteMutation();
-	const detailQuery = useQuery({
-		...queryKeys.gardeningEvent.detail(id),
-	});
+	const listQuery = useQuery({ ...queryKeys.gardeningEvent.all });
+	const data = listQuery.data?.items.find((item) => String(item.id) === String(id));
 
 	const bindingsQuery = useQuery({
 		...queryKeys.gardeningEvent.bindings(id),
-		enabled: !!detailQuery.data,
+		enabled: !!data,
 	});
+	const plantsQuery = useQuery({ ...queryKeys.plant.all });
+	const locationsQuery = useQuery({ ...queryKeys.location.all });
 
 	const plantIds = bindingsQuery.data?.plantIds ?? [];
 	const locationIds = bindingsQuery.data?.locationIds ?? [];
+	const plantsById = new Map((plantsQuery.data?.items ?? []).map((plant) => [String(plant.id), plant] as const));
+	const locationsById = new Map(
+		(locationsQuery.data?.items ?? []).map((location) => [String(location.id), location] as const),
+	);
 
-	const plantQueries = useQueries({
-		queries: plantIds.map((plantId: PlantEntityId) => ({
-			...queryKeys.plant.detail(plantId),
-			enabled: !!bindingsQuery.data && plantIds.length > 0,
-		})),
-	});
-
-	const locationQueries = useQueries({
-		queries: locationIds.map((locationId: LocationEntityId) => ({
-			...queryKeys.location.detail(locationId),
-			enabled: !!bindingsQuery.data && locationIds.length > 0,
-		})),
-	});
-
-	if (detailQuery.isPending) {
+	if (listQuery.isPending) {
 		return <PageLoading />;
 	}
-	if (detailQuery.isError || !detailQuery.data) {
+	if (listQuery.isError || !data) {
 		return <ItemNotFound resourceLabel={m.collections_gardeningEvent_title()} />;
 	}
-
-	const data = detailQuery.data;
 
 	return (
 		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -111,22 +100,31 @@ function GardeningEventDetailPage() {
 				</div>
 			</DashboardPageHeading>
 			<DashboardPageContent className="flex flex-col gap-6 overflow-y-auto pb-6">
-				<p className="max-w-2xl whitespace-pre-wrap text-muted-foreground text-sm leading-relaxed">
-					{data.action.content.trim() ? (
-						data.action.content
-					) : (
-						<span className="italic">{m.components_detail_field_noNoteBody()}</span>
-					)}
-				</p>
-
-				<section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm">
-					<h2 className="mb-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
-						{m.components_detail_metaHeading()}
-					</h2>
+				<div className="space-y-3">
+					<h2 className="font-medium text-lg">{m.components_detail_metaHeading()}</h2>
+					<section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm">
 					<dl className="grid gap-x-4 gap-y-3 text-sm sm:grid-cols-[minmax(9rem,auto)_1fr]">
 						<div className="contents">
+							<dt className="text-muted-foreground">{m.fields_title()}</dt>
+							<dd className="wrap-break-word min-w-0 capitalize">
+								{gardeningActionMessage(data.action.type)}
+							</dd>
+						</div>
+						<div className="contents">
+							<dt className="text-muted-foreground">{m.fields_description()}</dt>
+							<dd className="wrap-break-word min-w-0 whitespace-pre-wrap">
+								{data.action.content.trim() ? (
+									data.action.content
+								) : (
+									<span className="text-muted-foreground italic">{m.components_detail_field_noNoteBody()}</span>
+								)}
+							</dd>
+						</div>
+						<div className="contents">
 							<dt className="text-muted-foreground">{m.components_detail_field_actionType()}</dt>
-							<dd className="wrap-break-word min-w-0 font-mono text-xs">{data.action.type}</dd>
+							<dd className="wrap-break-word min-w-0 capitalize">
+								{gardeningActionMessage(data.action.type)}
+							</dd>
 						</div>
 						<div className="contents">
 							<dt className="text-muted-foreground">{m.fields_occurredAt()}</dt>
@@ -146,92 +144,75 @@ function GardeningEventDetailPage() {
 								})}
 							</dd>
 						</div>
-					</dl>
-				</section>
-
-				<div className="grid gap-6 lg:grid-cols-2">
-					<section className="space-y-2">
-						<h2 className="font-semibold text-sm">
-							{`${m.common_linked()} ${m.collections_plant_titlePlural().toLowerCase()}`}
-						</h2>
-						{bindingsQuery.isPending ? (
-							<PageLoading variant="section" />
-						) : plantIds.length === 0 ? (
-							<p className="rounded-lg border border-border/70 border-dashed bg-muted/10 px-3 py-4 text-muted-foreground text-sm">
-								{m.components_detail_eventBindings_nonePlants()}
-							</p>
-						) : (
-							<ul className="space-y-2">
-								{plantIds.map((plantId, i) => {
-									const q = plantQueries[i];
-									const label =
-										q?.data != null
-											? getPlantDisplayTitle(q.data)
-											: q?.isError
-												? String(plantId)
-												: m.common_loading();
-									return (
-										<li key={String(plantId)}>
-											{q?.data != null ? (
+						<div className="contents">
+							<dt className="text-muted-foreground">{m.collections_plant_titlePlural()}</dt>
+							<dd className="wrap-break-word min-w-0">
+								{bindingsQuery.isPending ? (
+									<span className="text-muted-foreground">{m.common_loading()}</span>
+								) : plantIds.length === 0 ? (
+									<span className="text-muted-foreground">{m.components_detail_eventBindings_nonePlants()}</span>
+								) : (
+									<div className="flex flex-wrap gap-2">
+										{plantIds.map((plantId) => {
+											const plant = plantsById.get(String(plantId));
+											const label = plant ? getPlantDisplayTitle(plant) : m.common_unknown();
+											return plant ? (
 												<Link
+													key={String(plantId)}
 													to="/plant/$plantId"
 													params={{ plantId: String(plantId) }}
-													className="block rounded-lg border border-border/60 bg-card/40 px-3 py-2 font-medium text-primary text-sm underline-offset-4 hover:border-border hover:bg-card/70 hover:underline"
+													className="inline-flex rounded-md border border-border/60 px-2.5 py-1 text-primary text-xs underline-offset-4 hover:bg-card/70 hover:underline"
 												>
 													{label}
 												</Link>
 											) : (
-												<div className="rounded-lg border border-border/40 bg-muted/10 px-3 py-2 font-mono text-muted-foreground text-xs">
+												<span
+													key={String(plantId)}
+													className="inline-flex rounded-md border border-border/40 px-2.5 py-1 text-muted-foreground text-xs"
+												>
 													{label}
-												</div>
-											)}
-										</li>
-									);
-								})}
-							</ul>
-						)}
-					</section>
-
-					<section className="space-y-2">
-						<h2 className="font-semibold text-sm">
-							{`${m.common_linked()} ${m.collections_location_titlePlural().toLowerCase()}`}
-						</h2>
-						{bindingsQuery.isPending ? (
-							<PageLoading variant="section" />
-						) : locationIds.length === 0 ? (
-							<p className="rounded-lg border border-border/70 border-dashed bg-muted/10 px-3 py-4 text-muted-foreground text-sm">
-								{m.components_detail_eventBindings_noneLocations()}
-							</p>
-						) : (
-							<ul className="space-y-2">
-								{locationIds.map((locationId, i) => {
-									const q = locationQueries[i];
-									const label =
-										q?.data != null
-											? q.data.name
-											: q?.isError
-												? String(locationId)
-												: m.common_loading();
-									return (
-										<li key={String(locationId)}>
-											{q?.data != null ? (
+												</span>
+											);
+										})}
+									</div>
+								)}
+							</dd>
+						</div>
+						<div className="contents">
+							<dt className="text-muted-foreground">{m.collections_location_titlePlural()}</dt>
+							<dd className="wrap-break-word min-w-0">
+								{bindingsQuery.isPending ? (
+									<span className="text-muted-foreground">{m.common_loading()}</span>
+								) : locationIds.length === 0 ? (
+									<span className="text-muted-foreground">{m.components_detail_eventBindings_noneLocations()}</span>
+								) : (
+									<div className="flex flex-wrap gap-2">
+										{locationIds.map((locationId) => {
+											const location = locationsById.get(String(locationId));
+											const label = location?.name ?? m.common_unknown();
+											return location ? (
 												<Link
+													key={String(locationId)}
 													to="/location/$locationId"
 													params={{ locationId: String(locationId) }}
-													className="block rounded-lg border border-border/60 bg-card/40 px-3 py-2 font-medium text-primary text-sm underline-offset-4 hover:border-border hover:bg-card/70 hover:underline"
+													className="inline-flex rounded-md border border-border/60 px-2.5 py-1 text-primary text-xs underline-offset-4 hover:bg-card/70 hover:underline"
 												>
 													{label}
 												</Link>
 											) : (
-												<div className="rounded-lg border border-border/40 bg-muted/10 px-3 py-2 font-mono text-muted-foreground text-xs">
+												<span
+													key={String(locationId)}
+													className="inline-flex rounded-md border border-border/40 px-2.5 py-1 text-muted-foreground text-xs"
+												>
 													{label}
-												</div>
-											)}
-										</li>
-									);
-								})}
-							</ul>
-						)}
+												</span>
+											);
+										})}
+									</div>
+								)}
+							</dd>
+						</div>
+					</dl>
 					</section>
 				</div>
 			</DashboardPageContent>

@@ -2,7 +2,7 @@ import type { PlantEntityId } from "@backend/core/domain/gardening/entities";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { PencilIcon, Trash2Icon } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
 import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
 import { GardeningActionPresentationIcon } from "@/components/gardening/gardening-action-icon";
@@ -15,6 +15,7 @@ import { PageLoading } from "@/components/layout/page-loading";
 import { Button } from "@/components/ui/button";
 import { ButtonTooltip } from "@/components/ui/button-tooltip";
 import { gardeningActionMessage } from "@/lib/gardening-action-messages";
+import { getPlantPlacementSummary } from "@/lib/spatial-placement-summary";
 import { translateCatalogField } from "@/lib/translate-catalog-field";
 import * as m from "@/paraglide/messages.js";
 import { getLocale } from "@/paraglide/runtime";
@@ -32,9 +33,7 @@ function PlantDetailPage() {
 	const navigate = useNavigate();
 	const del = usePlantDeleteMutation();
 	const { plantId } = Route.useParams();
-	const { data, isPending, isError } = useQuery({
-		...queryKeys.plant.detail(plantId as PlantEntityId),
-	});
+	const { data: plantsData, isPending, isError } = useQuery({ ...queryKeys.plant.all });
 	const { data: eventsData, isPending: eventsPending } = useQuery({
 		...queryKeys.gardeningEvent.forPlant(plantId as PlantEntityId),
 	});
@@ -42,6 +41,11 @@ function PlantDetailPage() {
 		...queryKeys.spatial.allNodes,
 		placeholderData: (previous) => previous,
 	});
+	const { data: locationsData } = useQuery({ ...queryKeys.location.all });
+	const data = useMemo(
+		() => plantsData?.items.find((item) => String(item.id) === String(plantId)) ?? null,
+		[plantId, plantsData?.items],
+	);
 
 	if (isPending) {
 		return <PageLoading />;
@@ -52,7 +56,13 @@ function PlantDetailPage() {
 
 	const title = getPlantDisplayTitle(data);
 	const cultivar = data.cultivar;
+	const species = cultivar?.species ?? null;
 	const events = eventsData?.items ?? [];
+	const plantPlacement = getPlantPlacementSummary(
+		spatialData?.items ?? [],
+		String(data.id),
+		locationsData?.items ?? [],
+	);
 	const isPlaced = getSpatialPlacementStatusByRef(spatialData?.items ?? [], {
 		entity: "plant",
 		entityId: String(data.id),
@@ -78,15 +88,15 @@ function PlantDetailPage() {
 						</Button>
 					</ButtonTooltip>
 					<ButtonTooltip
-						disabled={!isPlaced}
-						label={isPlaced ? m.common_deleteDisabledWhilePlaced() : m.common_delete()}
+						disabled={isPlaced}
+						label={isPlaced ? m.common_plant_deleteDisabledWhilePlaced() : m.common_delete()}
 					>
 						<Button
 							type="button"
 							variant="destructive"
 							size="icon"
 							disabled={isPlaced}
-							aria-label={isPlaced ? m.common_deleteDisabledWhilePlaced() : m.common_delete()}
+							aria-label={isPlaced ? m.common_plant_deleteDisabledWhilePlaced() : m.common_delete()}
 							onClick={() => {
 								if (isPlaced) return;
 								setDeleteOpen(true);
@@ -113,94 +123,84 @@ function PlantDetailPage() {
 					/>
 				</div>
 			</DashboardPageHeading>
-			<DashboardPageContent className="flex flex-col gap-8 overflow-y-auto pb-6">
-				<div className="space-y-4">
-					{data.description ? (
-						<p className="max-w-2xl text-muted-foreground text-sm leading-relaxed">{data.description}</p>
-					) : (
-						<p className="text-muted-foreground text-sm italic">
-							{m.components_detail_field_noDescription()}
-						</p>
-					)}
-
+			<DashboardPageContent className="flex flex-col gap-6 overflow-y-auto pb-6">
+				<div className="space-y-3">
+					<h2 className="font-medium text-lg">{m.components_detail_metaHeading()}</h2>
 					<section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm">
-						<h2 className="mb-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
-							{m.components_detail_metaHeading()}
-						</h2>
 						<dl className="grid gap-x-4 gap-y-3 text-sm sm:grid-cols-[minmax(9rem,auto)_1fr]">
 							<div className="contents">
-								<dt className="text-muted-foreground">{m.collections_cultivar_title()}</dt>
-								<dd className="wrap-break-word min-w-0">
-									{cultivar?.characteristics.name ?? m.filtering_catalogNoCultivar()}
+								<dt className="text-muted-foreground">{m.fields_title()}</dt>
+								<dd className="wrap-break-word min-w-0">{title}</dd>
+							</div>
+							<div className="contents">
+								<dt className="text-muted-foreground">{m.fields_description()}</dt>
+								<dd className="wrap-break-word min-w-0 whitespace-pre-wrap">
+									{data.description?.trim() ? (
+										data.description
+									) : (
+										<span className="text-muted-foreground italic">
+											{m.components_detail_field_noDescription()}
+										</span>
+									)}
 								</dd>
 							</div>
 							<div className="contents">
-								<dt className="text-muted-foreground">
-									{`${m.collections_cultivar_title()} ${m.common_record().toLowerCase()}`}
-								</dt>
+								<dt className="text-muted-foreground">{m.collections_cultivar_title()}</dt>
 								<dd className="wrap-break-word min-w-0">
-									{data.cultivarId ? (
+									{cultivar ? (
 										<Link
 											to="/catalog/cultivar/$cultivarId"
-											params={{ cultivarId: String(data.cultivarId) }}
-											className="text-primary underline-offset-4 hover:underline"
+											params={{ cultivarId: String(cultivar.id) }}
+											className="inline-flex items-center gap-2 text-primary underline-offset-4 hover:underline"
 										>
-											{`${m.common_open()} ${m.collections_cultivar_title().toLowerCase()}`}
+											<ItemPresentationIcon presentation={cultivar.presentation} />
+											<span className="min-w-0 truncate">{cultivar.characteristics.name}</span>
 										</Link>
 									) : (
-										<span className="text-muted-foreground">—</span>
+										<span className="text-muted-foreground">{m.filtering_catalogNoCultivar()}</span>
 									)}
 								</dd>
 							</div>
 							<div className="contents">
 								<dt className="text-muted-foreground">{m.collections_species_title()}</dt>
 								<dd className="wrap-break-word min-w-0">
-									{cultivar?.species
-										? translateCatalogField(
-												cultivar.species.characteristics.name,
-												cultivar.species.systemCatalog,
-											)
-										: m.filtering_catalogNoSpecies()}
-								</dd>
-							</div>
-							<div className="contents">
-								<dt className="text-muted-foreground">
-									{`${m.collections_species_title()} ${m.common_record().toLowerCase()}`}
-								</dt>
-								<dd className="wrap-break-word min-w-0">
-									{cultivar?.speciesId && cultivar.species ? (
+									{species ? (
 										<Link
 											to="/catalog/species-detail/$speciesId"
-											params={{ speciesId: String(cultivar.speciesId) }}
-											search={{
-												category: String(cultivar.species.categoryId ?? ""),
-											}}
-											className="text-primary underline-offset-4 hover:underline"
+											params={{ speciesId: String(species.id) }}
+											search={{ category: String(species.categoryId ?? "") }}
+											className="inline-flex items-center gap-2 text-primary underline-offset-4 hover:underline"
 										>
-											{`${m.common_open()} ${m.collections_species_title().toLowerCase()}`}
+											<ItemPresentationIcon presentation={species.presentation} />
+											<span className="min-w-0 truncate">
+												{translateCatalogField(
+													species.characteristics.name,
+													species.systemCatalog,
+												)}
+											</span>
 										</Link>
 									) : (
-										<span className="text-muted-foreground">—</span>
+										<span className="text-muted-foreground">{m.filtering_catalogNoSpecies()}</span>
 									)}
 								</dd>
 							</div>
-
 							<div className="contents">
 								<dt className="text-muted-foreground">{m.collections_location_title()}</dt>
 								<dd className="wrap-break-word min-w-0">
-									<span className="text-muted-foreground">
-										{m.components_detail_field_layoutFrame()}
-									</span>
-								</dd>
-							</div>
-							<div className="contents">
-								<dt className="text-muted-foreground">
-									{m.components_detail_field_layoutInLocation()}
-								</dt>
-								<dd className="wrap-break-word min-w-0">
-									<span className="text-muted-foreground">
-										{m.components_detail_field_layoutFrame()}
-									</span>
+									{plantPlacement.kind === "underLocation" ? (
+										<Link
+											to="/location/$locationId"
+											params={{ locationId: plantPlacement.locationId }}
+											className="inline-flex items-center gap-2 text-primary underline-offset-4 hover:underline"
+										>
+											<ItemPresentationIcon presentation={plantPlacement.locationPresentation} />
+											<span className="min-w-0 truncate">{plantPlacement.locationName}</span>
+										</Link>
+									) : (
+										<span className="text-muted-foreground">
+											{m.components_detail_field_unplaced()}
+										</span>
+									)}
 								</dd>
 							</div>
 							<div className="contents">
@@ -251,7 +251,7 @@ function PlantDetailPage() {
 												{gardeningActionMessage(event.action.type)}
 											</div>
 											<div className="text-muted-foreground text-xs">
-											{event.occurredAt.toLocaleString(getLocale(), {
+												{event.occurredAt.toLocaleString(getLocale(), {
 													dateStyle: "short",
 													timeStyle: "short",
 												})}

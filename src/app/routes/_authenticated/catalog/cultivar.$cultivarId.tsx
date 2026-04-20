@@ -28,10 +28,13 @@ function CultivarDetailPage() {
 	const navigate = useNavigate();
 	const del = useCultivarDeleteMutation();
 	const { cultivarId } = Route.useParams();
-	const { data, isPending, isError } = useQuery({
-		...queryKeys.cultivar.fullById(cultivarId as CultivarEntityId),
-	});
+	const { data: cultivarsData, isPending, isError } = useQuery({ ...queryKeys.cultivar.all });
 	const { data: plantsData } = useQuery({ ...queryKeys.plant.all });
+	const { data: speciesData } = useQuery({ ...queryKeys.species.all });
+	const data =
+		cultivarsData?.items.find((item) => String(item.id) === String(cultivarId as CultivarEntityId)) ?? null;
+	const species =
+		speciesData?.items.find((item) => String(item.id) === String(data?.speciesId ?? "")) ?? null;
 
 	if (isPending) {
 		return <PageLoading />;
@@ -40,7 +43,6 @@ function CultivarDetailPage() {
 		return <ItemNotFound resourceLabel={m.collections_cultivar_title()} />;
 	}
 
-	const species = data.species;
 	const linkedPlantsCount =
 		plantsData?.items.filter((plant) => String(plant.cultivarId ?? "") === String(data.id)).length ?? 0;
 
@@ -103,19 +105,26 @@ function CultivarDetailPage() {
 				</div>
 			</DashboardPageHeading>
 			<DashboardPageContent className="flex flex-col gap-6 overflow-y-auto pb-6">
-				{data.characteristics.description ? (
-					<p className="max-w-2xl text-muted-foreground text-sm leading-relaxed">
-						{data.characteristics.description}
-					</p>
-				) : (
-					<p className="text-muted-foreground text-sm italic">{m.components_detail_field_noDescription()}</p>
-				)}
-
-				<section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm">
-					<h2 className="mb-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
-						{m.components_detail_metaHeading()}
-					</h2>
+				<div className="space-y-3">
+					<h2 className="font-medium text-lg">{m.components_detail_metaHeading()}</h2>
+					<section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm">
 					<dl className="grid gap-x-4 gap-y-3 text-sm sm:grid-cols-[minmax(9rem,auto)_1fr]">
+						<div className="contents">
+							<dt className="text-muted-foreground">{m.fields_title()}</dt>
+							<dd className="wrap-break-word min-w-0">{data.characteristics.name}</dd>
+						</div>
+						<div className="contents">
+							<dt className="text-muted-foreground">{m.fields_description()}</dt>
+							<dd className="wrap-break-word min-w-0 whitespace-pre-wrap">
+								{data.characteristics.description?.trim() ? (
+									data.characteristics.description
+								) : (
+									<span className="text-muted-foreground italic">
+										{m.components_detail_field_noDescription()}
+									</span>
+								)}
+							</dd>
+						</div>
 						<div className="contents">
 							<dt className="text-muted-foreground">{m.collections_species_title()}</dt>
 							<dd className="wrap-break-word min-w-0">
@@ -124,12 +133,13 @@ function CultivarDetailPage() {
 										to="/catalog/species-detail/$speciesId"
 										params={{ speciesId: String(data.speciesId) }}
 										search={{ category: String(species.categoryId ?? "") }}
-										className="text-primary underline-offset-4 hover:underline"
+										className="inline-flex items-center gap-2 text-primary underline-offset-4 hover:underline"
 									>
+										<ItemPresentationIcon presentation={species.presentation} />
 										{translateCatalogField(species.characteristics.name, species.systemCatalog)}
 									</Link>
 								) : (
-									m.filtering_catalogNoSpecies()
+									<span className="text-muted-foreground">{m.filtering_catalogNoSpecies()}</span>
 								)}
 							</dd>
 						</div>
@@ -153,7 +163,7 @@ function CultivarDetailPage() {
 							</dd>
 						</div>
 						<div className="contents">
-							<dt className="text-muted-foreground">{m.components_detail_field_relatedLists()}</dt>
+							<dt className="text-muted-foreground">{m.collections_plant_titlePlural()}</dt>
 							<dd className="wrap-break-word min-w-0">
 								<Link
 									to="/plants"
@@ -165,7 +175,8 @@ function CultivarDetailPage() {
 							</dd>
 						</div>
 					</dl>
-				</section>
+					</section>
+				</div>
 			</DashboardPageContent>
 		</div>
 	);

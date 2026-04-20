@@ -31,15 +31,11 @@ function SpeciesDetailPage() {
 	const navigate = useNavigate();
 	const del = useSpeciesDeleteMutation();
 	const { speciesId } = Route.useParams();
-	const {
-		data: species,
-		isPending,
-		isError,
-	} = useQuery({
-		...queryKeys.species.detail(speciesId as SpeciesEntityId),
-	});
+	const { data: speciesData, isPending, isError } = useQuery({ ...queryKeys.species.all });
 	const { data: categories } = useQuery({ ...queryKeys.speciesCategory.all });
 	const { data: cultivarsData } = useQuery({ ...queryKeys.cultivar.all });
+	const species =
+		speciesData?.items.find((item) => String(item.id) === String(speciesId as SpeciesEntityId)) ?? null;
 
 	if (isPending) {
 		return <PageLoading />;
@@ -51,7 +47,7 @@ function SpeciesDetailPage() {
 	const category = categories?.items.find((c) => String(c.id) === String(species.categoryId));
 	const categoryTitle = category
 		? translateCatalogField(category.title, category.systemCatalog)
-		: String(species.categoryId);
+		: `${m.common_unknown()} ${m.collections_speciesCategory_title().toLowerCase()}`;
 
 	const name = translateCatalogField(species.characteristics.name, species.systemCatalog);
 	const desc = translateCatalogField(species.characteristics.description, species.systemCatalog);
@@ -120,25 +116,33 @@ function SpeciesDetailPage() {
 				</div>
 			</DashboardPageHeading>
 			<DashboardPageContent className="flex flex-col gap-6 overflow-y-auto pb-6">
-				{desc ? (
-					<p className="max-w-2xl text-muted-foreground text-sm leading-relaxed">{desc}</p>
-				) : (
-					<p className="text-muted-foreground text-sm italic">{m.components_detail_field_noDescription()}</p>
-				)}
-
-				<section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm">
-					<h2 className="mb-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
-						{m.components_detail_metaHeading()}
-					</h2>
+				<div className="space-y-3">
+					<h2 className="font-medium text-lg">{m.components_detail_metaHeading()}</h2>
+					<section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm">
 					<dl className="grid gap-x-4 gap-y-3 text-sm sm:grid-cols-[minmax(9rem,auto)_1fr]">
+						<div className="contents">
+							<dt className="text-muted-foreground">{m.fields_title()}</dt>
+							<dd className="wrap-break-word min-w-0">{name}</dd>
+						</div>
+						<div className="contents">
+							<dt className="text-muted-foreground">{m.fields_description()}</dt>
+							<dd className="wrap-break-word min-w-0 whitespace-pre-wrap">
+								{desc ? (
+									desc
+								) : (
+									<span className="text-muted-foreground italic">{m.components_detail_field_noDescription()}</span>
+								)}
+							</dd>
+						</div>
 						<div className="contents">
 							<dt className="text-muted-foreground">{m.collections_speciesCategory_title()}</dt>
 							<dd className="wrap-break-word min-w-0">
 								<Link
 									to="/catalog/species-category/$speciesCategoryId"
 									params={{ speciesCategoryId: String(species.categoryId) }}
-									className="text-primary underline-offset-4 hover:underline"
+									className="inline-flex items-center gap-2 text-primary underline-offset-4 hover:underline"
 								>
+									<ItemPresentationIcon presentation={category?.presentation} />
 									{categoryTitle}
 								</Link>
 							</dd>
@@ -169,33 +173,37 @@ function SpeciesDetailPage() {
 								})}
 							</dd>
 						</div>
-						<div className="contents sm:col-span-2">
-							<dt className="text-muted-foreground">{m.components_detail_field_relatedLists()}</dt>
-							<dd className="min-w-0">
-								<div className="flex flex-col gap-2">
-									<Link
-										to="/catalog/cultivars"
-										search={{ category: String(species.categoryId), species: String(species.id) }}
-										className="inline-flex w-fit text-primary underline-offset-4 hover:underline"
-									>
-										{m.components_detail_link_cultivarsForSpecies()}
-									</Link>
-									<Link
-										to="/plants"
-										search={{
-											category: String(species.categoryId),
-											species: String(species.id),
-											cultivar: "",
-										}}
-										className="inline-flex w-fit text-primary underline-offset-4 hover:underline"
-									>
-										{m.components_detail_link_plantsForSpecies()}
-									</Link>
-								</div>
+						<div className="contents">
+							<dt className="text-muted-foreground">{m.collections_cultivar_titlePlural()}</dt>
+							<dd className="wrap-break-word min-w-0">
+								<Link
+									to="/catalog/cultivars"
+									search={{ category: String(species.categoryId), species: String(species.id) }}
+									className="text-primary underline-offset-4 hover:underline"
+								>
+									{m.components_detail_link_cultivarsForSpecies()}
+								</Link>
+							</dd>
+						</div>
+						<div className="contents">
+							<dt className="text-muted-foreground">{m.collections_plant_titlePlural()}</dt>
+							<dd className="wrap-break-word min-w-0">
+								<Link
+									to="/plants"
+									search={{
+										category: String(species.categoryId),
+										species: String(species.id),
+										cultivar: "",
+									}}
+									className="text-primary underline-offset-4 hover:underline"
+								>
+									{m.components_detail_link_plantsForSpecies()}
+								</Link>
 							</dd>
 						</div>
 					</dl>
-				</section>
+					</section>
+				</div>
 			</DashboardPageContent>
 		</div>
 	);

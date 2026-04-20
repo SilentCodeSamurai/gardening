@@ -82,18 +82,11 @@ export function usePlantCreateMutation() {
 				queryClient.setQueryData<CachedHydratedPlantList>(queryKeys.plant.all.queryKey, (prev) =>
 					appendToItemsContainer(prev, pending),
 				);
-				queryClient.setQueryData(queryKeys.plant.detail(pending.id).queryKey, pending);
 				return { snapshots, pendingIds: [pendingId] };
 			},
 			onError: (error, _vars, ctx) => {
 				if (!ctx) return;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
-				for (const pendingId of ctx.pendingIds ?? []) {
-					queryClient.setQueryData(
-						queryKeys.plant.detail(pendingId as HydratedPlantEntity["id"]).queryKey,
-						undefined,
-					);
-				}
 				toast.error(renderError(error, m.collections_plant_actionError()));
 			},
 			onSuccess: (entity, _vars, ctx) => {
@@ -102,16 +95,11 @@ export function usePlantCreateMutation() {
 					queryClient.setQueryData<CachedHydratedPlantList>(queryKeys.plant.all.queryKey, (prev) =>
 						replacePendingInItemsContainer(prev, pendingId as HydratedPlantEntity["id"], entity),
 					);
-					queryClient.setQueryData(
-						queryKeys.plant.detail(pendingId as HydratedPlantEntity["id"]).queryKey,
-						undefined,
-					);
 				} else {
 					queryClient.setQueryData<CachedHydratedPlantList>(queryKeys.plant.all.queryKey, (prev) =>
 						replacePendingInItemsContainer(prev, entity.id, entity),
 					);
 				}
-				queryClient.setQueryData(queryKeys.plant.detail(entity.id).queryKey, entity);
 				toast.success(m.collections_plant_createSuccess());
 			},
 		}),
@@ -180,16 +168,10 @@ export function usePlantUpdateMutation() {
 		orpc.plant.update.mutationOptions({
 			onMutate: async (variables) => {
 				await cancelQueriesByKeys(queryClient, [queryKeys.plant.all.queryKey]);
-				const snapshots = snapshotQueries(queryClient, [
-					queryKeys.plant.all.queryKey,
-					queryKeys.plant.detail(variables.id).queryKey,
-				]);
+				const snapshots = snapshotQueries(queryClient, [queryKeys.plant.all.queryKey]);
 				const previousAll = snapshots[0]?.data as CachedHydratedPlantList | undefined;
-				const previousDetail = snapshots[1]?.data as CachedHydratedPlant | undefined;
 				const existing =
-					previousDetail ??
-					previousAll?.items.find((item) => String(item.id) === String(variables.id)) ??
-					null;
+					previousAll?.items.find((item) => String(item.id) === String(variables.id)) ?? null;
 				if (existing && !isQueryObjectPending(existing)) {
 					const nextCultivar =
 						variables.cultivarId === undefined
@@ -208,7 +190,6 @@ export function usePlantUpdateMutation() {
 					queryClient.setQueryData<CachedHydratedPlantList>(queryKeys.plant.all.queryKey, (prev) =>
 						upsertInItemsContainer(prev, optimistic),
 					);
-					queryClient.setQueryData(queryKeys.plant.detail(variables.id).queryKey, optimistic);
 				}
 				return { snapshots };
 			},
@@ -222,7 +203,6 @@ export function usePlantUpdateMutation() {
 				queryClient.setQueryData<CachedHydratedPlantList>(queryKeys.plant.all.queryKey, (prev) =>
 					upsertInItemsContainer(prev, entity),
 				);
-				queryClient.setQueryData(queryKeys.plant.detail(entity.id).queryKey, entity);
 				toast.success(m.collections_plant_updateSuccess());
 			},
 		}),
@@ -245,7 +225,6 @@ export function usePlantDeleteMutation() {
 				});
 				const snapshots = snapshotQueries(queryClient, [
 					queryKeys.plant.all.queryKey,
-					queryKeys.plant.detail(variables.id).queryKey,
 					queryKeys.spatial.allNodes.queryKey,
 				]);
 				const previousAll = snapshots[0]?.data as CachedHydratedPlantList | undefined;
@@ -254,8 +233,7 @@ export function usePlantDeleteMutation() {
 				queryClient.setQueryData<CachedHydratedPlantList>(queryKeys.plant.all.queryKey, (prev) =>
 					removeFromItemsContainer(prev, variables.id),
 				);
-				queryClient.setQueryData(queryKeys.plant.detail(variables.id).queryKey, undefined);
-				const previousSpatial = snapshots[2]?.data as ItemsContainer<SpatialNodeEntity> | undefined;
+				const previousSpatial = snapshots[1]?.data as ItemsContainer<SpatialNodeEntity> | undefined;
 				if (previousSpatial) {
 					const placement = getSpatialPlacementStatusByRef(previousSpatial.items, {
 						entity: "plant",
@@ -286,7 +264,6 @@ export function usePlantDeleteMutation() {
 				void queryClient.invalidateQueries({
 					queryKey: queryKeys.gardeningEvent.forPlant(deletedId).queryKey,
 				});
-				queryClient.setQueryData(queryKeys.plant.detail(deletedId).queryKey, undefined);
 				toast.success(m.collections_plant_deleteSuccess());
 			},
 		}),
@@ -310,15 +287,11 @@ export function usePlantDeleteManyMutation() {
 				const snapshots = snapshotQueries(queryClient, [
 					queryKeys.plant.all.queryKey,
 					queryKeys.spatial.allNodes.queryKey,
-					...variables.ids.map((id: string) => queryKeys.plant.detail(id).queryKey),
 				]);
 				queryClient.setQueryData<CachedHydratedPlantList>(
 					queryKeys.plant.all.queryKey,
 					(prev) => removeManyFromItemsContainer(prev, variables.ids) ?? { items: [] },
 				);
-				for (const id of variables.ids) {
-					queryClient.setQueryData(queryKeys.plant.detail(id).queryKey, undefined);
-				}
 				const previousSpatial = snapshots[1]?.data as ItemsContainer<SpatialNodeEntity> | undefined;
 				if (previousSpatial) {
 					const nodeIdsToDrop = new Set<string>();
@@ -355,7 +328,6 @@ export function usePlantDeleteManyMutation() {
 					void queryClient.invalidateQueries({
 						queryKey: queryKeys.gardeningEvent.forPlant(deletedId).queryKey,
 					});
-					queryClient.setQueryData(queryKeys.plant.detail(deletedId).queryKey, undefined);
 				}
 				toast.success(m.collections_plant_deleteManySuccess());
 			},

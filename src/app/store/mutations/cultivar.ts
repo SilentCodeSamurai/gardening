@@ -1,6 +1,6 @@
 import { WorkspaceVO } from "@backend/core/domain/access/workspace.vo";
 import type { CultivarEntity, CultivarEntityId, SpeciesEntityId } from "@backend/core/domain/gardening/entities";
-import { type QueryClient, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { SpeciesWithSystemCatalog } from "#/backend/core/application/use-cases/gardening/species.use-cases";
 import { renderError } from "@/lib/render-error";
@@ -8,12 +8,7 @@ import { orpc } from "@/orpc/client";
 import * as m from "@/paraglide/messages.js";
 
 import { useActiveWorkspaceKey } from "@/store/active-workspace-key";
-import {
-	appendToItemsContainer,
-	removeFromItemsContainer,
-	removeManyFromItemsContainer,
-	upsertInItemsContainer,
-} from "@/store/cache-utils";
+import { appendToItemsContainer, removeFromItemsContainer, removeManyFromItemsContainer, upsertInItemsContainer } from "@/store/cache-utils";
 import { queryKeys } from "@/store/keys";
 import type {
 	CachedCultivar,
@@ -31,13 +26,6 @@ import {
 	restoreQuerySnapshots,
 	snapshotQueries,
 } from "./optimistic";
-
-async function refreshCultivarFullByIdIfCached(queryClient: QueryClient, id: CultivarEntityId): Promise<void> {
-	const fullKey = queryKeys.cultivar.fullById(id).queryKey;
-	if (queryClient.getQueryData(fullKey) === undefined) return;
-	const full = await orpc.cultivar.getFullById.call({ id });
-	queryClient.setQueryData(fullKey, full);
-}
 
 export function useCultivarCreateMutation() {
 	const queryClient = useQueryClient();
@@ -63,7 +51,6 @@ export function useCultivarCreateMutation() {
 				queryClient.setQueryData<CachedCultivarList>(queryKeys.cultivar.all.queryKey, (prev) =>
 					appendToItemsContainer(prev, pending),
 				);
-				queryClient.setQueryData(queryKeys.cultivar.detail(pending.id).queryKey, pending);
 				return { snapshots, pendingId };
 			},
 			onError: (error, _vars, ctx) => {
@@ -71,22 +58,16 @@ export function useCultivarCreateMutation() {
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
 				toast.error(renderError(error, m.collections_cultivar_actionError()));
 			},
-			onSuccess: async (entity, _vars, ctx) => {
+			onSuccess: (entity, _vars, ctx) => {
 				if (ctx?.pendingId) {
 					queryClient.setQueryData<CachedCultivarList>(queryKeys.cultivar.all.queryKey, (prev) =>
 						replacePendingInItemsContainer(prev, ctx.pendingId as CultivarEntityId, entity),
-					);
-					queryClient.setQueryData(
-						queryKeys.cultivar.detail(ctx.pendingId as CultivarEntity["id"]).queryKey,
-						undefined,
 					);
 				} else {
 					queryClient.setQueryData<CachedCultivarList>(queryKeys.cultivar.all.queryKey, (prev) =>
 						replacePendingInItemsContainer(prev, entity.id, entity),
 					);
 				}
-				queryClient.setQueryData(queryKeys.cultivar.detail(entity.id).queryKey, entity);
-				await refreshCultivarFullByIdIfCached(queryClient, entity.id);
 				toast.success(m.collections_cultivar_createSuccess());
 			},
 		}),
@@ -100,16 +81,10 @@ export function useCultivarUpdateMutation() {
 		orpc.cultivar.update.mutationOptions({
 			onMutate: async (variables) => {
 				await cancelQueriesByKeys(queryClient, [queryKeys.cultivar.all.queryKey]);
-				const snapshots = snapshotQueries(queryClient, [
-					queryKeys.cultivar.all.queryKey,
-					queryKeys.cultivar.detail(variables.id).queryKey,
-				]);
+				const snapshots = snapshotQueries(queryClient, [queryKeys.cultivar.all.queryKey]);
 				const previousAll = snapshots[0]?.data as CachedCultivarList | undefined;
-				const previousDetail = snapshots[1]?.data as CachedCultivar | undefined;
 				const base =
-					previousDetail ??
-					previousAll?.items.find((item) => String(item.id) === String(variables.id)) ??
-					null;
+					previousAll?.items.find((item) => String(item.id) === String(variables.id)) ?? null;
 				if (base && !isQueryObjectPending(base)) {
 					const optimistic = markQueryObjectPending({
 						...base,
@@ -123,7 +98,6 @@ export function useCultivarUpdateMutation() {
 					queryClient.setQueryData<CachedCultivarList>(queryKeys.cultivar.all.queryKey, (prev) =>
 						upsertInItemsContainer(prev, optimistic),
 					);
-					queryClient.setQueryData(queryKeys.cultivar.detail(variables.id).queryKey, optimistic);
 				}
 				return { snapshots };
 			},
@@ -133,11 +107,10 @@ export function useCultivarUpdateMutation() {
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
 				toast.error(renderError(error, m.collections_cultivar_actionError()));
 			},
-			onSuccess: async (entity) => {
+			onSuccess: (entity) => {
 				queryClient.setQueryData<CachedCultivarList>(queryKeys.cultivar.all.queryKey, (prev) =>
 					upsertInItemsContainer(prev, entity),
 				);
-				queryClient.setQueryData(queryKeys.cultivar.detail(entity.id).queryKey, entity);
 				queryClient.setQueryData<CachedHydratedPlantList>(queryKeys.plant.all.queryKey, (prev) => {
 					if (!prev) return prev;
 					const speciesById = new Map<string, SpeciesWithSystemCatalog>(
@@ -163,7 +136,6 @@ export function useCultivarUpdateMutation() {
 						}),
 					};
 				});
-				await refreshCultivarFullByIdIfCached(queryClient, entity.id);
 				toast.success(m.collections_cultivar_updateSuccess());
 			},
 		}),
@@ -179,7 +151,6 @@ export function useCultivarDeleteMutation() {
 				await cancelQueriesByKeys(queryClient, [queryKeys.cultivar.all.queryKey]);
 				const snapshots = snapshotQueries(queryClient, [
 					queryKeys.cultivar.all.queryKey,
-					queryKeys.cultivar.detail(variables.id).queryKey,
 				]);
 				const previousAll = snapshots[0]?.data as CachedCultivarList | undefined;
 				const row = previousAll?.items.find((item) => String(item.id) === String(variables.id));
@@ -187,8 +158,6 @@ export function useCultivarDeleteMutation() {
 				queryClient.setQueryData<CachedCultivarList>(queryKeys.cultivar.all.queryKey, (prev) =>
 					removeFromItemsContainer(prev, variables.id),
 				);
-				queryClient.setQueryData(queryKeys.cultivar.detail(variables.id).queryKey, undefined);
-				queryClient.setQueryData(queryKeys.cultivar.fullById(variables.id).queryKey, undefined);
 				return { snapshots };
 			},
 			onError: (error, variables, ctx) => {
@@ -201,8 +170,6 @@ export function useCultivarDeleteMutation() {
 				queryClient.setQueryData<CachedCultivarList>(queryKeys.cultivar.all.queryKey, (prev) =>
 					dropPendingInItemsContainer(prev, deletedId),
 				);
-				queryClient.setQueryData(queryKeys.cultivar.detail(deletedId).queryKey, undefined);
-				queryClient.setQueryData(queryKeys.cultivar.fullById(deletedId).queryKey, undefined);
 				toast.success(m.collections_cultivar_deleteSuccess());
 			},
 		}),
@@ -218,17 +185,11 @@ export function useCultivarDeleteManyMutation() {
 				await cancelQueriesByKeys(queryClient, [queryKeys.cultivar.all.queryKey]);
 				const snapshots = snapshotQueries(queryClient, [
 					queryKeys.cultivar.all.queryKey,
-					...variables.ids.map((id: string) => queryKeys.cultivar.detail(id).queryKey),
-					...variables.ids.map((id: string) => queryKeys.cultivar.fullById(id).queryKey),
 				]);
 				queryClient.setQueryData<CachedCultivarList>(
 					queryKeys.cultivar.all.queryKey,
 					(prev) => removeManyFromItemsContainer(prev, variables.ids) ?? { items: [] },
 				);
-				for (const id of variables.ids) {
-					queryClient.setQueryData(queryKeys.cultivar.detail(id).queryKey, undefined);
-					queryClient.setQueryData(queryKeys.cultivar.fullById(id).queryKey, undefined);
-				}
 				return { snapshots };
 			},
 			onError: (error, variables, ctx) => {
@@ -241,10 +202,6 @@ export function useCultivarDeleteManyMutation() {
 				queryClient.setQueryData<CachedCultivarList>(queryKeys.cultivar.all.queryKey, (prev) =>
 					dropPendingManyInItemsContainer(prev, variables.ids),
 				);
-				for (const id of variables.ids) {
-					queryClient.setQueryData(queryKeys.cultivar.detail(id).queryKey, undefined);
-					queryClient.setQueryData(queryKeys.cultivar.fullById(id).queryKey, undefined);
-				}
 				void queryClient.invalidateQueries({ queryKey: queryKeys.plant.all.queryKey });
 				toast.success(m.collections_cultivar_deleteManySuccess());
 			},

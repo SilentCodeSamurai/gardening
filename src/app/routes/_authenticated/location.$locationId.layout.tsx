@@ -31,21 +31,15 @@ function LocationLayoutPage() {
 
 	const rootId = layoutRootLocationId as LocationEntityId;
 	const rootDiffersFromOpened = String(rootId) !== String(openedLocationId);
+	const locationsQuery = useQuery({ ...queryKeys.location.all });
+	const openedLocation =
+		locationsQuery.data?.items.find((location) => String(location.id) === String(openedLocationId)) ?? null;
+	const editorRootLocation = rootDiffersFromOpened
+		? (locationsQuery.data?.items.find((location) => String(location.id) === String(rootId)) ?? null)
+		: openedLocation;
 
-	const openedQuery = useQuery({
-		...queryKeys.location.detail(openedLocationId),
-	});
-
-	const rootQuery = useQuery({
-		...queryKeys.location.detail(rootId),
-		enabled: rootDiffersFromOpened,
-	});
-
-	const editorRootLocation = rootDiffersFromOpened ? rootQuery.data : openedQuery.data;
-
-	const isPending = openedQuery.isPending || (rootDiffersFromOpened && rootQuery.isPending);
-	const isError =
-		openedQuery.isError || !openedQuery.data || (rootDiffersFromOpened && (rootQuery.isError || !rootQuery.data));
+	const isPending = locationsQuery.isPending;
+	const isError = locationsQuery.isError || !openedLocation || !editorRootLocation;
 
 	if (isPending) {
 		return <PageLoading />;

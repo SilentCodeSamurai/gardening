@@ -50,19 +50,11 @@ export function useSpeciesCategoryCreateMutation() {
 				queryClient.setQueryData<CachedSpeciesCategoryList>(queryKeys.speciesCategory.all.queryKey, (prev) =>
 					appendToItemsContainer(prev, pending),
 				);
-				queryClient.setQueryData(queryKeys.speciesCategory.detail(pending.id).queryKey, pending);
 				return { snapshots, pendingId };
 			},
 			onError: (error, _vars, ctx) => {
 				if (!ctx) return;
 				restoreQuerySnapshots(queryClient, ctx.snapshots);
-				if (ctx.pendingId) {
-					queryClient.setQueryData(
-						queryKeys.speciesCategory.detail(ctx.pendingId as SpeciesCategoryWithSystemCatalog["id"])
-							.queryKey,
-						undefined,
-					);
-				}
 				toast.error(renderError(error, m.collections_speciesCategory_actionError()));
 			},
 			onSuccess: (entity, _vars, ctx) => {
@@ -76,18 +68,12 @@ export function useSpeciesCategoryCreateMutation() {
 								entity,
 							),
 					);
-					queryClient.setQueryData(
-						queryKeys.speciesCategory.detail(ctx.pendingId as SpeciesCategoryWithSystemCatalog["id"])
-							.queryKey,
-						undefined,
-					);
 				} else {
 					queryClient.setQueryData<CachedSpeciesCategoryList>(
 						queryKeys.speciesCategory.all.queryKey,
 						(prev) => replacePendingInItemsContainer(prev, entity.id, entity),
 					);
 				}
-				queryClient.setQueryData(queryKeys.speciesCategory.detail(entity.id).queryKey, entity);
 				toast.success(m.collections_speciesCategory_createSuccess());
 			},
 		}),
@@ -101,16 +87,10 @@ export function useSpeciesCategoryUpdateMutation() {
 		orpc.speciesCategory.update.mutationOptions({
 			onMutate: async (variables) => {
 				await cancelQueriesByKeys(queryClient, [queryKeys.speciesCategory.all.queryKey]);
-				const snapshots = snapshotQueries(queryClient, [
-					queryKeys.speciesCategory.all.queryKey,
-					queryKeys.speciesCategory.detail(variables.id).queryKey,
-				]);
+				const snapshots = snapshotQueries(queryClient, [queryKeys.speciesCategory.all.queryKey]);
 				const previousAll = snapshots[0]?.data as CachedSpeciesCategoryList | undefined;
-				const previousDetail = snapshots[1]?.data as CachedSpeciesCategoryWithSystemCatalog | undefined;
 				const base =
-					previousDetail ??
-					previousAll?.items.find((item) => String(item.id) === String(variables.id)) ??
-					null;
+					previousAll?.items.find((item) => String(item.id) === String(variables.id)) ?? null;
 				if (base && !isQueryObjectPending(base)) {
 					const optimistic = markQueryObjectPending({
 						...base,
@@ -122,7 +102,6 @@ export function useSpeciesCategoryUpdateMutation() {
 						queryKeys.speciesCategory.all.queryKey,
 						(prev) => upsertInItemsContainer(prev, optimistic),
 					);
-					queryClient.setQueryData(queryKeys.speciesCategory.detail(variables.id).queryKey, optimistic);
 				}
 				return { snapshots };
 			},
@@ -136,7 +115,6 @@ export function useSpeciesCategoryUpdateMutation() {
 				queryClient.setQueryData<CachedSpeciesCategoryList>(queryKeys.speciesCategory.all.queryKey, (prev) =>
 					upsertInItemsContainer(prev, entity),
 				);
-				queryClient.setQueryData(queryKeys.speciesCategory.detail(entity.id).queryKey, entity);
 				toast.success(m.collections_speciesCategory_updateSuccess());
 			},
 		}),
@@ -152,7 +130,6 @@ export function useSpeciesCategoryDeleteMutation() {
 				await cancelQueriesByKeys(queryClient, [queryKeys.speciesCategory.all.queryKey]);
 				const snapshots = snapshotQueries(queryClient, [
 					queryKeys.speciesCategory.all.queryKey,
-					queryKeys.speciesCategory.detail(variables.id).queryKey,
 				]);
 				const previousAll = snapshots[0]?.data as CachedSpeciesCategoryList | undefined;
 				const row = previousAll?.items.find((item) => String(item.id) === String(variables.id));
@@ -160,7 +137,6 @@ export function useSpeciesCategoryDeleteMutation() {
 				queryClient.setQueryData<CachedSpeciesCategoryList>(queryKeys.speciesCategory.all.queryKey, (prev) =>
 					removeFromItemsContainer(prev, variables.id),
 				);
-				queryClient.setQueryData(queryKeys.speciesCategory.detail(variables.id).queryKey, undefined);
 				return { snapshots };
 			},
 			onError: (error, variables, ctx) => {
@@ -174,7 +150,6 @@ export function useSpeciesCategoryDeleteMutation() {
 				queryClient.setQueryData<CachedSpeciesCategoryList>(queryKeys.speciesCategory.all.queryKey, (prev) =>
 					dropPendingInItemsContainer(prev, deletedId),
 				);
-				queryClient.setQueryData(queryKeys.speciesCategory.detail(deletedId).queryKey, undefined);
 				toast.success(m.collections_speciesCategory_deleteSuccess());
 			},
 		}),
@@ -193,15 +168,11 @@ export function useSpeciesCategoryDeleteManyMutation() {
 				]);
 				const snapshots = snapshotQueries(queryClient, [
 					queryKeys.speciesCategory.all.queryKey,
-					...variables.ids.map((id: string) => queryKeys.speciesCategory.detail(id).queryKey),
 				]);
 				queryClient.setQueryData<CachedSpeciesCategoryList>(
 					queryKeys.speciesCategory.all.queryKey,
 					(prev) => removeManyFromItemsContainer(prev, variables.ids) ?? { items: [] },
 				);
-				for (const id of variables.ids) {
-					queryClient.setQueryData(queryKeys.speciesCategory.detail(id).queryKey, undefined);
-				}
 				return { snapshots };
 			},
 			onError: (error, variables, ctx) => {
@@ -214,9 +185,6 @@ export function useSpeciesCategoryDeleteManyMutation() {
 				queryClient.setQueryData<CachedSpeciesCategoryList>(queryKeys.speciesCategory.all.queryKey, (prev) =>
 					dropPendingManyInItemsContainer(prev, variables.ids),
 				);
-				for (const id of variables.ids) {
-					queryClient.setQueryData(queryKeys.speciesCategory.detail(id).queryKey, undefined);
-				}
 				void queryClient.invalidateQueries({ queryKey: queryKeys.species.all.queryKey });
 				toast.success(m.collections_speciesCategory_deleteManySuccess());
 			},

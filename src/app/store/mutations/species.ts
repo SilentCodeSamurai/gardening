@@ -56,7 +56,6 @@ export function useSpeciesCreateMutation() {
 				queryClient.setQueryData<CachedSpeciesList>(queryKeys.species.all.queryKey, (prev) =>
 					appendToItemsContainer(prev, pending),
 				);
-				queryClient.setQueryData(queryKeys.species.detail(pending.id).queryKey, pending);
 				return { snapshots, pendingId };
 			},
 			onError: (error, _vars, ctx) => {
@@ -70,13 +69,11 @@ export function useSpeciesCreateMutation() {
 					queryClient.setQueryData<CachedSpeciesList>(queryKeys.species.all.queryKey, (prev) =>
 						replacePendingInItemsContainer(prev, pendingId, entity),
 					);
-					queryClient.setQueryData(queryKeys.species.detail(pendingId).queryKey, undefined);
 				} else {
 					queryClient.setQueryData<CachedSpeciesList>(queryKeys.species.all.queryKey, (prev) =>
 						replacePendingInItemsContainer(prev, entity.id, entity),
 					);
 				}
-				queryClient.setQueryData(queryKeys.species.detail(entity.id).queryKey, entity);
 				toast.success(m.collections_species_createSuccess());
 			},
 		}),
@@ -90,16 +87,10 @@ export function useSpeciesUpdateMutation() {
 		orpc.species.update.mutationOptions({
 			onMutate: async (variables) => {
 				await cancelQueriesByKeys(queryClient, [queryKeys.species.all.queryKey]);
-				const snapshots = snapshotQueries(queryClient, [
-					queryKeys.species.all.queryKey,
-					queryKeys.species.detail(variables.id).queryKey,
-				]);
+				const snapshots = snapshotQueries(queryClient, [queryKeys.species.all.queryKey]);
 				const previousAll = snapshots[0]?.data as CachedSpeciesList | undefined;
-				const previousDetail = snapshots[1]?.data as CachedSpeciesWithSystemCatalog | undefined;
 				const base =
-					previousDetail ??
-					previousAll?.items.find((item) => String(item.id) === String(variables.id)) ??
-					null;
+					previousAll?.items.find((item) => String(item.id) === String(variables.id)) ?? null;
 				if (base && !isQueryObjectPending(base)) {
 					const optimistic = markQueryObjectPending({
 						...base,
@@ -113,7 +104,6 @@ export function useSpeciesUpdateMutation() {
 					queryClient.setQueryData<CachedSpeciesList>(queryKeys.species.all.queryKey, (prev) =>
 						upsertInItemsContainer(prev, optimistic),
 					);
-					queryClient.setQueryData(queryKeys.species.detail(variables.id).queryKey, optimistic);
 				}
 				return { snapshots };
 			},
@@ -127,7 +117,6 @@ export function useSpeciesUpdateMutation() {
 				queryClient.setQueryData<CachedSpeciesList>(queryKeys.species.all.queryKey, (prev) =>
 					upsertInItemsContainer(prev, entity),
 				);
-				queryClient.setQueryData(queryKeys.species.detail(entity.id).queryKey, entity);
 				queryClient.setQueryData<CachedPlantHydratedWithCatalogSpeciesList>(
 					queryKeys.plant.all.queryKey,
 					(prev) => {
@@ -171,7 +160,6 @@ export function useSpeciesDeleteMutation() {
 				await cancelQueriesByKeys(queryClient, [queryKeys.species.all.queryKey]);
 				const snapshots = snapshotQueries(queryClient, [
 					queryKeys.species.all.queryKey,
-					queryKeys.species.detail(variables.id).queryKey,
 				]);
 				const previousAll = snapshots[0]?.data as CachedSpeciesList | undefined;
 				const row = previousAll?.items.find((item) => String(item.id) === String(variables.id));
@@ -179,7 +167,6 @@ export function useSpeciesDeleteMutation() {
 				queryClient.setQueryData<CachedSpeciesList>(queryKeys.species.all.queryKey, (prev) =>
 					removeFromItemsContainer(prev, variables.id),
 				);
-				queryClient.setQueryData(queryKeys.species.detail(variables.id).queryKey, undefined);
 				return { snapshots };
 			},
 			onError: (error, variables, ctx) => {
@@ -192,7 +179,6 @@ export function useSpeciesDeleteMutation() {
 				queryClient.setQueryData<CachedSpeciesList>(queryKeys.species.all.queryKey, (prev) =>
 					dropPendingInItemsContainer(prev, deletedId),
 				);
-				queryClient.setQueryData(queryKeys.species.detail(deletedId).queryKey, undefined);
 				toast.success(m.collections_species_deleteSuccess());
 			},
 		}),
@@ -211,15 +197,11 @@ export function useSpeciesDeleteManyMutation() {
 				]);
 				const snapshots = snapshotQueries(queryClient, [
 					queryKeys.species.all.queryKey,
-					...variables.ids.map((id: string) => queryKeys.species.detail(id).queryKey),
 				]);
 				queryClient.setQueryData<CachedSpeciesList>(
 					queryKeys.species.all.queryKey,
 					(prev) => removeManyFromItemsContainer(prev, variables.ids) ?? { items: [] },
 				);
-				for (const id of variables.ids) {
-					queryClient.setQueryData(queryKeys.species.detail(id).queryKey, undefined);
-				}
 				return { snapshots };
 			},
 			onError: (error, variables, ctx) => {
@@ -232,9 +214,6 @@ export function useSpeciesDeleteManyMutation() {
 				queryClient.setQueryData<CachedSpeciesList>(queryKeys.species.all.queryKey, (prev) =>
 					dropPendingManyInItemsContainer(prev, variables.ids),
 				);
-				for (const id of variables.ids) {
-					queryClient.setQueryData(queryKeys.species.detail(id).queryKey, undefined);
-				}
 				void queryClient.invalidateQueries({ queryKey: queryKeys.cultivar.all.queryKey });
 				toast.success(m.collections_species_deleteManySuccess());
 			},

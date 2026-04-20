@@ -28,10 +28,12 @@ function SpeciesCategoryDetailPage() {
 	const navigate = useNavigate();
 	const del = useSpeciesCategoryDeleteMutation();
 	const { speciesCategoryId } = Route.useParams();
-	const { data, isPending, isError } = useQuery({
-		...queryKeys.speciesCategory.detail(speciesCategoryId as SpeciesCategoryEntityId),
-	});
+	const { data: categoriesData, isPending, isError } = useQuery({ ...queryKeys.speciesCategory.all });
 	const { data: speciesData } = useQuery({ ...queryKeys.species.all });
+	const data =
+		categoriesData?.items.find(
+			(item) => String(item.id) === String(speciesCategoryId as SpeciesCategoryEntityId),
+		) ?? null;
 
 	if (isPending) {
 		return <PageLoading />;
@@ -103,11 +105,14 @@ function SpeciesCategoryDetailPage() {
 				</div>
 			</DashboardPageHeading>
 			<DashboardPageContent className="flex flex-col gap-6 overflow-y-auto pb-6">
-				<section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm">
-					<h2 className="mb-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
-						{m.components_detail_metaHeading()}
-					</h2>
+				<div className="space-y-3">
+					<h2 className="font-medium text-lg">{m.components_detail_metaHeading()}</h2>
+					<section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm">
 					<dl className="grid gap-x-4 gap-y-3 text-sm sm:grid-cols-[minmax(9rem,auto)_1fr]">
+						<div className="contents">
+							<dt className="text-muted-foreground">{m.fields_title()}</dt>
+							<dd className="wrap-break-word min-w-0">{title}</dd>
+						</div>
 						<div className="contents">
 							<dt className="text-muted-foreground">{m.components_detail_field_defaultCatalogRow()}</dt>
 							<dd className="wrap-break-word min-w-0">
@@ -132,36 +137,45 @@ function SpeciesCategoryDetailPage() {
 								})}
 							</dd>
 						</div>
-						<div className="contents sm:col-span-2">
-							<dt className="text-muted-foreground">{m.components_detail_field_relatedLists()}</dt>
+						<div className="contents">
+							<dt className="text-muted-foreground">{m.collections_species_titlePlural()}</dt>
 							<dd className="min-w-0">
-								<div className="flex flex-col gap-2">
-									<Link
-										to="/catalog/species"
-										search={{ category: String(data.id) }}
-										className="inline-flex w-fit text-primary underline-offset-4 hover:underline"
-									>
-										{m.components_detail_link_speciesInCategory()}
-									</Link>
-									<Link
-										to="/catalog/cultivars"
-										search={{ category: String(data.id), species: "" }}
-										className="inline-flex w-fit text-primary underline-offset-4 hover:underline"
-									>
-										{m.components_detail_link_cultivarsInCategory()}
-									</Link>
-									<Link
-										to="/plants"
-										search={{ category: String(data.id), species: "", cultivar: "" }}
-										className="inline-flex w-fit text-primary underline-offset-4 hover:underline"
-									>
-										{m.components_detail_link_plantsInCategory()}
-									</Link>
-								</div>
+								<Link
+									to="/catalog/species"
+									search={{ category: String(data.id) }}
+									className="text-primary underline-offset-4 hover:underline"
+								>
+									{m.components_detail_link_speciesInCategory()}
+								</Link>
+							</dd>
+						</div>
+						<div className="contents">
+							<dt className="text-muted-foreground">{m.collections_cultivar_titlePlural()}</dt>
+							<dd className="min-w-0">
+								<Link
+									to="/catalog/cultivars"
+									search={{ category: String(data.id), species: "" }}
+									className="text-primary underline-offset-4 hover:underline"
+								>
+									{m.components_detail_link_cultivarsInCategory()}
+								</Link>
+							</dd>
+						</div>
+						<div className="contents">
+							<dt className="text-muted-foreground">{m.collections_plant_titlePlural()}</dt>
+							<dd className="min-w-0">
+								<Link
+									to="/plants"
+									search={{ category: String(data.id), species: "", cultivar: "" }}
+									className="text-primary underline-offset-4 hover:underline"
+								>
+									{m.components_detail_link_plantsInCategory()}
+								</Link>
 							</dd>
 						</div>
 					</dl>
-				</section>
+					</section>
+				</div>
 			</DashboardPageContent>
 		</div>
 	);

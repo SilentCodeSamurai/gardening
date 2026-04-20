@@ -1,12 +1,13 @@
 import type { LocationEntityId } from "@backend/core/domain/gardening/entities";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { PencilIcon, Trash2Icon } from "lucide-react";
-import { useState } from "react";
+import { LayoutGridIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import { useMemo, useState } from "react";
 import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
 import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
 import { GardeningActionPresentationIcon } from "@/components/gardening/gardening-action-icon";
 import { LocationUpdateDialog } from "@/components/gardening/location/location-update-dialog";
+import { getPlantDisplayTitle } from "@/components/gardening/plant/plant-list-card";
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
 import { ItemNotFound } from "@/components/layout/item-not-found";
@@ -14,6 +15,7 @@ import { PageLoading } from "@/components/layout/page-loading";
 import { Button } from "@/components/ui/button";
 import { ButtonTooltip } from "@/components/ui/button-tooltip";
 import { gardeningActionMessage } from "@/lib/gardening-action-messages";
+import { getLocationPlacementSummary } from "@/lib/spatial-placement-summary";
 import * as m from "@/paraglide/messages.js";
 import { getLocale } from "@/paraglide/runtime";
 import { queryKeys } from "@/store/keys";
@@ -31,10 +33,8 @@ function LocationDetailPage() {
 	const del = useLocationDeleteMutation();
 	const { locationId } = Route.useParams();
 	const id = locationId as LocationEntityId;
-	const { data, isPending, isError } = useQuery({
-		...queryKeys.location.detail(id),
-	});
-	const { data: allLocations } = useQuery({ ...queryKeys.location.all });
+	const { data: allLocations, isPending, isError } = useQuery({ ...queryKeys.location.all });
+	const { data: plantsData } = useQuery({ ...queryKeys.plant.all });
 	const { data: eventsData, isPending: eventsPending } = useQuery({
 		...queryKeys.gardeningEvent.forLocation(id),
 	});
@@ -42,6 +42,44 @@ function LocationDetailPage() {
 		...queryKeys.spatial.allNodes,
 		placeholderData: (previous) => previous,
 	});
+	const data = useMemo(
+		() => allLocations?.items.find((item) => String(item.id) === String(id)) ?? null,
+		[allLocations?.items, id],
+	);
+	const parentLocation = useMemo(() => {
+		if (!data) return null;
+		const summary = getLocationPlacementSummary(spatialData?.items ?? [], data, allLocations?.items ?? []);
+		if (summary.kind !== "underParent") return null;
+		return allLocations?.items.find((loc) => String(loc.id) === String(summary.parentLocationId)) ?? null;
+	}, [allLocations?.items, data, spatialData?.items]);
+	const events = eventsData?.items ?? [];
+	const locations = allLocations?.items ?? [];
+	const plants = plantsData?.items ?? [];
+	const { childLocations, childPlants } = useMemo(() => {
+		if (!data) return { childLocations: [], childPlants: [] };
+		const spatialItems = spatialData?.items ?? [];
+		const currentNode =
+			spatialItems.find(
+				(node) => node.ref.entity === "location" && String(node.ref.entityId) === String(data.id),
+			) ?? null;
+		if (!currentNode) return { childLocations: [], childPlants: [] };
+
+		const childNodes = spatialItems.filter(
+			(node) => node.parentId != null && String(node.parentId) === String(currentNode.id),
+		);
+
+		const childLocationIds = new Set(
+			childNodes.filter((node) => node.ref.entity === "location").map((node) => String(node.ref.entityId)),
+		);
+		const childPlantIds = new Set(
+			childNodes.filter((node) => node.ref.entity === "plant").map((node) => String(node.ref.entityId)),
+		);
+
+		return {
+			childLocations: locations.filter((location) => childLocationIds.has(String(location.id))),
+			childPlants: plants.filter((plant) => childPlantIds.has(String(plant.id))),
+		};
+	}, [data, locations, plants, spatialData?.items]);
 
 	if (isPending) {
 		return <PageLoading />;
@@ -49,8 +87,6 @@ function LocationDetailPage() {
 	if (isError || !data) {
 		return <ItemNotFound resourceLabel={m.collections_location_title()} />;
 	}
-
-	const events = eventsData?.items ?? [];
 	const isPlaced = getSpatialPlacementStatusByRef(spatialData?.items ?? [], {
 		entity: "location",
 		entityId: String(data.id),
@@ -75,15 +111,15 @@ function LocationDetailPage() {
 						</Button>
 					</ButtonTooltip>
 					<ButtonTooltip
-						disabled={!isPlaced}
-						label={isPlaced ? m.common_deleteDisabledWhilePlaced() : m.common_delete()}
+						disabled={isPlaced}
+						label={isPlaced ? m.common_location_deleteDisabledWhilePlaced() : m.common_delete()}
 					>
 						<Button
 							type="button"
 							variant="destructive"
 							size="icon"
 							disabled={isPlaced}
-							aria-label={isPlaced ? m.common_deleteDisabledWhilePlaced() : m.common_delete()}
+							aria-label={isPlaced ? m.common_location_deleteDisabledWhilePlaced() : m.common_delete()}
 							onClick={() => {
 								if (isPlaced) return;
 								setDeleteOpen(true);
@@ -107,47 +143,41 @@ function LocationDetailPage() {
 					/>
 				</div>
 			</DashboardPageHeading>
-			<DashboardPageContent className="flex flex-col gap-8 overflow-y-auto pb-6">
-				<div className="space-y-4">
-					<div className="flex flex-wrap gap-2">
-						<Link
-							to="/location/$locationId/layout"
-							params={{ locationId: String(data.id) }}
-							className="inline-flex items-center rounded-md bg-primary px-3 py-1.5 font-medium text-primary-foreground text-sm shadow-sm ring-1 ring-primary/20 transition-colors hover:bg-primary/90"
-						>
+			<DashboardPageContent className="flex flex-col gap-6 overflow-y-auto pb-6">
+				<div>
+					<Button asChild type="button" variant="outline" size="lg">
+						<Link to="/location/$locationId/layout" params={{ locationId: String(data.id) }}>
+							<LayoutGridIcon />
 							{m.components_locationLayoutEditor_openLayoutEditor()}
 						</Link>
-					</div>
+					</Button>
+				</div>
 
+				<div className="space-y-3">
+					<h2 className="font-medium text-lg">{m.components_detail_metaHeading()}</h2>
 					<section className="rounded-xl border border-border/70 bg-muted/15 p-4 shadow-sm">
-						<h2 className="mb-3 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
-							{m.components_detail_metaHeading()}
-						</h2>
 						<dl className="grid gap-x-4 gap-y-3 text-sm sm:grid-cols-[minmax(9rem,auto)_1fr]">
+							<div className="contents">
+								<dt className="text-muted-foreground">{m.fields_title()}</dt>
+								<dd className="wrap-break-word min-w-0">{data.name}</dd>
+							</div>
 							<div className="contents">
 								<dt className="text-muted-foreground">{m.components_detail_field_parentLocation()}</dt>
 								<dd className="wrap-break-word min-w-0">
-									<span className="text-muted-foreground">
-										{m.components_detail_field_rootLocation()}
-									</span>
-								</dd>
-							</div>
-							<div className="contents">
-								<dt className="text-muted-foreground">{m.components_detail_field_layoutFrame()}</dt>
-								<dd className="wrap-break-word min-w-0">
-									<span className="text-muted-foreground">
-										{m.components_detail_field_layoutFrame()}
-									</span>
-								</dd>
-							</div>
-							<div className="contents">
-								<dt className="text-muted-foreground">{m.collections_location_titlePlural()}</dt>
-								<dd className="wrap-break-word min-w-0">{allLocations?.items.length ?? 0}</dd>
-							</div>
-							<div className="contents">
-								<dt className="text-muted-foreground">{m.components_detail_field_recordId()}</dt>
-								<dd className="wrap-break-word min-w-0">
-									<span className="font-mono text-xs">{String(data.id)}</span>
+									{parentLocation ? (
+										<Link
+											to="/location/$locationId"
+											params={{ locationId: String(parentLocation.id) }}
+											className="inline-flex items-center gap-2 text-primary underline-offset-4 hover:underline"
+										>
+											<ItemPresentationIcon presentation={parentLocation.presentation} />
+											<span className="min-w-0 truncate">{parentLocation.name}</span>
+										</Link>
+									) : (
+										<span className="text-muted-foreground">
+											{m.components_detail_field_rootLocation()}
+										</span>
+									)}
 								</dd>
 							</div>
 							<div className="contents">
@@ -171,6 +201,55 @@ function LocationDetailPage() {
 						</dl>
 					</section>
 				</div>
+
+				<section className="space-y-3">
+					<h2 className="font-medium text-lg">{m.common_related()}</h2>
+					<div className="grid gap-4 lg:grid-cols-2">
+						<section className="rounded-xl border border-border/70 bg-card/60 p-4 shadow-sm">
+							<h3 className="mb-3 font-medium text-sm">{m.collections_location_titlePlural()}</h3>
+							{childLocations.length === 0 ? (
+								<p className="text-muted-foreground text-sm">{m.items_noElements()}</p>
+							) : (
+								<ul className="space-y-2">
+									{childLocations.map((location) => (
+										<li key={String(location.id)}>
+											<Link
+												to="/location/$locationId"
+												params={{ locationId: String(location.id) }}
+												className="inline-flex min-w-0 items-center gap-2 text-primary underline-offset-4 hover:underline"
+											>
+												<ItemPresentationIcon presentation={location.presentation} />
+												<span className="truncate">{location.name}</span>
+											</Link>
+										</li>
+									))}
+								</ul>
+							)}
+						</section>
+
+						<section className="rounded-xl border border-border/70 bg-card/60 p-4 shadow-sm">
+							<h3 className="mb-3 font-medium text-sm">{m.collections_plant_titlePlural()}</h3>
+							{childPlants.length === 0 ? (
+								<p className="text-muted-foreground text-sm">{m.items_noElements()}</p>
+							) : (
+								<ul className="space-y-2">
+									{childPlants.map((plant) => (
+										<li key={String(plant.id)}>
+											<Link
+												to="/plant/$plantId"
+												params={{ plantId: String(plant.id) }}
+												className="inline-flex min-w-0 items-center gap-2 text-primary underline-offset-4 hover:underline"
+											>
+												<ItemPresentationIcon presentation={plant.cultivar?.presentation} />
+												<span className="truncate">{getPlantDisplayTitle(plant)}</span>
+											</Link>
+										</li>
+									))}
+								</ul>
+							)}
+						</section>
+					</div>
+				</section>
 
 				<section className="space-y-3">
 					<h2 className="font-medium text-lg">{m.components_detail_eventsSection_title()}</h2>
@@ -198,7 +277,7 @@ function LocationDetailPage() {
 												{gardeningActionMessage(event.action.type)}
 											</div>
 											<div className="text-muted-foreground text-xs">
-											{event.occurredAt.toLocaleString(getLocale(), {
+												{event.occurredAt.toLocaleString(getLocale(), {
 													dateStyle: "short",
 													timeStyle: "short",
 												})}
