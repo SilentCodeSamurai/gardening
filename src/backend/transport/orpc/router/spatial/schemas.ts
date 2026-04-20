@@ -12,6 +12,9 @@ export const CreateSpatialNodeInputSchema = z.object({
 	kind: z.enum(["frame", "leaf"]),
 	ref: SpatialNodeRefSchema,
 });
+export const CreateManySpatialNodeInputSchema = z.object({
+	items: z.array(CreateSpatialNodeInputSchema),
+});
 export const DeleteSpatialNodeInputSchema = z.object({
 	id: SpatialNodeEntityIdSchema,
 });
@@ -28,8 +31,8 @@ export const RestoreSpatialNodeInputSchema = z.object({
 export const GetSpatialTreeByRootIdInputSchema = z.object({
 	id: SpatialNodeEntityIdSchema,
 });
-export const ApplySpatialOperationsInputSchema = z.object({
-	operations: z.array(
+export const UpdateSpatialNodePlacementManyInputSchema = z.object({
+	placements: z.array(
 		z.object({
 			id: SpatialNodeEntityIdSchema,
 			parentId: SpatialNodeEntityIdSchema.nullable(),

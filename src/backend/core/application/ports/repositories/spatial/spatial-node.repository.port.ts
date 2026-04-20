@@ -26,7 +26,7 @@ export type SpatialNodeRepositoryCreateOutputDTO = SpatialNodeEntity;
 export type SpatialNodeRepositoryCreateManyInputDTO = {
 	items: readonly SpatialNodeRepositoryCreateInputDTO[];
 };
-export type SpatialNodeRepositoryCreateManyOutputDTO = { count: number };
+export type SpatialNodeRepositoryCreateManyOutputDTO = { items: SpatialNodeEntity[] };
 
 export type SpatialNodeRepositoryGetOneOutputDTO = SpatialNodeEntity;
 
@@ -104,6 +104,12 @@ export interface SpatialNodeRepositoryPort
 	getTreeForRootOne(
 		input: WithRequiredRepositoryFilters<SpatialNodeRepositoryTreeRootFilterClause>,
 	): Promise<SpatialNodeTreeNode>;
+
+	/**
+	 * Load many nodes by required filters and fail when any requested branch has no row.
+	 * Intended for strict batch validation where missing ids should abort the operation.
+	 */
+	getManyStrict(input: WithRequiredRepositoryFilters<SpatialNodeRepositoryFilterClause>): Promise<ItemsContainer<SpatialNodeEntity>>;
 }
 
 export const SpatialNodeRepositoryPortToken: InjectionToken<SpatialNodeRepositoryPort> =

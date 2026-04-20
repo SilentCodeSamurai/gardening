@@ -128,45 +128,44 @@ export function useGardeningEventDeleteMutation() {
 
 export function useGardeningEventDeleteManyMutation() {
 	const qc = useQueryClient();
-	return useMutation({
-		mutationFn: async (variables: { ids: string[] }) => ({
-			deletedIds: await Promise.all(variables.ids.map((id) => orpc.gardeningEvent.delete.call({ id }))),
+	return useMutation(
+		orpc.gardeningEvent.deleteMany.mutationOptions({
+			onMutate: async (variables): Promise<{ snapshots: QuerySnapshot[] }> => {
+				await cancelQueriesByKeys(qc, [queryKeys.gardeningEvent.all.queryKey]);
+				const snapshots = snapshotQueries(qc, [
+					queryKeys.gardeningEvent.all.queryKey,
+					...variables.ids.map((id) => queryKeys.gardeningEvent.detail(id).queryKey),
+					...variables.ids.map((id) => queryKeys.gardeningEvent.bindings(id).queryKey),
+				]);
+				qc.setQueryData<CachedGardeningEventList>(
+					queryKeys.gardeningEvent.all.queryKey,
+					(prev) => removeManyFromItemsContainer(prev, variables.ids) ?? { items: [] },
+				);
+				for (const id of variables.ids) {
+					qc.setQueryData(queryKeys.gardeningEvent.detail(id).queryKey, undefined);
+					qc.setQueryData(queryKeys.gardeningEvent.bindings(id).queryKey, undefined);
+					removeFromGardeningEventScopedLists(qc, id);
+				}
+				return { snapshots };
+			},
+			onError: (error, _variables, ctx) => {
+				if (!ctx) return;
+				restoreQuerySnapshots(qc, ctx.snapshots);
+				toast.error(renderError(error, m.collections_gardeningEvent_actionError()));
+			},
+			onSuccess: (_result, variables) => {
+				qc.setQueryData<CachedGardeningEventList>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
+					dropPendingManyInItemsContainer(prev, variables.ids),
+				);
+				for (const deletedId of variables.ids) {
+					qc.setQueryData(queryKeys.gardeningEvent.detail(deletedId).queryKey, undefined);
+					qc.setQueryData(queryKeys.gardeningEvent.bindings(deletedId).queryKey, undefined);
+					removeFromGardeningEventScopedLists(qc, deletedId);
+				}
+				toast.success(m.collections_gardeningEvent_deleteManySuccess());
+			},
 		}),
-		onMutate: async (variables): Promise<Ctx> => {
-			await cancelQueriesByKeys(qc, [queryKeys.gardeningEvent.all.queryKey]);
-			const snapshots = snapshotQueries(qc, [
-				queryKeys.gardeningEvent.all.queryKey,
-				...variables.ids.map((id) => queryKeys.gardeningEvent.detail(id).queryKey),
-				...variables.ids.map((id) => queryKeys.gardeningEvent.bindings(id).queryKey),
-			]);
-			qc.setQueryData<CachedGardeningEventList>(
-				queryKeys.gardeningEvent.all.queryKey,
-				(prev) => removeManyFromItemsContainer(prev, variables.ids) ?? { items: [] },
-			);
-			for (const id of variables.ids) {
-				qc.setQueryData(queryKeys.gardeningEvent.detail(id).queryKey, undefined);
-				qc.setQueryData(queryKeys.gardeningEvent.bindings(id).queryKey, undefined);
-				removeFromGardeningEventScopedLists(qc, id);
-			}
-			return { snapshots };
-		},
-		onError: (error, _variables, ctx) => {
-			if (!ctx) return;
-			restoreQuerySnapshots(qc, ctx.snapshots);
-			toast.error(renderError(error, m.collections_gardeningEvent_actionError()));
-		},
-		onSuccess: (result) => {
-			qc.setQueryData<CachedGardeningEventList>(queryKeys.gardeningEvent.all.queryKey, (prev) =>
-				dropPendingManyInItemsContainer(prev, result.deletedIds),
-			);
-			for (const deletedId of result.deletedIds) {
-				qc.setQueryData(queryKeys.gardeningEvent.detail(deletedId).queryKey, undefined);
-				qc.setQueryData(queryKeys.gardeningEvent.bindings(deletedId).queryKey, undefined);
-				removeFromGardeningEventScopedLists(qc, deletedId);
-			}
-			toast.success(m.collections_gardeningEvent_deleteManySuccess());
-		},
-	});
+	);
 }
 
 export function useGardeningEventCreateForLocationMutation() {

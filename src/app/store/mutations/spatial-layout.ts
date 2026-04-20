@@ -93,37 +93,67 @@ function commandToUpsert(command: BackendCommand): BackendSpatialOp | null {
 	return null;
 }
 
-export function useSpatialLayoutApplyOperationsMutation() {
+/**
+ * Persists parsed layout commands using real batch RPCs where possible:
+ * consecutive upserts → one {@link orpc.spatial.updatePlacementMany}, consecutive deletes → one {@link orpc.spatial.deleteManyNodes}.
+ * Restores still call {@link orpc.spatial.restoreNode} one-by-one (no batch route yet).
+ */
+async function executeSpatialLayoutBackendCommands(commands: readonly BackendCommand[]): Promise<void> {
+	const upsertBatch: BackendSpatialOp[] = [];
+	const deleteBatch: string[] = [];
+
+	const flushUpserts = async () => {
+		if (upsertBatch.length === 0) return;
+		await orpc.spatial.updatePlacementMany.call({
+			placements: upsertBatch.map((op) => ({
+				id: op.id as unknown as SpatialNodeEntityId,
+				parentId: op.parentId as unknown as SpatialNodeEntityId | null,
+				rect: op.rect,
+			})),
+		});
+		upsertBatch.length = 0;
+	};
+
+	const flushDeletes = async () => {
+		if (deleteBatch.length === 0) return;
+		await orpc.spatial.deleteManyNodes.call({
+			ids: deleteBatch.map((id) => id as unknown as SpatialNodeEntityId),
+		});
+		deleteBatch.length = 0;
+	};
+
+	for (const command of commands) {
+		if (command.type === "upsert") {
+			await flushDeletes();
+			upsertBatch.push(command.op);
+			continue;
+		}
+		if (command.type === "restore") {
+			await flushDeletes();
+			await flushUpserts();
+			await orpc.spatial.restoreNode.call({
+				id: command.op.id as unknown as SpatialNodeEntityId,
+				parentId: command.op.parentId as unknown as SpatialNodeEntityId | null,
+				rect: command.op.rect,
+				kind: command.op.kind,
+				ref: command.op.ref,
+			});
+			continue;
+		}
+		await flushUpserts();
+		deleteBatch.push(command.id);
+	}
+	await flushUpserts();
+	await flushDeletes();
+}
+
+export function useSpatialLayoutUpdatePlacementManyMutation() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
 		mutationFn: async (input: { operations: readonly SpatialLayoutOperation<SpatialLayoutNode>[] }) => {
 			const commands = parseBackendCommands(input.operations);
-			for (const command of commands) {
-				if (command.type === "upsert") {
-					await orpc.spatial.applyOperations.call({
-						operations: [
-							{
-								id: command.op.id as unknown as SpatialNodeEntityId,
-								parentId: command.op.parentId as unknown as SpatialNodeEntityId | null,
-								rect: command.op.rect,
-							},
-						],
-					});
-					continue;
-				}
-				if (command.type === "restore") {
-					await orpc.spatial.restoreNode.call({
-						id: command.op.id as unknown as SpatialNodeEntityId,
-						parentId: command.op.parentId as unknown as SpatialNodeEntityId | null,
-						rect: command.op.rect,
-						kind: command.op.kind,
-						ref: command.op.ref,
-					});
-					continue;
-				}
-				await orpc.spatial.deleteNode.call({ id: command.id as unknown as SpatialNodeEntityId });
-			}
+			await executeSpatialLayoutBackendCommands(commands);
 		},
 		onMutate: async (input) => {
 			await queryClient.cancelQueries({ queryKey: queryKeys.spatial._def });

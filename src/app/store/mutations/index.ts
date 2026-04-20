@@ -1,5 +1,6 @@
 export {
 	useCultivarCreateMutation,
+	useCultivarDeleteManyMutation,
 	useCultivarDeleteMutation,
 	useCultivarUpdateMutation,
 } from "./cultivar";
@@ -25,14 +26,16 @@ export {
 	usePlantUpdateMutation,
 } from "./plant";
 export { useSpatialNodeCreateMutation } from "./spatial";
-export { useSpatialLayoutApplyOperationsMutation } from "./spatial-layout.ts";
+export { useSpatialLayoutUpdatePlacementManyMutation } from "./spatial-layout.ts";
 export {
 	useSpeciesCreateMutation,
+	useSpeciesDeleteManyMutation,
 	useSpeciesDeleteMutation,
 	useSpeciesUpdateMutation,
 } from "./species";
 export {
 	useSpeciesCategoryCreateMutation,
+	useSpeciesCategoryDeleteManyMutation,
 	useSpeciesCategoryDeleteMutation,
 	useSpeciesCategoryUpdateMutation,
 } from "./species-category";

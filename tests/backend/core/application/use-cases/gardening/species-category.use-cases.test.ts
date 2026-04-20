@@ -178,4 +178,37 @@ describe("Species category use-cases", () => {
     expect(remaining.items.some((x) => x.id === c1.id)).toBe(false);
     expect(remaining.items.some((x) => x.id === c2.id)).toBe(false);
   });
+
+  it("deleteMany in user workspace only deletes rows in that scope (default catalog ids are no-ops)", async () => {
+    const workspaceRepo = c.resolve(WorkspaceRoleAssignmentRepositoryPortToken);
+    await workspaceRepo.upsertOne({
+      subject: SubjectVO.user("no-assignments"),
+      workspace: WorkspaceVO.user("no-assignments"),
+      role: "admin",
+      grantSource: "test",
+    });
+    const populate = c.resolve(PopulateDefaultCatalogUseCase);
+    await populate.run({
+      context: {
+        actorSubject: bootstrapServiceAccount,
+        activeWorkspaceScope: WorkspaceVO.globalShared(),
+      },
+      dto: { catalog: tinyDefaultCatalog },
+    });
+    const userCtx = userUseCaseContext("no-assignments");
+    const getAll = c.resolve(SpeciesCategoryGetAllUseCase);
+    const seeded = (await getAll.run({ context: userCtx })).items.find((x) => x.systemCatalog);
+    expect(seeded).toBeTruthy();
+
+    const create = c.resolve(SpeciesCategoryCreateUseCase);
+    const custom = await create.run({ context: userCtx, dto: { title: "User category for bulk" } });
+
+    const deleteMany = c.resolve(SpeciesCategoryDeleteManyUseCase);
+    const out = await deleteMany.run({ context: userCtx, dto: { ids: [custom.id, seeded!.id] } });
+    expect(out.count).toBe(1);
+
+    const after = await getAll.run({ context: userCtx });
+    expect(after.items.some((x) => x.id === seeded!.id)).toBe(true);
+    expect(after.items.some((x) => x.id === custom.id)).toBe(false);
+  });
 });

@@ -14,7 +14,7 @@ import {
 	TransactionManagerPortToken,
 } from "../../ports/transaction/transaction-manager.port";
 import { AccessControlApplicationService } from "../../services/access-control/access-control.application-service";
-import { SpatialOperationsService } from "../../services/spatial/spatial-operations.service";
+import { SpatialNodeRefApplicationService } from "../../services/spatial/spatial-node-ref.application-service";
 import { BaseUseCase } from "../shared/base.use-case";
 import { BaseUseCaseError, UseCaseValidationError } from "../shared/errors";
 import type { ExcludeWorkspace } from "../shared/types";
@@ -146,7 +146,7 @@ export class LocationDeleteUseCase extends TransactionalUseCase<
 > {
 	constructor(
 		@inject(AccessControlApplicationService) private readonly access: AccessControlApplicationService,
-		@inject(SpatialOperationsService) private readonly spatialOperationsService: SpatialOperationsService,
+		@inject(SpatialNodeRefApplicationService) private readonly spatialNodeRefService: SpatialNodeRefApplicationService,
 		@inject(LocationRepositoryPortToken) private readonly locationRepository: LocationRepositoryPort,
 		@inject(TransactionManagerPortToken) transactionManager: TransactionManagerPort,
 	) {
@@ -156,7 +156,7 @@ export class LocationDeleteUseCase extends TransactionalUseCase<
 	protected async execute(input: LocationDeleteUseCaseInput): Promise<LocationDeleteUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "delete" });
 		const scope = input.context.activeWorkspaceScope;
-		const placement = await this.spatialOperationsService.getPlacementStatusByRef({
+		const placement = await this.spatialNodeRefService.getPlacementStatusByRef({
 			ref: { entity: "location", entityId: String(input.dto.id) },
 			workspaces: [scope],
 		});
@@ -166,7 +166,7 @@ export class LocationDeleteUseCase extends TransactionalUseCase<
 		const deletedId = await this.locationRepository.deleteOne({
 			filters: [{ id: input.dto.id, workspace: scope }],
 		});
-		await this.spatialOperationsService.deleteUnplacedNodeByRef({
+		await this.spatialNodeRefService.deleteUnplacedNodeByRef({
 			ref: { entity: "location", entityId: String(deletedId) },
 			workspaces: [scope],
 		});
@@ -184,7 +184,7 @@ export class LocationDeleteManyUseCase extends TransactionalUseCase<
 > {
 	constructor(
 		@inject(AccessControlApplicationService) private readonly access: AccessControlApplicationService,
-		@inject(SpatialOperationsService) private readonly spatialOperationsService: SpatialOperationsService,
+		@inject(SpatialNodeRefApplicationService) private readonly spatialNodeRefService: SpatialNodeRefApplicationService,
 		@inject(LocationRepositoryPortToken) private readonly locationRepository: LocationRepositoryPort,
 		@inject(TransactionManagerPortToken) transactionManager: TransactionManagerPort,
 	) {
@@ -206,7 +206,7 @@ export class LocationDeleteManyUseCase extends TransactionalUseCase<
 		const scope = input.context.activeWorkspaceScope;
 		const placedIdSet = new Set<string>();
 		for (const id of input.dto.ids) {
-			const placement = await this.spatialOperationsService.getPlacementStatusByRef({
+			const placement = await this.spatialNodeRefService.getPlacementStatusByRef({
 				ref: { entity: "location", entityId: String(id) },
 				workspaces: [scope],
 			});
@@ -227,7 +227,7 @@ export class LocationDeleteManyUseCase extends TransactionalUseCase<
 			});
 		}
 		for (const deletedId of input.dto.ids) {
-			await this.spatialOperationsService.deleteUnplacedNodeByRef({
+			await this.spatialNodeRefService.deleteUnplacedNodeByRef({
 				ref: { entity: "location", entityId: String(deletedId) },
 				workspaces: [scope],
 			});

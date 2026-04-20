@@ -104,7 +104,7 @@ export function planDeleteSpatialRefWithoutChildren(
 
 export async function executeDeleteWithoutChildrenPlan(plan: SpatialDeleteWithoutChildrenPlan): Promise<void> {
 	if (plan.reparentOps.length > 0) {
-		await orpc.spatial.applyOperations.call({ operations: plan.reparentOps });
+		await orpc.spatial.updatePlacementMany.call({ placements: plan.reparentOps });
 	}
 	await orpc.spatial.deleteNode.call({ id: plan.targetId });
 }

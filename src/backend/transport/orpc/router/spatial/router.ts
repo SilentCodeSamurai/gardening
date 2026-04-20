@@ -1,23 +1,25 @@
 import {
-	SpatialApplyOperationsUseCase,
+	SpatialNodeCreateManyUseCase,
 	SpatialNodeCreateUseCase,
 	SpatialNodeDeleteManyUseCase,
 	SpatialNodeDeleteUseCase,
 	SpatialNodeGetAllUseCase,
 	SpatialNodeGetTreeForRootIdUseCase,
 	SpatialNodeRestoreUseCase,
+	SpatialNodeUpdatePlacementManyUseCase,
 } from "@backend/core/application/use-cases/spatial/spatial.use-cases";
 
 import { createUseCaseContextFromOrpc } from "../../create-use-case-context";
 import { authenticatedProcedure } from "../../orpc-procedure";
 import { runUseCaseOrpc } from "../../shared/run-use-case-orpc";
 import {
-	ApplySpatialOperationsInputSchema,
+	CreateManySpatialNodeInputSchema,
 	CreateSpatialNodeInputSchema,
 	DeleteManySpatialNodeInputSchema,
 	DeleteSpatialNodeInputSchema,
 	GetSpatialTreeByRootIdInputSchema,
 	RestoreSpatialNodeInputSchema,
+	UpdateSpatialNodePlacementManyInputSchema,
 } from "./schemas";
 
 export const spatialRouter = {
@@ -26,6 +28,12 @@ export const spatialRouter = {
 		.handler(({ input, context }) =>
 			runUseCaseOrpc(SpatialNodeCreateUseCase, { context: createUseCaseContextFromOrpc(context), dto: input }),
 		),
+	createManyNodes: authenticatedProcedure.input(CreateManySpatialNodeInputSchema).handler(({ input, context }) =>
+		runUseCaseOrpc(SpatialNodeCreateManyUseCase, {
+			context: createUseCaseContextFromOrpc(context),
+			dto: input,
+		}),
+	),
 	deleteNode: authenticatedProcedure.input(DeleteSpatialNodeInputSchema).handler(({ input, context }) =>
 		runUseCaseOrpc(SpatialNodeDeleteUseCase, {
 			context: createUseCaseContextFromOrpc(context),
@@ -52,10 +60,12 @@ export const spatialRouter = {
 			dto: { id: input.id },
 		}),
 	),
-	applyOperations: authenticatedProcedure.input(ApplySpatialOperationsInputSchema).handler(({ input, context }) =>
-		runUseCaseOrpc(SpatialApplyOperationsUseCase, {
-			context: createUseCaseContextFromOrpc(context),
-			dto: { operations: input.operations },
-		}),
-	),
+	updatePlacementMany: authenticatedProcedure
+		.input(UpdateSpatialNodePlacementManyInputSchema)
+		.handler(({ input, context }) =>
+			runUseCaseOrpc(SpatialNodeUpdatePlacementManyUseCase, {
+				context: createUseCaseContextFromOrpc(context),
+				dto: { placements: input.placements },
+			}),
+		),
 };

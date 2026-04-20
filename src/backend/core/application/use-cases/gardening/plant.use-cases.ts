@@ -13,7 +13,7 @@ import {
 	type PlantRepositoryUpdatePatchDTO,
 } from "../../ports/repositories/gardening/plant.repository.port";
 import { AccessControlApplicationService } from "../../services/access-control/access-control.application-service";
-import { SpatialOperationsService } from "../../services/spatial/spatial-operations.service";
+import { SpatialNodeRefApplicationService } from "../../services/spatial/spatial-node-ref.application-service";
 import { BaseUseCaseError, UseCaseValidationError } from "../shared/errors";
 import { BaseUseCase } from "../shared/base.use-case";
 import type { ExcludeWorkspace } from "../shared/types";
@@ -202,7 +202,7 @@ export class PlantDeleteManyUseCasePlacedEntityError extends BaseUseCaseError {
 export class PlantDeleteUseCase extends TransactionalUseCase<PlantDeleteUseCaseInput, PlantDeleteUseCaseOutput> {
 	constructor(
 		@inject(AccessControlApplicationService) private readonly access: AccessControlApplicationService,
-		@inject(SpatialOperationsService) private readonly spatialOperationsService: SpatialOperationsService,
+		@inject(SpatialNodeRefApplicationService) private readonly spatialNodeRefService: SpatialNodeRefApplicationService,
 		@inject(PlantRepositoryPortToken) private readonly plantRepository: PlantRepositoryPort,
 		@inject(TransactionManagerPortToken) transactionManager: TransactionManagerPort,
 	) {
@@ -211,7 +211,7 @@ export class PlantDeleteUseCase extends TransactionalUseCase<PlantDeleteUseCaseI
 	protected async execute(input: PlantDeleteUseCaseInput): Promise<PlantDeleteUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "delete" });
 		const scope = input.context.activeWorkspaceScope;
-		const placement = await this.spatialOperationsService.getPlacementStatusByRef({
+		const placement = await this.spatialNodeRefService.getPlacementStatusByRef({
 			ref: { entity: "plant", entityId: String(input.dto.id) },
 			workspaces: [scope],
 		});
@@ -221,7 +221,7 @@ export class PlantDeleteUseCase extends TransactionalUseCase<PlantDeleteUseCaseI
 		const deletedId = await this.plantRepository.deleteOne({
 			filters: [{ id: input.dto.id, workspace: scope }],
 		});
-		await this.spatialOperationsService.deleteUnplacedNodeByRef({
+		await this.spatialNodeRefService.deleteUnplacedNodeByRef({
 			ref: { entity: "plant", entityId: String(deletedId) },
 			workspaces: [scope],
 		});
@@ -239,7 +239,7 @@ export class PlantDeleteManyUseCase extends TransactionalUseCase<
 > {
 	constructor(
 		@inject(AccessControlApplicationService) private readonly access: AccessControlApplicationService,
-		@inject(SpatialOperationsService) private readonly spatialOperationsService: SpatialOperationsService,
+		@inject(SpatialNodeRefApplicationService) private readonly spatialNodeRefService: SpatialNodeRefApplicationService,
 		@inject(PlantRepositoryPortToken) private readonly plantRepository: PlantRepositoryPort,
 		@inject(TransactionManagerPortToken) transactionManager: TransactionManagerPort,
 	) {
@@ -261,7 +261,7 @@ export class PlantDeleteManyUseCase extends TransactionalUseCase<
 		const scope = input.context.activeWorkspaceScope;
 		const placedIdSet = new Set<string>();
 		for (const id of input.dto.ids) {
-			const placement = await this.spatialOperationsService.getPlacementStatusByRef({
+			const placement = await this.spatialNodeRefService.getPlacementStatusByRef({
 				ref: { entity: "plant", entityId: String(id) },
 				workspaces: [scope],
 			});
@@ -282,7 +282,7 @@ export class PlantDeleteManyUseCase extends TransactionalUseCase<
 			});
 		}
 		for (const deletedId of input.dto.ids) {
-			await this.spatialOperationsService.deleteUnplacedNodeByRef({
+			await this.spatialNodeRefService.deleteUnplacedNodeByRef({
 				ref: { entity: "plant", entityId: String(deletedId) },
 				workspaces: [scope],
 			});

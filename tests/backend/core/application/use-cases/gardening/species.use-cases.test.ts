@@ -10,12 +10,15 @@ import { CultivarGetAllUseCase } from "@backend/core/application/use-cases/garde
 import {
   RepositoryNotFoundError,
 } from "@backend/core/application/ports/repositories/shared/base-repository.errors";
+import { WorkspaceRoleAssignmentRepositoryPortToken } from "#/backend/core/application/ports/repositories/access/workspace-role-assignment.repository.port";
 import { bootstrapServiceAccount } from "#/backend/core/application/service-accounts";
+import { SubjectVO } from "@backend/core/domain/access/subject.vo";
 import { WorkspaceVO } from "@backend/core/domain/access/workspace.vo";
 import { createTestUseCaseContext } from "../create-test-use-case-context";
 import { PopulateDefaultCatalogUseCase } from "@backend/core/application/use-cases/gardening/populate-default-catalog.use-case";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { userUseCaseContext } from "../../../../helpers/use-case-context";
 import { createUseCaseTestContainer } from "./create-use-case-test-container";
 import { seedMinimalCatalog } from "../../../../helpers/gardening/seed-minimal-catalog";
 import { fixtureSpeciesCharacteristics } from "../../../../helpers/gardening/test-fixtures";
@@ -209,5 +212,44 @@ describe("Species use-cases", () => {
     const remaining = await getAll.run({ context });
     expect(remaining.items.some((s) => s.id === s1.id)).toBe(false);
     expect(remaining.items.some((s) => s.id === s2.id)).toBe(false);
+  });
+
+  it("deleteMany in user workspace only deletes rows in that scope (default catalog ids are no-ops)", async () => {
+    const workspaceRepo = c.resolve(WorkspaceRoleAssignmentRepositoryPortToken);
+    await workspaceRepo.upsertOne({
+      subject: SubjectVO.user("no-assignments"),
+      workspace: WorkspaceVO.user("no-assignments"),
+      role: "admin",
+      grantSource: "test",
+    });
+    const populate = c.resolve(PopulateDefaultCatalogUseCase);
+    await populate.run({
+      context: {
+        actorSubject: bootstrapServiceAccount,
+        activeWorkspaceScope: WorkspaceVO.globalShared(),
+      },
+      dto: { catalog: tinyDefaultCatalog },
+    });
+    const userCtx = userUseCaseContext("no-assignments");
+    const getAll = c.resolve(SpeciesGetAllUseCase);
+    const seeded = (await getAll.run({ context: userCtx })).items.find((s) => s.systemCatalog);
+    expect(seeded).toBeTruthy();
+
+    const create = c.resolve(SpeciesCreateUseCase);
+    const custom = await create.run({
+      context: userCtx,
+      dto: {
+        categoryId: seeded!.categoryId,
+        characteristics: fixtureSpeciesCharacteristics({ name: "user-species-bulk" }),
+      },
+    });
+
+    const deleteMany = c.resolve(SpeciesDeleteManyUseCase);
+    const out = await deleteMany.run({ context: userCtx, dto: { ids: [custom.id, seeded!.id] } });
+    expect(out.count).toBe(1);
+
+    const after = await getAll.run({ context: userCtx });
+    expect(after.items.some((s) => s.id === seeded!.id)).toBe(true);
+    expect(after.items.some((s) => s.id === custom.id)).toBe(false);
   });
 });

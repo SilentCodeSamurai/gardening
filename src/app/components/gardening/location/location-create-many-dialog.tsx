@@ -1,5 +1,6 @@
-import type { SpatialNodeEntityId } from "@backend/core/domain/spatial/entities";
+import type { SpatialNodeEntity, SpatialNodeEntityId } from "@backend/core/domain/spatial/entities";
 import { useStore } from "@tanstack/react-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import { SELECT_NONE } from "@/components/form/select-sentinel";
 import type { SpatialGeometry } from "@/components/spatial-layout-editor";
@@ -18,13 +19,23 @@ import {
 } from "@/components/ui/dialog";
 import { useAppForm } from "@/hooks/form";
 import { normalizePresentationInput } from "@/lib/item-presentation";
+import { orpc } from "@/orpc/client";
 import * as m from "@/paraglide/messages.js";
-import { useLocationCreateMutation, useSpatialNodeCreateMutation } from "@/store/mutations";
+import { queryKeys } from "@/store/keys";
+import { useLocationCreateMutation } from "@/store/mutations";
 
 type LayoutDraft = {
 	id: string;
 	label: string;
 	geometry: SpatialGeometry;
+};
+
+export type LocationCreateManySpatialResult = {
+	id: string;
+	parentId: string | null;
+	rect: { x: number; y: number; width: number; height: number };
+	label: string;
+	ref: SpatialNodeEntity["ref"];
 };
 
 type NameMode = "preview" | "customStem";
@@ -35,13 +46,8 @@ type Props = {
 	parentSpatialNodeId: SpatialNodeEntityId;
 	nodes: LayoutDraft[];
 	existingSiblingNames: string[];
-	onSpatialNodeCreated?: (input: {
-		id: string;
-		parentId: string | null;
-		rect: { x: number; y: number; width: number; height: number };
-		label: string;
-		ref: { entity: "location" | "plant"; entityId: string };
-	}) => void;
+	/** Called once after all locations + spatial nodes are created (single undo step in the layout editor). */
+	onSpatialNodesCreated: (nodes: readonly LocationCreateManySpatialResult[]) => void;
 };
 
 type FormValues = {
@@ -58,10 +64,10 @@ export function LocationCreateManyDialog({
 	parentSpatialNodeId,
 	nodes,
 	existingSiblingNames,
-	onSpatialNodeCreated,
+	onSpatialNodesCreated,
 }: Props) {
 	const mut = useLocationCreateMutation();
-	const spatialMut = useSpatialNodeCreateMutation();
+	const queryClient = useQueryClient();
 
 	const nameModeOptions = useMemo(
 		() => [
@@ -102,30 +108,44 @@ export function LocationCreateManyDialog({
 							nodes.length,
 						);
 			onOpenChange(false);
+			const spatialCreateInputs: Array<{
+				label: string;
+				rect: { x: number; y: number; width: number; height: number };
+				ref: { entity: "location"; entityId: string };
+			}> = [];
 			for (let i = 0; i < nodes.length; i++) {
 				const node = nodes[i];
 				const name = (names[i] ?? "").trim();
 				if (!name) continue;
 				const entity = await mut.mutateAsync({ name, presentation });
-				const spatialNode = await spatialMut.mutateAsync({
-					parentId: parentSpatialNodeId,
-					kind: "frame",
-					ref: { entity: "location", entityId: String(entity.id) },
+				spatialCreateInputs.push({
+					label: name,
 					rect: {
 						x: node.geometry.x,
 						y: node.geometry.y,
 						width: node.geometry.width,
 						height: node.geometry.height,
 					},
-				});
-				onSpatialNodeCreated?.({
-					id: String(spatialNode.id),
-					parentId: spatialNode.parentId ? String(spatialNode.parentId) : null,
-					rect: spatialNode.rect,
-					label: name,
-					ref: spatialNode.ref,
+					ref: { entity: "location", entityId: String(entity.id) },
 				});
 			}
+			const createdSpatial = await orpc.spatial.createManyNodes.call({
+				items: spatialCreateInputs.map((row) => ({
+					parentId: parentSpatialNodeId,
+					kind: "frame" as const,
+					ref: row.ref,
+					rect: row.rect,
+				})),
+			});
+			const createdNodes = createdSpatial.items.map((spatialNode, i) => ({
+				id: String(spatialNode.id),
+				parentId: spatialNode.parentId ? String(spatialNode.parentId) : null,
+				rect: spatialNode.rect,
+				label: spatialCreateInputs[i]?.label ?? "",
+				ref: spatialNode.ref,
+			}));
+			await queryClient.invalidateQueries({ queryKey: queryKeys.spatial._def });
+			if (createdNodes.length > 0) onSpatialNodesCreated(createdNodes);
 		},
 	});
 

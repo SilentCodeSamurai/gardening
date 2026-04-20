@@ -63,8 +63,8 @@ export function registerSpatialNodeRepositoryContract(
 			expect(items.length).toBeGreaterThanOrEqual(2);
 		});
 
-		it("createMany returns count", async () => {
-			const { count } = await spatialNode.createMany({
+		it("createMany returns created items", async () => {
+			const { items } = await spatialNode.createMany({
 				items: [
 					nodeIn({
 						parentId: null,
@@ -80,7 +80,9 @@ export function registerSpatialNodeRepositoryContract(
 					}),
 				],
 			});
-			expect(count).toBe(2);
+			expect(items).toHaveLength(2);
+			expect(items[0]?.id).toBeDefined();
+			expect(items[1]?.id).toBeDefined();
 		});
 
 		it("getMany filters: [] returns empty", async () => {

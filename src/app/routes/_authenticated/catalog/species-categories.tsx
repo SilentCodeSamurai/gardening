@@ -51,11 +51,12 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { translateCatalogField } from "@/lib/translate-catalog-field";
 import { renderError } from "@/lib/render-error";
+import { tableSelectionBulkTooltip } from "@/lib/table-selection-tooltips";
+import { translateCatalogField } from "@/lib/translate-catalog-field";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
-import { useSpeciesCategoryDeleteMutation } from "@/store/mutations";
+import { useSpeciesCategoryDeleteManyMutation, useSpeciesCategoryDeleteMutation } from "@/store/mutations";
 
 export const Route = createFileRoute("/_authenticated/catalog/species-categories")({
 	component: SpeciesCategoriesPage,
@@ -70,6 +71,8 @@ function SpeciesCategoriesPage() {
 	const [globalFilter, setGlobalFilter] = useState("");
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [createOpen, setCreateOpen] = useState(false);
+	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+	const bulkDeleteMany = useSpeciesCategoryDeleteManyMutation();
 	const columnHelper = useMemo(() => createColumnHelper<SpeciesCategoryWithSystemCatalog>(), []);
 	const columns = useMemo(
 		() => [
@@ -248,6 +251,22 @@ function SpeciesCategoriesPage() {
 		[columnFilters, columns, globalFilter, items, rowSelection, sorting],
 	);
 
+	const selectedCategoryIds = useMemo(
+		() => table.getFilteredSelectedRowModel().rows.map((row) => row.original.id),
+		[table],
+	);
+	const selectionIncludesSystemCatalog = useMemo(
+		() => table.getFilteredSelectedRowModel().rows.some((row) => row.original.systemCatalog),
+		[table],
+	);
+	const bulkDeleteDisabled = selectedCategoryIds.length === 0 || selectionIncludesSystemCatalog;
+	const bulkDeleteTooltip = tableSelectionBulkTooltip({
+		selectedCount: selectedCategoryIds.length,
+		hasPlacedInSelection: false,
+		selectionIncludesDefaultCatalog: selectionIncludesSystemCatalog,
+		enabledTooltip: m.collections_speciesCategory_deleteManyTooltip(),
+	});
+
 	return (
 		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
 			<DashboardPageHeading collection="speciesCategory">
@@ -291,10 +310,36 @@ function SpeciesCategoriesPage() {
 						errorMessage={renderError(error, m.common_loadError())}
 						emptyMessage={m.items_noElements()}
 						highlightPendingRows
+						selectedActions={
+							<ButtonTooltip label={bulkDeleteTooltip} disabled={bulkDeleteDisabled}>
+								<Button
+									type="button"
+									variant="outline"
+									disabled={bulkDeleteDisabled}
+									onClick={() => setBulkDeleteOpen(true)}
+								>
+									{m.collections_speciesCategory_deleteMany()}
+								</Button>
+							</ButtonTooltip>
+						}
 					/>
 				</div>
 			</DashboardPageContent>
 			<SpeciesCategoryCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
+			<DeleteConfirmDialog
+				open={bulkDeleteOpen}
+				onOpenChange={setBulkDeleteOpen}
+				title={m.collections_speciesCategory_deleteMany()}
+				description={m.collections_speciesCategory_deleteManyConfirmDescription({
+					count: selectedCategoryIds.length,
+				})}
+				isPending={bulkDeleteMany.isPending}
+				onConfirm={async () => {
+					setBulkDeleteOpen(false);
+					setRowSelection({});
+					await bulkDeleteMany.mutateAsync({ ids: selectedCategoryIds });
+				}}
+			/>
 		</div>
 	);
 }

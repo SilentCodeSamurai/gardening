@@ -2,18 +2,24 @@ import { WorkspaceVO } from "@backend/core/domain/access/workspace.vo";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { SpeciesCategoryWithSystemCatalog } from "#/backend/core/application/use-cases/gardening/species-category.use-cases";
+import { renderError } from "@/lib/render-error";
 import { orpc } from "@/orpc/client";
 import * as m from "@/paraglide/messages.js";
-import { renderError } from "@/lib/render-error";
 
 import { useActiveWorkspaceKey } from "@/store/active-workspace-key";
-import { appendToItemsContainer, removeFromItemsContainer, upsertInItemsContainer } from "@/store/cache-utils";
+import {
+	appendToItemsContainer,
+	removeFromItemsContainer,
+	removeManyFromItemsContainer,
+	upsertInItemsContainer,
+} from "@/store/cache-utils";
 import { queryKeys } from "@/store/keys";
 import type { CachedSpeciesCategoryList, CachedSpeciesCategoryWithSystemCatalog } from "@/store/query-cache-types";
 import { isQueryObjectPending, markQueryObjectPending, QUERY_OBJECT_PENDING } from "@/store/query-object-status";
 import {
 	cancelQueriesByKeys,
 	dropPendingInItemsContainer,
+	dropPendingManyInItemsContainer,
 	makePendingId,
 	replacePendingInItemsContainer,
 	restoreQuerySnapshots,
@@ -170,6 +176,49 @@ export function useSpeciesCategoryDeleteMutation() {
 				);
 				queryClient.setQueryData(queryKeys.speciesCategory.detail(deletedId).queryKey, undefined);
 				toast.success(m.collections_speciesCategory_deleteSuccess());
+			},
+		}),
+	);
+}
+
+export function useSpeciesCategoryDeleteManyMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation(
+		orpc.speciesCategory.deleteMany.mutationOptions({
+			onMutate: async (variables) => {
+				await cancelQueriesByKeys(queryClient, [
+					queryKeys.speciesCategory.all.queryKey,
+					queryKeys.species.all.queryKey,
+				]);
+				const snapshots = snapshotQueries(queryClient, [
+					queryKeys.speciesCategory.all.queryKey,
+					...variables.ids.map((id: string) => queryKeys.speciesCategory.detail(id).queryKey),
+				]);
+				queryClient.setQueryData<CachedSpeciesCategoryList>(
+					queryKeys.speciesCategory.all.queryKey,
+					(prev) => removeManyFromItemsContainer(prev, variables.ids) ?? { items: [] },
+				);
+				for (const id of variables.ids) {
+					queryClient.setQueryData(queryKeys.speciesCategory.detail(id).queryKey, undefined);
+				}
+				return { snapshots };
+			},
+			onError: (error, variables, ctx) => {
+				if (!ctx) return;
+				void variables;
+				restoreQuerySnapshots(queryClient, ctx.snapshots);
+				toast.error(renderError(error, m.collections_speciesCategory_actionError()));
+			},
+			onSuccess: (_result, variables) => {
+				queryClient.setQueryData<CachedSpeciesCategoryList>(queryKeys.speciesCategory.all.queryKey, (prev) =>
+					dropPendingManyInItemsContainer(prev, variables.ids),
+				);
+				for (const id of variables.ids) {
+					queryClient.setQueryData(queryKeys.speciesCategory.detail(id).queryKey, undefined);
+				}
+				void queryClient.invalidateQueries({ queryKey: queryKeys.species.all.queryKey });
+				toast.success(m.collections_speciesCategory_deleteManySuccess());
 			},
 		}),
 	);

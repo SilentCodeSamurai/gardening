@@ -1,4 +1,4 @@
-import type { SpatialNodeTreeNode } from "@backend/core/domain/spatial/entities";
+
 import type { ItemsContainer } from "@backend/shared/types";
 
 /**
@@ -22,11 +22,11 @@ export function withSyncedItemsContainer<T extends object>(
 	return { items: container.items.map((item) => markQueryObjectSynced(item)) };
 }
 
-export function withSyncedSpatialTree(node: SpatialNodeTreeNode): WithQueryObjectStatus<SpatialNodeTreeNode> {
+export function withSyncedTree<T extends { children: T[] }>(node: T): WithQueryObjectStatus<T> {
 	return {
 		...node,
 		objectStatus: QUERY_OBJECT_SYNCED,
-		children: node.children.map(withSyncedSpatialTree),
+		children: node.children.map(withSyncedTree),
 	};
 }
 

@@ -56,13 +56,13 @@ import {
 	SpeciesCategoryUpdateUseCase,
 } from "../core/application/use-cases/gardening/species-category.use-cases";
 import {
-	SpatialApplyOperationsUseCase,
 	SpatialNodeCreateUseCase,
 	SpatialNodeDeleteManyUseCase,
 	SpatialNodeDeleteUseCase,
 	SpatialNodeGetAllUseCase,
 	SpatialNodeGetTreeForRootIdUseCase,
 	SpatialNodeRestoreUseCase,
+	SpatialNodeUpdatePlacementManyUseCase,
 } from "../core/application/use-cases/spatial/spatial.use-cases";
 
 const injectableApplicationClasses = [
@@ -73,7 +73,7 @@ const injectableApplicationClasses = [
 	SpatialNodeDeleteUseCase,
 	SpatialNodeDeleteManyUseCase,
 	SpatialNodeRestoreUseCase,
-	SpatialApplyOperationsUseCase,
+	SpatialNodeUpdatePlacementManyUseCase,
 
 	// Use-cases: gardening events
 	GardeningEventGetAllUseCase,

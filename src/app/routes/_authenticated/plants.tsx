@@ -19,6 +19,7 @@ import { EllipsisVerticalIcon, PencilIcon, PlusIcon, Trash2Icon, XIcon } from "l
 import { useCallback, useMemo, useState } from "react";
 import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
 import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
+import type { PlantItem } from "#/app/store/cache/collections/plant";
 import {
 	GardeningEventCreateDialog,
 	type GardeningEventCreateDialogInitialValues,
@@ -62,14 +63,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { CATALOG_FILTER_NO_VALUE } from "@/lib/catalog-filter-sentinel";
-import { getPlantPlacementSummary, plantPlacementFilterToken } from "@/lib/spatial-placement-summary";
 import { renderError } from "@/lib/render-error";
+import { getPlantPlacementSummary, plantPlacementFilterToken } from "@/lib/spatial-placement-summary";
 import { tableSelectionBulkTooltip } from "@/lib/table-selection-tooltips";
 import { translateCatalogField } from "@/lib/translate-catalog-field";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import { usePlantDeleteManyMutation, usePlantDeleteMutation } from "@/store/mutations";
-import type { CachedHydratedPlant } from "@/store/query-cache-types";
 import { collectPlacedEntityIds } from "@/store/spatial-placement";
 
 export const Route = createFileRoute("/_authenticated/plants")({
@@ -106,24 +106,24 @@ function resolveSpeciesDisplayName(rawSpeciesName: string): string {
 	return trimmed;
 }
 
-function getPlantDisplayTitle(plant: CachedHydratedPlant): string {
+function getPlantDisplayTitle(plant: PlantItem): string {
 	if (plant.title?.trim()) return plant.title.trim();
 	return plant.cultivar?.characteristics.name || m.items_untitled();
 }
 
-function plantCategoryFilterKey(plant: CachedHydratedPlant, speciesCategoryById: Map<string, string>): string {
+function plantCategoryFilterKey(plant: PlantItem, speciesCategoryById: Map<string, string>): string {
 	const sp = plant.cultivar?.species;
 	if (!sp) return CATALOG_FILTER_NO_VALUE;
 	const cat = speciesCategoryById.get(String(sp.id)) ?? "";
 	return cat === "" ? CATALOG_FILTER_NO_VALUE : cat;
 }
 
-function plantSpeciesFilterKey(plant: CachedHydratedPlant): string {
+function plantSpeciesFilterKey(plant: PlantItem): string {
 	if (!plant.cultivar?.species) return CATALOG_FILTER_NO_VALUE;
 	return String(plant.cultivar.species.id);
 }
 
-function plantCultivarFilterKey(plant: CachedHydratedPlant): string {
+function plantCultivarFilterKey(plant: PlantItem): string {
 	if (!plant.cultivar) return CATALOG_FILTER_NO_VALUE;
 	return String(plant.cultivar.id);
 }
@@ -408,7 +408,7 @@ function PlantsPage() {
 		[cultivarById, speciesCategoryById],
 	);
 
-	const columnHelper = useMemo(() => createColumnHelper<CachedHydratedPlant>(), []);
+	const columnHelper = useMemo(() => createColumnHelper<PlantItem>(), []);
 	const columns = useMemo(
 		() => [
 			columnHelper.display({
@@ -506,7 +506,7 @@ function PlantsPage() {
 					matchesCatalogColumnFilter(plantCategoryFilterKey(row.original, speciesCategoryById), filterValue),
 				enableGlobalFilter: false,
 				meta: {
-					filter: ({ column }: { column: Column<CachedHydratedPlant, unknown> }) => {
+					filter: ({ column }: { column: Column<PlantItem, unknown> }) => {
 						const value = String(column.getFilterValue() ?? "");
 						const selected = plantCategoryFilterOptions.find((opt) => opt.value === value) ?? null;
 						return (
@@ -577,8 +577,8 @@ function PlantsPage() {
 						column,
 						table,
 					}: {
-						column: Column<CachedHydratedPlant, unknown>;
-						table: Table<CachedHydratedPlant>;
+						column: Column<PlantItem, unknown>;
+						table: Table<PlantItem>;
 					}) => {
 						const categoryFilter = String(table.getColumn("category")?.getFilterValue() ?? "");
 						const filteredSpeciesOptions =
@@ -656,8 +656,8 @@ function PlantsPage() {
 						column,
 						table,
 					}: {
-						column: Column<CachedHydratedPlant, unknown>;
-						table: Table<CachedHydratedPlant>;
+						column: Column<PlantItem, unknown>;
+						table: Table<PlantItem>;
 					}) => {
 						const categoryFilter = String(table.getColumn("category")?.getFilterValue() ?? "");
 						const speciesFilter = String(table.getColumn("species")?.getFilterValue() ?? "");
@@ -849,7 +849,7 @@ function PlantsPage() {
 
 	const table = useMemo(
 		() =>
-			createTable<CachedHydratedPlant>({
+			createTable<PlantItem>({
 				data: items,
 				columns,
 				globalFilterFn: fuzzyFilter,
@@ -1007,7 +1007,7 @@ function PlantsPage() {
 	);
 }
 
-function PlantRowActions({ plant, isPlaced }: { plant: CachedHydratedPlant; isPlaced: boolean }) {
+function PlantRowActions({ plant, isPlaced }: { plant: PlantItem; isPlaced: boolean }) {
 	const [editOpen, setEditOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [createEventOpen, setCreateEventOpen] = useState(false);

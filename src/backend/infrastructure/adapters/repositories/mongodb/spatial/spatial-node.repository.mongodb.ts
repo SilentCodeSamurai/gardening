@@ -55,7 +55,7 @@ export class SpatialNodeMongoDBRepository extends BaseMongoDBRepository implemen
 	async createMany(
 		input: SpatialNodeRepositoryCreateManyInputDTO,
 	): Promise<SpatialNodeRepositoryCreateManyOutputDTO> {
-		if (input.items.length === 0) return { count: 0 };
+		if (input.items.length === 0) return { items: [] };
 		for (const item of input.items) {
 			if (item.parentId !== null) {
 				const parent = await this.collection(MONGODB_COLLECTION_TYPE.SPATIAL_NODES).findOne(
@@ -76,7 +76,7 @@ export class SpatialNodeMongoDBRepository extends BaseMongoDBRepository implemen
 		await this.collection(MONGODB_COLLECTION_TYPE.SPATIAL_NODES).insertMany(docs, {
 			session: this.tx.session,
 		});
-		return { count: input.items.length };
+		return { items: docs.map(MONGODB_MAPPERS.spatialNode) };
 	}
 	async getOne(input: {
 		filters: readonly SpatialNodeRepositoryFilterClause[];
@@ -115,6 +115,18 @@ export class SpatialNodeMongoDBRepository extends BaseMongoDBRepository implemen
 			.find(this.filters(input.filters), { session: this.tx.session })
 			.toArray();
 		return { items: docs.map(MONGODB_MAPPERS.spatialNode) };
+	}
+	async getManyStrict(input: {
+		filters: readonly SpatialNodeRepositoryFilterClause[];
+	}): Promise<SpatialNodeRepositoryGetManyOutputDTO> {
+		const result = await this.getMany({ filters: input.filters });
+		const byId = new Set(result.items.map((row) => String(row.id)));
+		for (const filter of input.filters) {
+			if (filter.id !== undefined && !byId.has(String(filter.id))) {
+				this.throwNotFoundError("SpatialNode", filter.id);
+			}
+		}
+		return result;
 	}
 	async updateOne(input: {
 		filters: readonly SpatialNodeRepositoryFilterClause[];

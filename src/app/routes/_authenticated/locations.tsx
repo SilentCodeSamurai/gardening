@@ -15,6 +15,7 @@ import { EllipsisVerticalIcon, PencilIcon, PlusIcon, Trash2Icon, XIcon } from "l
 import { useMemo, useState } from "react";
 import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
 import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
+import type { LocationItem } from "#/app/store/cache/collections/location";
 import {
 	GardeningEventCreateDialog,
 	type GardeningEventCreateDialogInitialValues,
@@ -49,13 +50,12 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { renderError } from "@/lib/render-error";
 import { getLocationPlacementSummary, locationPlacementFilterToken } from "@/lib/spatial-placement-summary";
 import { tableSelectionBulkTooltip } from "@/lib/table-selection-tooltips";
-import { renderError } from "@/lib/render-error";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import { useLocationDeleteManyMutation, useLocationDeleteMutation } from "@/store/mutations";
-import type { CachedLocation } from "@/store/query-cache-types";
 import { isQueryObjectPending } from "@/store/query-object-status";
 import { collectPlacedEntityIds } from "@/store/spatial-placement";
 
@@ -122,7 +122,7 @@ function LocationsPage() {
 	const [createEventOpen, setCreateEventOpen] = useState(false);
 	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 	const bulkDeleteMany = useLocationDeleteManyMutation();
-	const columnHelper = useMemo(() => createColumnHelper<CachedLocation>(), []);
+	const columnHelper = useMemo(() => createColumnHelper<LocationItem>(), []);
 	const columns = useMemo(
 		() => [
 			columnHelper.display({
@@ -267,7 +267,7 @@ function LocationsPage() {
 	);
 	const table = useMemo(
 		() =>
-			createTable<CachedLocation>({
+			createTable<LocationItem>({
 				data: rootItems,
 				columns,
 				getCoreRowModel: getCoreRowModel(),
@@ -428,7 +428,7 @@ function LocationsPage() {
 	);
 }
 
-function LocationRowActions({ location, isPlaced }: { location: CachedLocation; isPlaced: boolean }) {
+function LocationRowActions({ location, isPlaced }: { location: LocationItem; isPlaced: boolean }) {
 	const [editOpen, setEditOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [createEventOpen, setCreateEventOpen] = useState(false);

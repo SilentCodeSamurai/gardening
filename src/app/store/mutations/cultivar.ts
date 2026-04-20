@@ -3,12 +3,17 @@ import type { CultivarEntity, CultivarEntityId, SpeciesEntityId } from "@backend
 import { type QueryClient, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { SpeciesWithSystemCatalog } from "#/backend/core/application/use-cases/gardening/species.use-cases";
+import { renderError } from "@/lib/render-error";
 import { orpc } from "@/orpc/client";
 import * as m from "@/paraglide/messages.js";
-import { renderError } from "@/lib/render-error";
 
 import { useActiveWorkspaceKey } from "@/store/active-workspace-key";
-import { appendToItemsContainer, removeFromItemsContainer, upsertInItemsContainer } from "@/store/cache-utils";
+import {
+	appendToItemsContainer,
+	removeFromItemsContainer,
+	removeManyFromItemsContainer,
+	upsertInItemsContainer,
+} from "@/store/cache-utils";
 import { queryKeys } from "@/store/keys";
 import type {
 	CachedCultivar,
@@ -20,6 +25,7 @@ import { isQueryObjectPending, markQueryObjectPending, QUERY_OBJECT_PENDING } fr
 import {
 	cancelQueriesByKeys,
 	dropPendingInItemsContainer,
+	dropPendingManyInItemsContainer,
 	makePendingId,
 	replacePendingInItemsContainer,
 	restoreQuerySnapshots,
@@ -198,6 +204,49 @@ export function useCultivarDeleteMutation() {
 				queryClient.setQueryData(queryKeys.cultivar.detail(deletedId).queryKey, undefined);
 				queryClient.setQueryData(queryKeys.cultivar.fullById(deletedId).queryKey, undefined);
 				toast.success(m.collections_cultivar_deleteSuccess());
+			},
+		}),
+	);
+}
+
+export function useCultivarDeleteManyMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation(
+		orpc.cultivar.deleteMany.mutationOptions({
+			onMutate: async (variables) => {
+				await cancelQueriesByKeys(queryClient, [queryKeys.cultivar.all.queryKey]);
+				const snapshots = snapshotQueries(queryClient, [
+					queryKeys.cultivar.all.queryKey,
+					...variables.ids.map((id: string) => queryKeys.cultivar.detail(id).queryKey),
+					...variables.ids.map((id: string) => queryKeys.cultivar.fullById(id).queryKey),
+				]);
+				queryClient.setQueryData<CachedCultivarList>(
+					queryKeys.cultivar.all.queryKey,
+					(prev) => removeManyFromItemsContainer(prev, variables.ids) ?? { items: [] },
+				);
+				for (const id of variables.ids) {
+					queryClient.setQueryData(queryKeys.cultivar.detail(id).queryKey, undefined);
+					queryClient.setQueryData(queryKeys.cultivar.fullById(id).queryKey, undefined);
+				}
+				return { snapshots };
+			},
+			onError: (error, variables, ctx) => {
+				if (!ctx) return;
+				void variables;
+				restoreQuerySnapshots(queryClient, ctx.snapshots);
+				toast.error(renderError(error, m.collections_cultivar_actionError()));
+			},
+			onSuccess: (_result, variables) => {
+				queryClient.setQueryData<CachedCultivarList>(queryKeys.cultivar.all.queryKey, (prev) =>
+					dropPendingManyInItemsContainer(prev, variables.ids),
+				);
+				for (const id of variables.ids) {
+					queryClient.setQueryData(queryKeys.cultivar.detail(id).queryKey, undefined);
+					queryClient.setQueryData(queryKeys.cultivar.fullById(id).queryKey, undefined);
+				}
+				void queryClient.invalidateQueries({ queryKey: queryKeys.plant.all.queryKey });
+				toast.success(m.collections_cultivar_deleteManySuccess());
 			},
 		}),
 	);

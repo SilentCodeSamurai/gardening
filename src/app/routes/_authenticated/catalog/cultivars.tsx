@@ -54,11 +54,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { CATALOG_FILTER_NO_VALUE } from "@/lib/catalog-filter-sentinel";
-import { translateCatalogField } from "@/lib/translate-catalog-field";
 import { renderError } from "@/lib/render-error";
+import { tableSelectionBulkTooltip } from "@/lib/table-selection-tooltips";
+import { translateCatalogField } from "@/lib/translate-catalog-field";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
-import { useCultivarDeleteMutation } from "@/store/mutations";
+import { useCultivarDeleteManyMutation, useCultivarDeleteMutation } from "@/store/mutations";
 import type { CachedCultivar } from "@/store/query-cache-types";
 import { isQueryObjectPending } from "@/store/query-object-status";
 
@@ -253,6 +254,8 @@ function CultivarsPage() {
 	const [globalFilter, setGlobalFilter] = useState("");
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [createOpen, setCreateOpen] = useState(false);
+	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+	const bulkDeleteMany = useCultivarDeleteManyMutation();
 
 	const effectiveColumnFilters = useMemo(
 		() => reconcileCultivarColumnFilters(columnFilters, columnFilters, speciesById),
@@ -547,6 +550,16 @@ function CultivarsPage() {
 	);
 
 	const filteredRowCount = table.getFilteredRowModel().rows.length;
+	const selectedCultivarIds = useMemo(
+		() => table.getFilteredSelectedRowModel().rows.map((row) => row.original.id),
+		[table],
+	);
+	const bulkDeleteDisabled = selectedCultivarIds.length === 0;
+	const bulkDeleteTooltip = tableSelectionBulkTooltip({
+		selectedCount: selectedCultivarIds.length,
+		hasPlacedInSelection: false,
+		enabledTooltip: m.collections_cultivar_deleteManyTooltip(),
+	});
 	const emptyMessage =
 		items.length === 0
 			? m.items_noElements()
@@ -598,10 +611,36 @@ function CultivarsPage() {
 						errorMessage={renderError(error, m.common_loadError())}
 						emptyMessage={emptyMessage}
 						highlightPendingRows
+						selectedActions={
+							<ButtonTooltip label={bulkDeleteTooltip} disabled={bulkDeleteDisabled}>
+								<Button
+									type="button"
+									variant="outline"
+									disabled={bulkDeleteDisabled}
+									onClick={() => setBulkDeleteOpen(true)}
+								>
+									{m.collections_cultivar_deleteMany()}
+								</Button>
+							</ButtonTooltip>
+						}
 					/>
 				</div>
 			</DashboardPageContent>
 			<CultivarCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
+			<DeleteConfirmDialog
+				open={bulkDeleteOpen}
+				onOpenChange={setBulkDeleteOpen}
+				title={m.collections_cultivar_deleteMany()}
+				description={m.collections_cultivar_deleteManyConfirmDescription({
+					count: selectedCultivarIds.length,
+				})}
+				isPending={bulkDeleteMany.isPending}
+				onConfirm={async () => {
+					setBulkDeleteOpen(false);
+					setRowSelection({});
+					await bulkDeleteMany.mutateAsync({ ids: selectedCultivarIds });
+				}}
+			/>
 		</div>
 	);
 }

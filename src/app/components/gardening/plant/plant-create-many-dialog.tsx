@@ -1,7 +1,7 @@
 import type { CultivarEntityId } from "@backend/core/domain/gardening/entities";
-import type { SpatialNodeEntityId } from "@backend/core/domain/spatial/entities";
+import type { SpatialNodeEntity, SpatialNodeEntityId } from "@backend/core/domain/spatial/entities";
 import { useStore } from "@tanstack/react-form";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import { SELECT_NONE } from "@/components/form/select-sentinel";
 import type { SpatialGeometry } from "@/components/spatial-layout-editor";
@@ -19,14 +19,23 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { useAppForm } from "@/hooks/form";
+import { orpc } from "@/orpc/client";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
-import { usePlantCreateManyMutation, useSpatialNodeCreateMutation } from "@/store/mutations";
+import { usePlantCreateManyMutation } from "@/store/mutations";
 
 type LayoutDraft = {
 	id: string;
 	label: string;
 	geometry: SpatialGeometry;
+};
+
+export type PlantCreateManySpatialResult = {
+	id: string;
+	parentId: string | null;
+	rect: { x: number; y: number; width: number; height: number };
+	label: string;
+	ref: SpatialNodeEntity["ref"];
 };
 
 type NameMode = "preview" | "customStem";
@@ -37,13 +46,8 @@ type Props = {
 	parentSpatialNodeId: SpatialNodeEntityId;
 	nodes: LayoutDraft[];
 	existingSiblingTitles: string[];
-	onSpatialNodeCreated?: (input: {
-		id: string;
-		parentId: string | null;
-		rect: { x: number; y: number; width: number; height: number };
-		label: string;
-		ref: { entity: "location" | "plant"; entityId: string };
-	}) => void;
+	/** Called once after all plants + spatial nodes are created (single undo step in the layout editor). */
+	onSpatialNodesCreated: (nodes: readonly PlantCreateManySpatialResult[]) => void;
 };
 
 type FormValues = {
@@ -59,11 +63,11 @@ export function PlantCreateManyDialog({
 	parentSpatialNodeId,
 	nodes,
 	existingSiblingTitles,
-	onSpatialNodeCreated,
+	onSpatialNodesCreated,
 }: Props) {
 	const { data: cultivarData } = useQuery({ ...queryKeys.cultivar.all });
 	const mut = usePlantCreateManyMutation();
-	const spatialMut = useSpatialNodeCreateMutation();
+	const queryClient = useQueryClient();
 
 	const cultivarOptions = useMemo(() => {
 		const cultivars = cultivarData?.items ?? [];
@@ -116,29 +120,43 @@ export function PlantCreateManyDialog({
 					description,
 				})),
 			});
+			const spatialCreateInputs: Array<{
+				label: string;
+				rect: { x: number; y: number; width: number; height: number };
+				ref: { entity: "plant"; entityId: string };
+			}> = [];
 			for (let i = 0; i < container.items.length; i++) {
 				const plant = container.items[i];
 				const node = nodes[i];
 				if (!node) continue;
-				const spatialNode = await spatialMut.mutateAsync({
-					parentId: parentSpatialNodeId,
-					kind: "leaf",
-					ref: { entity: "plant", entityId: String(plant.id) },
+				spatialCreateInputs.push({
+					label: titles[i] ?? "",
 					rect: {
 						x: node.geometry.x,
 						y: node.geometry.y,
 						width: node.geometry.width,
 						height: node.geometry.height,
 					},
-				});
-				onSpatialNodeCreated?.({
-					id: String(spatialNode.id),
-					parentId: spatialNode.parentId ? String(spatialNode.parentId) : null,
-					rect: spatialNode.rect,
-					label: titles[i] ?? "",
-					ref: spatialNode.ref,
+					ref: { entity: "plant", entityId: String(plant.id) },
 				});
 			}
+			const createdSpatial = await orpc.spatial.createManyNodes.call({
+				items: spatialCreateInputs.map((row) => ({
+					parentId: parentSpatialNodeId,
+					kind: "leaf" as const,
+					ref: row.ref,
+					rect: row.rect,
+				})),
+			});
+			const createdNodes = createdSpatial.items.map((spatialNode, i) => ({
+				id: String(spatialNode.id),
+				parentId: spatialNode.parentId ? String(spatialNode.parentId) : null,
+				rect: spatialNode.rect,
+				label: spatialCreateInputs[i]?.label ?? "",
+				ref: spatialNode.ref,
+			}));
+			await queryClient.invalidateQueries({ queryKey: queryKeys.spatial._def });
+			if (createdNodes.length > 0) onSpatialNodesCreated(createdNodes);
 		},
 	});
 

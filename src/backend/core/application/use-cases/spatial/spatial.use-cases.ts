@@ -8,9 +8,9 @@ import {
 	TransactionManagerPortToken,
 } from "@backend/core/application/ports/transaction/transaction-manager.port";
 import { AccessControlApplicationService } from "@backend/core/application/services/access-control/access-control.application-service";
-import { SpatialOperationsService } from "@backend/core/application/services/spatial/spatial-operations.service";
 import { BaseUseCase } from "@backend/core/application/use-cases/shared/base.use-case";
 import { TransactionalUseCase } from "@backend/core/application/use-cases/shared/transactional.use-case";
+import { SpatialPlacementDomainService } from "@backend/core/domain/services/spatial-placement.domain-service";
 import type {
 	SpatialNodeEntity,
 	SpatialNodeEntityId,
@@ -41,6 +41,15 @@ export type SpatialNodeCreateUseCaseInput = UseCaseRequest<{
 	ref: SpatialNodeEntityRef;
 }>;
 export type SpatialNodeCreateUseCaseOutput = SpatialNodeEntity;
+export type SpatialNodeCreateManyUseCaseInput = UseCaseRequest<{
+	items: ReadonlyArray<{
+		parentId: SpatialNodeEntityId | null;
+		rect: SpatialNodeEntity["rect"];
+		kind: SpatialNodeEntity["kind"];
+		ref: SpatialNodeEntityRef;
+	}>;
+}>;
+export type SpatialNodeCreateManyUseCaseOutput = { items: SpatialNodeEntity[] };
 
 @injectable()
 export class SpatialNodeCreateUseCase extends BaseUseCase<
@@ -65,6 +74,38 @@ export class SpatialNodeCreateUseCase extends BaseUseCase<
 			rect: input.dto.rect,
 			kind: input.dto.kind,
 			ref: input.dto.ref,
+		});
+	}
+}
+
+@injectable()
+export class SpatialNodeCreateManyUseCase extends TransactionalUseCase<
+	SpatialNodeCreateManyUseCaseInput,
+	SpatialNodeCreateManyUseCaseOutput
+> {
+	constructor(
+		@inject(AccessControlApplicationService) private readonly access: AccessControlApplicationService,
+		@inject(SpatialNodeRepositoryPortToken) private readonly repo: SpatialNodeRepositoryPort,
+		@inject(TransactionManagerPortToken) transactionManager: TransactionManagerPort,
+	) {
+		super(transactionManager);
+	}
+	protected async execute(input: SpatialNodeCreateManyUseCaseInput): Promise<SpatialNodeCreateManyUseCaseOutput> {
+		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "create" });
+		const scope = input.context.activeWorkspaceScope;
+		for (const item of input.dto.items) {
+			if (item.parentId !== null) {
+				await this.repo.getOne({ filters: [{ id: item.parentId, workspace: scope }] });
+			}
+		}
+		return this.repo.createMany({
+			items: input.dto.items.map((item) => ({
+				workspace: scope,
+				parentId: item.parentId,
+				rect: item.rect,
+				kind: item.kind,
+				ref: item.ref,
+			})),
 		});
 	}
 }
@@ -202,44 +243,117 @@ export class SpatialNodeRestoreUseCase extends BaseUseCase<
 	}
 }
 
-export type SpatialApplyOperationDTO = {
+export type SpatialNodeUpdatePlacementDTO = {
 	id: SpatialNodeEntityId;
 	parentId: SpatialNodeEntityId | null;
 	rect: SpatialNodeEntity["rect"];
 };
-export type SpatialApplyOperationsUseCaseInput = UseCaseRequest<{
-	operations: readonly SpatialApplyOperationDTO[];
+export type SpatialNodeUpdatePlacementManyUseCaseInput = UseCaseRequest<{
+	placements: readonly SpatialNodeUpdatePlacementDTO[];
 }>;
-export type SpatialApplyOperationsUseCaseOutput = {
+export type SpatialNodeUpdatePlacementManyUseCaseOutput = {
 	results: SpatialNodeEntity[];
 };
 
 @injectable()
-export class SpatialApplyOperationsUseCase extends TransactionalUseCase<
-	SpatialApplyOperationsUseCaseInput,
-	SpatialApplyOperationsUseCaseOutput
+export class SpatialNodeUpdatePlacementManyUseCase extends TransactionalUseCase<
+	SpatialNodeUpdatePlacementManyUseCaseInput,
+	SpatialNodeUpdatePlacementManyUseCaseOutput
 > {
 	constructor(
 		@inject(AccessControlApplicationService) private readonly access: AccessControlApplicationService,
-		@inject(SpatialOperationsService) private readonly opsService: SpatialOperationsService,
+		@inject(SpatialNodeRepositoryPortToken) private readonly repo: SpatialNodeRepositoryPort,
+		@inject(SpatialPlacementDomainService) private readonly placementRules: SpatialPlacementDomainService,
 		@inject(TransactionManagerPortToken) transactionManager: TransactionManagerPort,
 	) {
 		super(transactionManager);
 	}
-	protected async execute(input: SpatialApplyOperationsUseCaseInput): Promise<SpatialApplyOperationsUseCaseOutput> {
+	protected async execute(
+		input: SpatialNodeUpdatePlacementManyUseCaseInput,
+	): Promise<SpatialNodeUpdatePlacementManyUseCaseOutput> {
 		await this.access.assertCanPerformActionOnWorkspace({ ...input.context, action: "update" });
-		const results: SpatialNodeEntity[] = [];
 		const scope = input.context.activeWorkspaceScope;
-		for (const op of input.dto.operations) {
-			results.push(
-				await this.opsService.placeNode({
-					workspace: scope,
-					id: op.id,
-					parentId: op.parentId,
-					rect: op.rect,
-				}),
-			);
+		if (input.dto.placements.length === 0) return { results: [] };
+
+		const byId = new Map<string, SpatialNodeEntity>();
+		const loadByIds = async (ids: readonly SpatialNodeEntityId[]) => {
+			if (ids.length === 0) return;
+			const unresolved = ids.filter((id) => !byId.has(String(id)));
+			if (unresolved.length === 0) return;
+			const loaded = await this.repo.getManyStrict({
+				filters: unresolved.map((id) => ({ id, workspace: scope })),
+			});
+			for (const row of loaded.items) byId.set(String(row.id), row);
+		};
+
+		await loadByIds(input.dto.placements.map((placement) => placement.id));
+		const requestedParentIds = input.dto.placements
+			.map((op) => op.parentId)
+			.filter((id): id is SpatialNodeEntityId => id !== null);
+		let pendingAncestors = [...new Set(requestedParentIds.map((id) => String(id)))].map(
+			(id) => id as unknown as SpatialNodeEntityId,
+		);
+		while (pendingAncestors.length > 0) {
+			await loadByIds(pendingAncestors);
+			const next = new Set<string>();
+			for (const id of pendingAncestors) {
+				const row = byId.get(String(id));
+				if (row && row.parentId !== null && !byId.has(String(row.parentId))) {
+					next.add(String(row.parentId));
+				}
+			}
+			pendingAncestors = [...next].map((id) => id as unknown as SpatialNodeEntityId);
 		}
+
+		const parentById = new Map([...byId.values()].map((row) => [String(row.id), row.parentId] as const));
+		for (const placement of input.dto.placements) {
+			this.placementRules.assertNoSelfParenting({ nodeId: placement.id, parentId: placement.parentId });
+			this.placementRules.assertNoCycle({
+				nodeId: placement.id,
+				parentId: placement.parentId,
+				parentById,
+			});
+			parentById.set(String(placement.id), placement.parentId);
+		}
+
+		const groups = new Map<
+			string,
+			{
+				dto: { parentId: SpatialNodeEntityId | null; rect: SpatialNodeEntity["rect"] };
+				ids: SpatialNodeEntityId[];
+			}
+		>();
+		for (const placement of input.dto.placements) {
+			const key = `${placement.parentId ?? "null"}:${placement.rect.x}:${placement.rect.y}:${placement.rect.width}:${placement.rect.height}`;
+			const existing = groups.get(key);
+			if (existing) {
+				existing.ids.push(placement.id);
+				continue;
+			}
+			groups.set(key, {
+				dto: {
+					parentId: placement.parentId,
+					rect: placement.rect,
+				},
+				ids: [placement.id],
+			});
+		}
+
+		for (const group of groups.values()) {
+			await this.repo.updateMany({
+				filters: group.ids.map((id) => ({ id, workspace: scope })),
+				dto: group.dto,
+			});
+		}
+
+		const persisted = await this.repo.getManyStrict({
+			filters: input.dto.placements.map((placement) => ({ id: placement.id, workspace: scope })),
+		});
+		const persistedById = new Map(persisted.items.map((row) => [String(row.id), row] as const));
+		// getManyStrict above guarantees all requested ids exist.
+		const results = input.dto.placements.map(
+			(placement) => persistedById.get(String(placement.id)) as SpatialNodeEntity,
+		);
 		return { results };
 	}
 }

@@ -77,12 +77,11 @@ export class SpatialNodeInMemoryRepository extends BaseRepositoryErrors implemen
 	async createMany(
 		input: SpatialNodeRepositoryCreateManyInputDTO,
 	): Promise<SpatialNodeRepositoryCreateManyOutputDTO> {
-		let count = 0;
+		const items: SpatialNodeEntity[] = [];
 		for (const item of input.items) {
-			this.insertRow(item);
-			count += 1;
+			items.push(this.insertRow(item));
 		}
-		return { count };
+		return { items };
 	}
 
 	async getOne(input: {
@@ -113,6 +112,19 @@ export class SpatialNodeInMemoryRepository extends BaseRepositoryErrors implemen
 		if (input.filters.length === 0) return { items: [] };
 		const rows = findRowsMatchingAnyClause([...this.store.spatialNodes.values()], input.filters);
 		return { items: rows };
+	}
+
+	async getManyStrict(input: {
+		filters: readonly SpatialNodeRepositoryFilterClause[];
+	}): Promise<SpatialNodeRepositoryGetManyOutputDTO> {
+		const result = await this.getMany({ filters: input.filters });
+		const byId = new Set(result.items.map((row) => String(row.id)));
+		for (const filter of input.filters) {
+			if (filter.id !== undefined && !byId.has(String(filter.id))) {
+				this.throwNotFoundError("SpatialNode", filter.id);
+			}
+		}
+		return result;
 	}
 
 	async updateOne(input: {

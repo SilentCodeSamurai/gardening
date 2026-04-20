@@ -61,11 +61,12 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { translateCatalogField } from "@/lib/translate-catalog-field";
 import { renderError } from "@/lib/render-error";
+import { tableSelectionBulkTooltip } from "@/lib/table-selection-tooltips";
+import { translateCatalogField } from "@/lib/translate-catalog-field";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
-import { useSpeciesDeleteMutation } from "@/store/mutations";
+import { useSpeciesDeleteManyMutation, useSpeciesDeleteMutation } from "@/store/mutations";
 
 export const Route = createFileRoute("/_authenticated/catalog/species")({
 	validateSearch: (search: Record<string, unknown>) => ({
@@ -103,6 +104,8 @@ function SpeciesPage() {
 	const [globalFilter, setGlobalFilter] = useState("");
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [createOpen, setCreateOpen] = useState(false);
+	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+	const bulkDeleteMany = useSpeciesDeleteManyMutation();
 
 	const categoryComboboxOptions = useMemo(() => {
 		const cats = catData?.items ?? [];
@@ -379,6 +382,21 @@ function SpeciesPage() {
 	);
 
 	const filteredRowCount = table.getFilteredRowModel().rows.length;
+	const selectedSpeciesIds = useMemo(
+		() => table.getFilteredSelectedRowModel().rows.map((row) => row.original.id),
+		[table],
+	);
+	const selectionIncludesSystemCatalog = useMemo(
+		() => table.getFilteredSelectedRowModel().rows.some((row) => row.original.systemCatalog),
+		[table],
+	);
+	const bulkDeleteDisabled = selectedSpeciesIds.length === 0 || selectionIncludesSystemCatalog;
+	const bulkDeleteTooltip = tableSelectionBulkTooltip({
+		selectedCount: selectedSpeciesIds.length,
+		hasPlacedInSelection: false,
+		selectionIncludesDefaultCatalog: selectionIncludesSystemCatalog,
+		enabledTooltip: m.collections_species_deleteManyTooltip(),
+	});
 	const emptyMessage =
 		items.length === 0
 			? m.items_noElements()
@@ -430,10 +448,36 @@ function SpeciesPage() {
 						errorMessage={renderError(spErrorValue, m.common_loadError())}
 						emptyMessage={emptyMessage}
 						highlightPendingRows
+						selectedActions={
+							<ButtonTooltip label={bulkDeleteTooltip} disabled={bulkDeleteDisabled}>
+								<Button
+									type="button"
+									variant="outline"
+									disabled={bulkDeleteDisabled}
+									onClick={() => setBulkDeleteOpen(true)}
+								>
+									{m.collections_species_deleteMany()}
+								</Button>
+							</ButtonTooltip>
+						}
 					/>
 				</div>
 			</DashboardPageContent>
 			<SpeciesCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
+			<DeleteConfirmDialog
+				open={bulkDeleteOpen}
+				onOpenChange={setBulkDeleteOpen}
+				title={m.collections_species_deleteMany()}
+				description={m.collections_species_deleteManyConfirmDescription({
+					count: selectedSpeciesIds.length,
+				})}
+				isPending={bulkDeleteMany.isPending}
+				onConfirm={async () => {
+					setBulkDeleteOpen(false);
+					setRowSelection({});
+					await bulkDeleteMany.mutateAsync({ ids: selectedSpeciesIds });
+				}}
+			/>
 		</div>
 	);
 }

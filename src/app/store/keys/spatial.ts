@@ -1,6 +1,6 @@
 import { createQueryKeys } from "@lukemorales/query-key-factory";
 import { client as api } from "@/orpc/client";
-import { withSyncedItemsContainer, withSyncedSpatialTree } from "@/store/query-object-status";
+import { withSyncedItemsContainer, withSyncedTree } from "@/store/query-object-status";
 
 export const spatialKeys = createQueryKeys("spatial", {
 	allNodes: {
@@ -10,6 +10,6 @@ export const spatialKeys = createQueryKeys("spatial", {
 
 	tree: (rootId: string) => ({
 		queryKey: [rootId],
-		queryFn: async () => withSyncedSpatialTree(await api.spatial.getTreeForRootId({ id: rootId })),
+		queryFn: async () => withSyncedTree(await api.spatial.getTreeForRootId({ id: rootId })),
 	}),
 });

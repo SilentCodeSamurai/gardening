@@ -54,7 +54,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
-import { useSpatialLayoutApplyOperationsMutation, useSpatialNodeCreateMutation } from "@/store/mutations";
+import { useSpatialLayoutUpdatePlacementManyMutation, useSpatialNodeCreateMutation } from "@/store/mutations";
 import { flattenSpatialLayoutOperations } from "@/store/mutations/spatial-layout-flatten-ops";
 import type { CachedHydratedPlant, CachedLocation } from "@/store/query-cache-types";
 import { getSpatialPlacementStatusByRef, spatialNodeHasParent } from "@/store/spatial-placement";
@@ -483,7 +483,7 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 		return result;
 	}, [plantItems, spatialNodes, subtreeSpatialNodeIds]);
 
-	const applySpatialLayoutOperationsMutation = useSpatialLayoutApplyOperationsMutation();
+	const updateSpatialNodePlacementManyMutation = useSpatialLayoutUpdatePlacementManyMutation();
 	const spatialNodeCreateMutation = useSpatialNodeCreateMutation();
 
 	useEffect(() => {
@@ -524,9 +524,9 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 					replace: true,
 				});
 			}
-			await applySpatialLayoutOperationsMutation.mutateAsync({ operations });
+			await updateSpatialNodePlacementManyMutation.mutateAsync({ operations });
 		},
-		[applySpatialLayoutOperationsMutation, navigate, rootLocation, urlFocusLocationId],
+		[updateSpatialNodePlacementManyMutation, navigate, rootLocation, urlFocusLocationId],
 	);
 
 	const applyHistoryOperations = useCallback(
@@ -585,6 +585,39 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 					},
 				},
 			]);
+		},
+		[layoutHistoryApi],
+	);
+
+	const commitCreatedNodes = useCallback(
+		(
+			inputs: readonly {
+				id: string;
+				parentId: string | null;
+				rect: { x: number; y: number; width: number; height: number };
+				label: string;
+				nodeType: LayoutNodeType;
+				ref: { entity: "location" | "plant"; entityId: string };
+			}[],
+		) => {
+			if (inputs.length === 0) return;
+			layoutHistoryApi.commit(
+				inputs.map(
+					(input): SpatialLayoutOperation<SpatialLayoutNode> => ({
+						type: "createNode",
+						id: String(input.id),
+						after: {
+							id: String(input.id),
+							parentId: input.parentId,
+							geometry: input.rect,
+							acceptsChildren: input.nodeType === "location",
+							nodeType: input.nodeType,
+							label: input.label,
+							spatialRef: input.ref,
+						},
+					}),
+				),
+			);
 		},
 		[layoutHistoryApi],
 	);
@@ -1094,8 +1127,14 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 					onOpenChange={(open) => {
 						if (!open) setCreateManyLocationsForm(null);
 					}}
-					onSpatialNodeCreated={(node) =>
-						commitCreatedNode({ ...node, nodeType: "location", label: node.label || "Location" })
+					onSpatialNodesCreated={(nodes) =>
+						commitCreatedNodes(
+							nodes.map((node) => ({
+								...node,
+								nodeType: "location" as const,
+								label: node.label || "Location",
+							})),
+						)
 					}
 				/>
 			) : null}
@@ -1109,8 +1148,14 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 					onOpenChange={(open) => {
 						if (!open) setCreateManyPlantsForm(null);
 					}}
-					onSpatialNodeCreated={(node) =>
-						commitCreatedNode({ ...node, nodeType: "plant", label: node.label || "Plant" })
+					onSpatialNodesCreated={(nodes) =>
+						commitCreatedNodes(
+							nodes.map((node) => ({
+								...node,
+								nodeType: "plant" as const,
+								label: node.label || "Plant",
+							})),
+						)
 					}
 				/>
 			) : null}
