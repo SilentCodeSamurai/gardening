@@ -12,6 +12,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { useAppTours } from "@/components/tours/app-tours-provider";
 import { useAppForm } from "@/hooks/form";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
@@ -68,6 +69,8 @@ export function PlantCreateDialog({
 	defaultCultivarId,
 	initialDescription,
 }: Props) {
+	const { activeTourId, setScopedValue } = useAppTours();
+	const isCrudTourActive = activeTourId === "working-with-data";
 	const { data: cultivarData } = useQuery({ ...queryKeys.cultivar.all });
 	const mut = usePlantCreateMutation();
 	const spatialMut = useSpatialNodeCreateMutation();
@@ -106,6 +109,9 @@ export function PlantCreateDialog({
 					title: payload.title,
 					description: payload.description,
 				});
+				if (isCrudTourActive) {
+					setScopedValue("createdPlantId", String(entity.id));
+				}
 				if (initialPlacement) {
 					const spatialNode = await spatialMut.mutateAsync({
 						parentId: payload.parentSpatialNodeId,
@@ -148,8 +154,14 @@ export function PlantCreateDialog({
 	const close = () => onOpenChange(false);
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-md">
+		<Dialog open={open} onOpenChange={onOpenChange} modal={!isCrudTourActive}>
+			<DialogContent
+				className="sm:max-w-md"
+				id="plant-create-dialog"
+				onInteractOutside={(event) => {
+					if (isCrudTourActive) event.preventDefault();
+				}}
+			>
 				<DialogHeader>
 					<DialogTitle>{m.collections_plant_create()}</DialogTitle>
 					<DialogDescription className="sr-only">{m.collections_plant_create()}</DialogDescription>
@@ -165,29 +177,33 @@ export function PlantCreateDialog({
 							void form.handleSubmit();
 						}}
 					>
-						<form.AppField name="cultivarId">
-							{(field) => (
-								<field.CatalogCombobox
-									label={m.collections_cultivar_title()}
-									placeholder={m.fields_selectPlaceholder()}
-									emptyLabel={m.filtering_comboboxEmpty()}
-									values={cultivarOptions}
-								/>
-							)}
-						</form.AppField>
-						<form.AppField name="title">
-							{(field) => <field.TextField label={m.fields_title()} placeholder={m.fields_title()} />}
-						</form.AppField>
-						<form.AppField name="description">
-							{(field) => (
-								<field.TextField label={m.fields_description()} placeholder={m.fields_description()} />
-							)}
-						</form.AppField>
+						<div className="grid gap-3" id="plant-create-form-fields">
+							<form.AppField name="cultivarId">
+								{(field) => (
+									<field.CatalogCombobox
+										label={m.collections_cultivar_title()}
+										placeholder={m.fields_selectPlaceholder()}
+										emptyLabel={m.filtering_comboboxEmpty()}
+										values={cultivarOptions}
+									/>
+								)}
+							</form.AppField>
+							<form.AppField name="title">
+								{(field) => <field.TextField label={m.fields_title()} placeholder={m.fields_title()} />}
+							</form.AppField>
+							<form.AppField name="description">
+								{(field) => (
+									<field.TextField label={m.fields_description()} placeholder={m.fields_description()} />
+								)}
+							</form.AppField>
+						</div>
 						<DialogFooter>
-							<Button type="button" variant="outline" onClick={close}>
+							<Button id="cancel" type="button" variant="outline" onClick={close}>
 								{m.common_cancel()}
 							</Button>
-							<form.SubscribeButton label={m.common_save()} />
+							<div id="submit">
+								<form.SubscribeButton label={m.common_save()} />
+							</div>
 						</DialogFooter>
 					</form>
 				</form.AppForm>

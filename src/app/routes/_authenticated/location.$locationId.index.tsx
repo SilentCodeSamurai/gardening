@@ -146,7 +146,10 @@ function LocationDetailPage() {
 			<DashboardPageContent className="flex flex-col gap-6 overflow-y-auto pb-6">
 				<div>
 					<Button asChild type="button" variant="outline" size="lg">
-						<Link to="/location/$locationId/layout" params={{ locationId: String(data.id) }}>
+						<Link
+							to="/location/$locationId/layout"
+							params={{ locationId: String(data.id) }}
+						>
 							<LayoutGridIcon />
 							{m.components_locationLayoutEditor_openLayoutEditor()}
 						</Link>

@@ -9,6 +9,7 @@ import { GardeningActionPresentationIcon } from "@/components/gardening/gardenin
 import { GardeningEventUpdateDialog } from "@/components/gardening/gardening-event/gardening-event-update-dialog";
 import { getPlantDisplayTitle } from "@/components/gardening/plant/plant-list-card";
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
+import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
 import { ItemNotFound } from "@/components/layout/item-not-found";
 import { PageLoading } from "@/components/layout/page-loading";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,22 @@ function GardeningEventDetailPage() {
 	const locationsById = new Map(
 		(locationsQuery.data?.items ?? []).map((location) => [String(location.id), location] as const),
 	);
+	const relatedPlants = plantIds.map((plantId) => {
+		const plant = plantsById.get(String(plantId));
+		return {
+			id: String(plantId),
+			plant,
+			label: plant ? getPlantDisplayTitle(plant) : m.common_unknown(),
+		};
+	});
+	const relatedLocations = locationIds.map((locationId) => {
+		const location = locationsById.get(String(locationId));
+		return {
+			id: String(locationId),
+			location,
+			label: location?.name ?? m.common_unknown(),
+		};
+	});
 
 	if (listQuery.isPending) {
 		return <PageLoading />;
@@ -144,77 +161,77 @@ function GardeningEventDetailPage() {
 								})}
 							</dd>
 						</div>
-						<div className="contents">
-							<dt className="text-muted-foreground">{m.collections_plant_titlePlural()}</dt>
-							<dd className="wrap-break-word min-w-0">
-								{bindingsQuery.isPending ? (
-									<span className="text-muted-foreground">{m.common_loading()}</span>
-								) : plantIds.length === 0 ? (
-									<span className="text-muted-foreground">{m.components_detail_eventBindings_nonePlants()}</span>
-								) : (
-									<div className="flex flex-wrap gap-2">
-										{plantIds.map((plantId) => {
-											const plant = plantsById.get(String(plantId));
-											const label = plant ? getPlantDisplayTitle(plant) : m.common_unknown();
-											return plant ? (
-												<Link
-													key={String(plantId)}
-													to="/plant/$plantId"
-													params={{ plantId: String(plantId) }}
-													className="inline-flex rounded-md border border-border/60 px-2.5 py-1 text-primary text-xs underline-offset-4 hover:bg-card/70 hover:underline"
-												>
-													{label}
-												</Link>
-											) : (
-												<span
-													key={String(plantId)}
-													className="inline-flex rounded-md border border-border/40 px-2.5 py-1 text-muted-foreground text-xs"
-												>
-													{label}
-												</span>
-											);
-										})}
-									</div>
-								)}
-							</dd>
-						</div>
-						<div className="contents">
-							<dt className="text-muted-foreground">{m.collections_location_titlePlural()}</dt>
-							<dd className="wrap-break-word min-w-0">
-								{bindingsQuery.isPending ? (
-									<span className="text-muted-foreground">{m.common_loading()}</span>
-								) : locationIds.length === 0 ? (
-									<span className="text-muted-foreground">{m.components_detail_eventBindings_noneLocations()}</span>
-								) : (
-									<div className="flex flex-wrap gap-2">
-										{locationIds.map((locationId) => {
-											const location = locationsById.get(String(locationId));
-											const label = location?.name ?? m.common_unknown();
-											return location ? (
-												<Link
-													key={String(locationId)}
-													to="/location/$locationId"
-													params={{ locationId: String(locationId) }}
-													className="inline-flex rounded-md border border-border/60 px-2.5 py-1 text-primary text-xs underline-offset-4 hover:bg-card/70 hover:underline"
-												>
-													{label}
-												</Link>
-											) : (
-												<span
-													key={String(locationId)}
-													className="inline-flex rounded-md border border-border/40 px-2.5 py-1 text-muted-foreground text-xs"
-												>
-													{label}
-												</span>
-											);
-										})}
-									</div>
-								)}
-							</dd>
-						</div>
 					</dl>
 					</section>
 				</div>
+				<section className="space-y-3">
+					<h2 className="font-medium text-lg">{m.common_related()}</h2>
+					<div className="grid gap-4 lg:grid-cols-2">
+						<section className="rounded-xl border border-border/70 bg-card/60 p-4 shadow-sm">
+							<h3 className="mb-3 font-medium text-sm">{m.collections_plant_titlePlural()}</h3>
+							{bindingsQuery.isPending ? (
+								<p className="text-muted-foreground text-sm">{m.common_loading()}</p>
+							) : relatedPlants.length === 0 ? (
+								<p className="text-muted-foreground text-sm">{m.components_detail_eventBindings_nonePlants()}</p>
+							) : (
+								<ul className="space-y-2">
+									{relatedPlants.map((item) => (
+										<li key={item.id}>
+											{item.plant ? (
+												<Link
+													to="/plant/$plantId"
+													params={{ plantId: item.id }}
+													className="inline-flex min-w-0 items-center gap-2 text-primary underline-offset-4 hover:underline"
+												>
+													<ItemPresentationIcon presentation={item.plant.cultivar?.presentation} />
+													<span className="truncate">{item.label}</span>
+												</Link>
+											) : (
+												<span className="inline-flex min-w-0 items-center gap-2 text-muted-foreground">
+													<ItemPresentationIcon presentation={undefined} />
+													<span className="truncate">{item.label}</span>
+												</span>
+											)}
+										</li>
+									))}
+								</ul>
+							)}
+						</section>
+
+						<section className="rounded-xl border border-border/70 bg-card/60 p-4 shadow-sm">
+							<h3 className="mb-3 font-medium text-sm">{m.collections_location_titlePlural()}</h3>
+							{bindingsQuery.isPending ? (
+								<p className="text-muted-foreground text-sm">{m.common_loading()}</p>
+							) : relatedLocations.length === 0 ? (
+								<p className="text-muted-foreground text-sm">
+									{m.components_detail_eventBindings_noneLocations()}
+								</p>
+							) : (
+								<ul className="space-y-2">
+									{relatedLocations.map((item) => (
+										<li key={item.id}>
+											{item.location ? (
+												<Link
+													to="/location/$locationId"
+													params={{ locationId: item.id }}
+													className="inline-flex min-w-0 items-center gap-2 text-primary underline-offset-4 hover:underline"
+												>
+													<ItemPresentationIcon presentation={item.location.presentation} />
+													<span className="truncate">{item.label}</span>
+												</Link>
+											) : (
+												<span className="inline-flex min-w-0 items-center gap-2 text-muted-foreground">
+													<ItemPresentationIcon presentation={undefined} />
+													<span className="truncate">{item.label}</span>
+												</span>
+											)}
+										</li>
+									))}
+								</ul>
+							)}
+						</section>
+					</div>
+				</section>
 			</DashboardPageContent>
 		</div>
 	);

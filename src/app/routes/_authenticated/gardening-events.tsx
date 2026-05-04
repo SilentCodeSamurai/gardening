@@ -210,11 +210,18 @@ function GardeningEventsPage() {
 	});
 
 	return (
-		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+		<div id="events-page" className="flex min-h-0 flex-1 flex-col overflow-hidden">
 			<DashboardPageHeading collection="gardeningEvent">
-				<h1 className="font-heading font-medium text-lg">{m.collections_gardeningEvent_titlePlural()}</h1>
+				<h1 className="font-heading font-medium text-lg" id="page-title">
+					{m.collections_gardeningEvent_titlePlural()}
+				</h1>
 				<ButtonTooltip label={m.collections_gardeningEvent_create()}>
-					<Button type="button" size="icon" variant="outline" onClick={() => setCreateOpen(true)}>
+					<Button
+						type="button"
+						size="icon"
+						variant="outline"
+						onClick={() => setCreateOpen(true)}
+					>
 						<span className="sr-only">{m.collections_gardeningEvent_create()}</span>
 						<PlusIcon />
 					</Button>

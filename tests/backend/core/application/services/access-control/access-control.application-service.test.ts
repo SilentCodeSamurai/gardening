@@ -13,10 +13,14 @@ import { SubjectVO } from "@backend/core/domain/access/subject.vo";
 import { WorkspaceVO } from "@backend/core/domain/access/workspace.vo";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+type MockedPort<T extends object> = {
+	[K in keyof T]: T[K] extends (...args: any[]) => any ? ReturnType<typeof vi.fn<T[K]>> : T[K];
+};
+
 describe("AccessControlApplicationService", () => {
 	let svc: AccessControlApplicationService;
-	let repo: WorkspaceRoleAssignmentRepositoryPort;
-	let audit: AccessAuditPort;
+	let repo: MockedPort<WorkspaceRoleAssignmentRepositoryPort>;
+	let audit: MockedPort<AccessAuditPort>;
 
 	const makeAssignment = (params: {
 		subject: SubjectVO;
@@ -34,19 +38,19 @@ describe("AccessControlApplicationService", () => {
 
 	beforeEach(() => {
 		repo = {
-			createOne: vi.fn(),
-			createMany: vi.fn(),
-			getOne: vi.fn(),
-			getMany: vi.fn(),
-			updateOne: vi.fn(),
-			updateMany: vi.fn(),
-			deleteOne: vi.fn(),
-			deleteMany: vi.fn(),
-			upsertOne: vi.fn(),
+			createOne: vi.fn<WorkspaceRoleAssignmentRepositoryPort["createOne"]>(),
+			createMany: vi.fn<WorkspaceRoleAssignmentRepositoryPort["createMany"]>(),
+			getOne: vi.fn<WorkspaceRoleAssignmentRepositoryPort["getOne"]>(),
+			getMany: vi.fn<WorkspaceRoleAssignmentRepositoryPort["getMany"]>(),
+			updateOne: vi.fn<WorkspaceRoleAssignmentRepositoryPort["updateOne"]>(),
+			updateMany: vi.fn<WorkspaceRoleAssignmentRepositoryPort["updateMany"]>(),
+			deleteOne: vi.fn<WorkspaceRoleAssignmentRepositoryPort["deleteOne"]>(),
+			deleteMany: vi.fn<WorkspaceRoleAssignmentRepositoryPort["deleteMany"]>(),
+			upsertOne: vi.fn<WorkspaceRoleAssignmentRepositoryPort["upsertOne"]>(),
 		};
 		audit = {
-			recordRoleAssigned: vi.fn(),
-			recordRoleRevoked: vi.fn(),
+			recordRoleAssigned: vi.fn<AccessAuditPort["recordRoleAssigned"]>(),
+			recordRoleRevoked: vi.fn<AccessAuditPort["recordRoleRevoked"]>(),
 		};
 		svc = new AccessControlApplicationService(repo, audit);
 	});
@@ -55,7 +59,7 @@ describe("AccessControlApplicationService", () => {
 		it("allows update when assignment matches workspace exactly (positive)", async () => {
 			const actor = SubjectVO.user("u1");
 			const scope = WorkspaceVO.org("acme");
-			(repo.getMany as ReturnType<typeof vi.fn>).mockResolvedValue({
+			repo.getMany.mockResolvedValue({
 				items: [makeAssignment({ subject: actor, workspace: scope, role: "editor" })],
 			});
 			const d = await svc.assertCanPerformActionOnWorkspace({
@@ -64,13 +68,13 @@ describe("AccessControlApplicationService", () => {
 				action: "update",
 			});
 			expect(d.allowed).toBe(true);
-			expect(d.matchedRole).toBe("editor");
+			expect(d.matchedRole).toBe("editor")
 		});
 
 		it("denies delete when viewer role lacks action (negative)", async () => {
 			const actor = SubjectVO.user("u1");
 			const scope = WorkspaceVO.user("u1");
-			(repo.getMany as ReturnType<typeof vi.fn>).mockResolvedValue({
+			repo.getMany.mockResolvedValue({
 				items: [makeAssignment({ subject: actor, workspace: scope, role: "viewer" })],
 			});
 			await expect(
@@ -85,7 +89,7 @@ describe("AccessControlApplicationService", () => {
 		it("denies update when viewer role lacks action (negative)", async () => {
 			const actor = SubjectVO.user("u-view");
 			const scope = WorkspaceVO.user("u-view");
-			(repo.getMany as ReturnType<typeof vi.fn>).mockResolvedValue({
+			repo.getMany.mockResolvedValue({
 				items: [makeAssignment({ subject: actor, workspace: scope, role: "viewer" })],
 			});
 			await expect(
@@ -100,7 +104,7 @@ describe("AccessControlApplicationService", () => {
 		it("denies create when viewer role lacks action (negative)", async () => {
 			const actor = SubjectVO.user("u-c");
 			const scope = WorkspaceVO.user("u-c");
-			(repo.getMany as ReturnType<typeof vi.fn>).mockResolvedValue({
+			repo.getMany.mockResolvedValue({
 				items: [makeAssignment({ subject: actor, workspace: scope, role: "viewer" })],
 			});
 			await expect(
@@ -113,7 +117,7 @@ describe("AccessControlApplicationService", () => {
 		});
 
 		it("denies read when there is no matching assignment (negative edge)", async () => {
-			(repo.getMany as ReturnType<typeof vi.fn>).mockResolvedValue({ items: [] });
+			repo.getMany.mockResolvedValue({ items: [] });
 			await expect(
 				svc.assertCanPerformActionOnWorkspace({
 					actorSubject: SubjectVO.user("u1"),
@@ -154,10 +158,10 @@ describe("AccessControlApplicationService", () => {
 				workspace: scope,
 				role: "viewer",
 			});
-			(repo.getMany as ReturnType<typeof vi.fn>).mockResolvedValue({
+			repo.getMany.mockResolvedValue({
 				items: [makeAssignment({ subject: adminUser, workspace: scope, role: "admin" })],
 			});
-			(repo.upsertOne as ReturnType<typeof vi.fn>).mockResolvedValue(assigned);
+			repo.upsertOne.mockResolvedValue(assigned);
 			await svc.assignWorkspaceRole({
 				actorSubject: adminUser,
 				targetSubject: other,
@@ -178,7 +182,7 @@ describe("AccessControlApplicationService", () => {
 			const editor = SubjectVO.user("editor");
 			const other = SubjectVO.user("other");
 			const scope = WorkspaceVO.user("editor");
-			(repo.getMany as ReturnType<typeof vi.fn>).mockResolvedValue({
+			repo.getMany.mockResolvedValue({
 				items: [makeAssignment({ subject: editor, workspace: scope, role: "editor" })],
 			});
 			await expect(
@@ -195,7 +199,7 @@ describe("AccessControlApplicationService", () => {
 			const adminUser = SubjectVO.user("admin");
 			const other = SubjectVO.user("other");
 			const scope = WorkspaceVO.user("admin");
-			(repo.getMany as ReturnType<typeof vi.fn>).mockResolvedValue({
+			repo.getMany.mockResolvedValue({
 				items: [makeAssignment({ subject: adminUser, workspace: scope, role: "admin" })],
 			});
 			await svc.revokeWorkspaceRole({

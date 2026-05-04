@@ -76,9 +76,11 @@ function DashboardPage() {
 	const recentPlants = useMemo(() => sortedPlants.slice(0, DASHBOARD_PREVIEW_LIMIT), [sortedPlants]);
 
 	return (
-		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+		<div id="dashboard-page" className="flex min-h-0 flex-1 flex-col overflow-hidden">
 			<DashboardPageHeading>
-				<h1 className="font-heading font-medium text-xl">{m.components_hub_title()}</h1>
+				<h1 className="font-heading font-medium text-xl" id="page-title">
+					{m.components_hub_title()}
+				</h1>
 			</DashboardPageHeading>
 			<DashboardPageContent className="flex flex-col gap-6 overflow-y-auto pb-6">
 				<div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-4">
@@ -316,7 +318,12 @@ function DashboardCollectionCard({
 					</CardTitle>
 					<div className="flex items-center gap-2">
 						{onCreate && createLabel ? (
-							<Button size="sm" variant="outline" type="button" onClick={onCreate}>
+							<Button
+								size="sm"
+								variant="outline"
+								type="button"
+								onClick={onCreate}
+							>
 								{createLabel}
 							</Button>
 						) : null}

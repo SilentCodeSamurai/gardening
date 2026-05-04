@@ -1010,26 +1010,28 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 
 	return (
 		<>
-			<SpatialLayoutEditor
-				gridStep={10}
-				history={layoutEditorHistory}
-				layoutHistory={layoutHistoryApi}
-				classNames={layoutEditorClassNames}
-				labels={spatialLayoutLabels}
-				root={spatialRoot}
-				nodes={layoutNodes}
-				onApplyOperations={onApplyOperations}
-				renderNodeContent={renderNodeContent}
-				renderNodeLabel={renderNodeLabel}
-				renderNodeContextActions={renderNodeContextActions}
-				getCreateOptions={getCreateOptions}
-				onCreatePlacementConfirm={onCreatePlacementConfirm}
-				onDuplicateNodePlacementConfirm={onDuplicateNodePlacementConfirm}
-				onCreateManyPlacementConfirm={onCreateManyPlacementConfirm}
-				placementCandidate={placementCandidate}
-				highlightNodeId={highlightNodeId}
-				onErrorMessage={(message) => window.alert(message)}
-			/>
+			<div className="flex min-h-0 min-w-0 flex-1">
+				<SpatialLayoutEditor
+					gridStep={10}
+					history={layoutEditorHistory}
+					layoutHistory={layoutHistoryApi}
+					classNames={layoutEditorClassNames}
+					labels={spatialLayoutLabels}
+					root={spatialRoot}
+					nodes={layoutNodes}
+					onApplyOperations={onApplyOperations}
+					renderNodeContent={renderNodeContent}
+					renderNodeLabel={renderNodeLabel}
+					renderNodeContextActions={renderNodeContextActions}
+					getCreateOptions={getCreateOptions}
+					onCreatePlacementConfirm={onCreatePlacementConfirm}
+					onDuplicateNodePlacementConfirm={onDuplicateNodePlacementConfirm}
+					onCreateManyPlacementConfirm={onCreateManyPlacementConfirm}
+					placementCandidate={placementCandidate}
+					highlightNodeId={highlightNodeId}
+					onErrorMessage={(message) => window.alert(message)}
+				/>
+			</div>
 
 			<LocationCreateDialog
 				open={createLocationState.open}

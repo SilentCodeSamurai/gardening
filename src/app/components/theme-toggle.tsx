@@ -25,6 +25,7 @@ export function ThemeToggle() {
 					size="sm"
 					className="w-full justify-between gap-2 font-normal"
 					aria-label={m.components_layout_theme_toggleAria()}
+					id="theme-toggle-trigger"
 				>
 					<span className="flex items-center gap-2">
 						<SunIcon className="size-3.5 shrink-0 opacity-70 dark:hidden" />
@@ -38,9 +39,15 @@ export function ThemeToggle() {
 				<DropdownMenuLabel>{m.components_layout_theme_toggleAria()}</DropdownMenuLabel>
 				<DropdownMenuSeparator />
 				<DropdownMenuRadioGroup value={theme} onValueChange={(v) => setTheme(v as Theme)}>
-					<DropdownMenuRadioItem value="light">{m.components_layout_theme_light()}</DropdownMenuRadioItem>
-					<DropdownMenuRadioItem value="dark">{m.components_layout_theme_dark()}</DropdownMenuRadioItem>
-					<DropdownMenuRadioItem value="system">{m.components_layout_theme_system()}</DropdownMenuRadioItem>
+					<DropdownMenuRadioItem value="light">
+						{m.components_layout_theme_light()}
+					</DropdownMenuRadioItem>
+					<DropdownMenuRadioItem value="dark">
+						{m.components_layout_theme_dark()}
+					</DropdownMenuRadioItem>
+					<DropdownMenuRadioItem value="system">
+						{m.components_layout_theme_system()}
+					</DropdownMenuRadioItem>
 				</DropdownMenuRadioGroup>
 			</DropdownMenuContent>
 		</DropdownMenu>

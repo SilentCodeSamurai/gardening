@@ -288,38 +288,38 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 									<>
 										{!targetLocked ? (
 											<form.AppField
-												name="target"
-												validators={{
-													onSubmit: ({ value }) =>
-														typeof value !== "string" || !value.trim()
-															? m.fields_selectRequired()
-															: undefined,
-												}}
-											>
-												{(field) => (
-													<field.Select
-														label={m.common_linkedTo()}
-														placeholder={m.fields_selectPlaceholder()}
-														values={[
-															{
-																value: "none",
-																label: (
-																	<span className="inline-flex items-center">
-																		<MinusIcon className="size-4" aria-hidden />
-																	</span>
-																),
-															},
-															{
-																value: "location",
-																label: m.collections_location_title(),
-															},
-															{
-																value: "plants",
-																label: m.collections_plant_titlePlural(),
-															},
-														]}
-													/>
-												)}
+													name="target"
+													validators={{
+														onSubmit: ({ value }) =>
+															typeof value !== "string" || !value.trim()
+																? m.fields_selectRequired()
+																: undefined,
+													}}
+												>
+													{(field) => (
+														<field.Select
+															label={m.common_linkedTo()}
+															placeholder={m.fields_selectPlaceholder()}
+															values={[
+																{
+																	value: "none",
+																	label: (
+																		<span className="inline-flex items-center">
+																			<MinusIcon className="size-4" aria-hidden />
+																		</span>
+																	),
+																},
+																{
+																	value: "location",
+																	label: m.collections_location_title(),
+																},
+																{
+																	value: "plants",
+																	label: m.collections_plant_titlePlural(),
+																},
+															]}
+														/>
+													)}
 											</form.AppField>
 										) : null}
 										{target === "location" ? (

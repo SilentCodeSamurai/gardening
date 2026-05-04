@@ -4,6 +4,7 @@ import { ChevronDownIcon, HomeIcon, Sprout } from "lucide-react";
 import { CollectionIcon } from "@/components/icon/collection-icon";
 import { SidebarLanguageMenu } from "@/components/layout/sidebar-language-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ToursMenu } from "@/components/tours/tours-menu";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
 	Sidebar,
@@ -48,7 +49,11 @@ export function DashboardSidebar() {
 						<SidebarMenu>
 							<SidebarMenuItem>
 								<SidebarMenuButton asChild isActive={isActivePath("/dashboard")}>
-									<Link to="/dashboard" className="flex w-full min-w-0 items-center gap-2">
+									<Link
+										to="/dashboard"
+										className="flex w-full min-w-0 items-center gap-2"
+										id="nav-home"
+									>
 										<HomeIcon className="size-4" />
 										{m.components_layout_nav_home()}
 									</Link>
@@ -61,7 +66,7 @@ export function DashboardSidebar() {
 					<SidebarGroup>
 						<SidebarGroupLabel asChild>
 							<CollapsibleTrigger className="w-full">
-								{m.components_layout_nav_catalogSection()}
+								<span>{m.components_layout_nav_catalogSection()}</span>
 								<ChevronDownIcon className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-180" />
 							</CollapsibleTrigger>
 						</SidebarGroupLabel>
@@ -76,6 +81,7 @@ export function DashboardSidebar() {
 											<Link
 												to="/catalog/species-categories"
 												className="flex w-full min-w-0 items-center gap-2"
+												id="nav-catalog-categories"
 											>
 												<CollectionIcon collection="speciesCategory" className="size-4" />
 												{m.collections_speciesCategory_titlePlural()}
@@ -88,6 +94,7 @@ export function DashboardSidebar() {
 												to="/catalog/species"
 												search={{ category: "" }}
 												className="flex w-full min-w-0 items-center gap-2"
+												id="nav-catalog-species"
 											>
 												<CollectionIcon collection="species" className="size-4" />
 												{m.collections_species_titlePlural()}
@@ -100,6 +107,7 @@ export function DashboardSidebar() {
 												to="/catalog/cultivars"
 												search={{ category: "", species: "" }}
 												className="flex w-full min-w-0 items-center gap-2"
+												id="nav-catalog-cultivars"
 											>
 												<CollectionIcon collection="cultivar" className="size-4" />
 												{m.collections_cultivar_titlePlural()}
@@ -120,6 +128,7 @@ export function DashboardSidebar() {
 										to="/plants"
 										search={{ category: "", species: "", cultivar: "" }}
 										className="flex w-full min-w-0 items-center gap-2"
+										id="nav-plants"
 									>
 										<CollectionIcon collection="plant" className="size-4" />
 										{m.collections_plant_titlePlural()}
@@ -128,7 +137,7 @@ export function DashboardSidebar() {
 							</SidebarMenuItem>
 							<SidebarMenuItem>
 								<SidebarMenuButton asChild isActive={isActivePath("/locations")}>
-									<Link to="/locations" className="flex w-full min-w-0 items-center gap-2">
+									<Link to="/locations" className="flex w-full min-w-0 items-center gap-2" id="nav-locations">
 										<CollectionIcon collection="location" className="size-4" />
 										{m.collections_location_titlePlural()}
 									</Link>
@@ -136,7 +145,11 @@ export function DashboardSidebar() {
 							</SidebarMenuItem>
 							<SidebarMenuItem>
 								<SidebarMenuButton asChild isActive={isActivePath("/gardening-events")}>
-									<Link to="/gardening-events" className="flex w-full min-w-0 items-center gap-2">
+									<Link
+										to="/gardening-events"
+										className="flex w-full min-w-0 items-center gap-2"
+										id="nav-events"
+									>
 										<CollectionIcon collection="gardeningEvent" className="size-4" />
 										{m.collections_gardeningEvent_titlePlural()}
 									</Link>
@@ -155,6 +168,7 @@ export function DashboardSidebar() {
 				</div>
 				<ThemeToggle />
 				<SidebarLanguageMenu />
+				<ToursMenu />
 			</SidebarFooter>
 			<SidebarRail />
 		</Sidebar>

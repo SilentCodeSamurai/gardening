@@ -2210,7 +2210,9 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 		if (options.length === 0) return null;
 		return (
 			<ContextMenuSub>
-				<ContextMenuSubTrigger disabled={placementBlocked}>{lb.createMenu}</ContextMenuSubTrigger>
+				<ContextMenuSubTrigger disabled={placementBlocked}>
+					{lb.createMenu}
+				</ContextMenuSubTrigger>
 				<ContextMenuSubContent>
 					{options.map((option) => (
 						<ContextMenuItem
@@ -2540,6 +2542,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 									variant="outline"
 									size="icon-lg"
 									aria-label={lb.zoomOut}
+									
 									onClick={() => setViewport((p) => ({ ...p, scale: Math.max(0.4, p.scale - 0.1) }))}
 								>
 									<Minus />
@@ -2553,7 +2556,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 									type="button"
 									variant="outline"
 									size="icon-lg"
-									aria-label={lb.zoomIn}
+									aria-label={lb.zoomIn}	
 									onClick={() => setViewport((p) => ({ ...p, scale: Math.min(3, p.scale + 0.1) }))}
 								>
 									<Plus />

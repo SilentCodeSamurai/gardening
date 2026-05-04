@@ -5,6 +5,7 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { AppAuthProvider } from "@/components/auth/app-auth-provider";
 import { NotFoundPage } from "@/components/layout/not-found";
 import { buildThemeInitScript, ThemeProvider } from "@/components/theme-provider";
+import { AppToursProvider } from "@/components/tours/app-tours-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { getLocale } from "@/paraglide/runtime";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
@@ -65,26 +66,28 @@ function RootDocument() {
 				<ThemeProvider>
 					<TooltipProvider>
 						<AppAuthProvider>
-							{/* Authenticated layout sets its own h-svh/overflow; public routes (e.g. /) need to scroll. */}
-							<div className="flex min-h-svh flex-col bg-background">
-								<Outlet />
-							</div>
+							<AppToursProvider>
+								{/* Authenticated layout sets its own h-svh/overflow; public routes (e.g. /) need to scroll. */}
+								<div className="flex min-h-svh flex-col bg-background">
+									<Outlet />
+								</div>
 
-							<Toaster position="top-center" richColors />
+								<Toaster position="top-center" richColors />
 
-							<TanStackDevtools
-								config={{
-									position: "bottom-right",
-								}}
-								plugins={[
-									{
-										name: "Tanstack Router",
-										render: <TanStackRouterDevtoolsPanel />,
-									},
-									TanStackQueryDevtools,
-								]}
-							/>
-							<Scripts />
+								<TanStackDevtools
+									config={{
+										position: "bottom-right",
+									}}
+									plugins={[
+										{
+											name: "Tanstack Router",
+											render: <TanStackRouterDevtoolsPanel />,
+										},
+										TanStackQueryDevtools,
+									]}
+								/>
+								<Scripts />
+							</AppToursProvider>
 						</AppAuthProvider>
 					</TooltipProvider>
 				</ThemeProvider>

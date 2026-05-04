@@ -405,11 +405,18 @@ function SpeciesPage() {
 				: m.items_noElements();
 
 	return (
-		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+		<div id="species-page" className="flex min-h-0 flex-1 flex-col overflow-hidden">
 			<DashboardPageHeading collection="species">
-				<h1 className="font-heading font-medium text-lg">{m.collections_species_titlePlural()}</h1>
+				<h1 className="font-heading font-medium text-lg" id="page-title">
+					{m.collections_species_titlePlural()}
+				</h1>
 				<ButtonTooltip label={m.collections_species_create()}>
-					<Button type="button" size="icon" variant="outline" onClick={() => setCreateOpen(true)}>
+					<Button
+						type="button"
+						size="icon"
+						variant="outline"
+						onClick={() => setCreateOpen(true)}
+					>
 						<span className="sr-only">{m.collections_species_create()}</span>
 						<PlusIcon />
 					</Button>

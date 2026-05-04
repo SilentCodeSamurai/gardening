@@ -43,6 +43,16 @@ const TABLE_ROW_OVERSCAN = 20;
 
 const defaultLeafColumnWidth = { min: 20, size: 150, max: Number.MAX_SAFE_INTEGER };
 
+function getRowTourEntityId(value: unknown): string | null {
+	if (typeof value !== "object" || value == null) return null;
+	if (!("id" in value)) return null;
+	const maybeId = (value as { id?: unknown }).id;
+	if (typeof maybeId === "string" || typeof maybeId === "number" || typeof maybeId === "bigint") {
+		return String(maybeId);
+	}
+	return null;
+}
+
 /** Headless tables often pass partial `state` without `columnSizing`; `column.getSize()` then throws. */
 function safeLeafColumnWidth<TData extends RowData>(
 	table: TanstackTable<TData>,
@@ -184,7 +194,7 @@ export function DataTable<TData extends RowData>({
 	const fixedTableClass = cn(virtualTableClass, "table-fixed");
 
 	const theadContent = (
-		<TableHeader className="bg-background shadow-[inset_0_-1px_0_0_hsl(var(--border))] [&_th]:bg-background [&_tr]:border-b-0">
+			<TableHeader className="bg-background shadow-[inset_0_-1px_0_0_hsl(var(--border))] [&_th]:bg-background [&_tr]:border-b-0">
 			{table.getHeaderGroups().map((headerGroup) => (
 				<TableRow key={headerGroup.id}>
 					{headerGroup.headers.map((header) => {
@@ -317,6 +327,7 @@ export function DataTable<TData extends RowData>({
 									let layoutTopBeforeRow = 0;
 									return virtualRows.map((virtualRow) => {
 										const row = rows[virtualRow.index];
+										const rowTourEntityId = getRowTourEntityId(row.original);
 										const translateY = virtualRow.start - layoutTopBeforeRow;
 										layoutTopBeforeRow += virtualRow.size;
 										const rowPending =
@@ -326,6 +337,7 @@ export function DataTable<TData extends RowData>({
 												key={row.id}
 												data-index={virtualRow.index}
 												data-state={row.getIsSelected() ? "selected" : undefined}
+												data-id={rowTourEntityId ?? undefined}
 												data-pending={rowPending ? "true" : undefined}
 												aria-busy={rowPending ? true : undefined}
 												className={cn(rowPending && pendingItemSurfaceClassName)}

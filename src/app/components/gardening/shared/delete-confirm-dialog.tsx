@@ -41,10 +41,16 @@ export function DeleteConfirmDialog({
 					) : null}
 				</DialogHeader>
 				<DialogFooter>
-					<Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+					<Button id="cancel" type="button" variant="outline" onClick={() => onOpenChange(false)}>
 						{m.common_cancel()}
 					</Button>
-					<Button type="button" variant="destructive" disabled={isPending} onClick={() => void onConfirm()}>
+					<Button
+						id="submit"
+						type="button"
+						variant="destructive"
+						disabled={isPending}
+						onClick={() => void onConfirm()}
+					>
 						{confirmLabel ?? m.common_delete()}
 					</Button>
 				</DialogFooter>

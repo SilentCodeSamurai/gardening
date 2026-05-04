@@ -901,11 +901,19 @@ function PlantsPage() {
 				: m.items_noElements();
 
 	return (
-		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+		<div id="plants-page" className="flex min-h-0 flex-1 flex-col overflow-hidden">
 			<DashboardPageHeading collection="plant">
-				<h1 className="font-heading font-medium text-lg">{m.collections_plant_titlePlural()}</h1>
+				<h1 className="font-heading font-medium text-lg" id="page-title">
+					{m.collections_plant_titlePlural()}
+				</h1>
 				<ButtonTooltip label={m.collections_plant_create()}>
-					<Button type="button" size="icon" variant="outline" onClick={() => setCreateOpen(true)}>
+					<Button
+						type="button"
+						size="icon"
+						variant="outline"
+						onClick={() => setCreateOpen(true)}
+						id="plants-create-trigger"
+					>
 						<span className="sr-only">{m.collections_plant_create()}</span>
 						<PlusIcon />
 					</Button>
@@ -1008,19 +1016,28 @@ function PlantRowActions({ plant, isPlaced }: { plant: CachedHydratedPlant; isPl
 		<div className="flex w-full items-center justify-center">
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
-					<Button type="button" variant="outline" size="icon" aria-label={m.common_actions()}>
+					<Button
+						type="button"
+						variant="outline"
+						size="icon"
+						aria-label={m.common_actions()}
+						data-action="plant-row-actions-trigger"
+						data-id={String(plant.id)}
+					>
 						<EllipsisVerticalIcon />
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent className="flex flex-col gap-1" align="end">
-					<DropdownMenuItem
-						onSelect={() => setCreateEventOpen(true)}
-						title={m.collections_gardeningEvent_createForPlantRowHint()}
-					>
+					<DropdownMenuItem onSelect={() => setCreateEventOpen(true)} title={m.collections_gardeningEvent_createForPlantRowHint()}>
 						<PlusIcon />
 						{m.collections_gardeningEvent_create()}
 					</DropdownMenuItem>
-					<DropdownMenuItem onSelect={() => setEditOpen(true)} title={m.common_edit()}>
+					<DropdownMenuItem
+						onSelect={() => setEditOpen(true)}
+						title={m.common_edit()}
+						data-action="plant-row-actions-edit"
+						data-id={String(plant.id)}
+					>
 						<PencilIcon />
 						{m.common_edit()}
 					</DropdownMenuItem>
@@ -1033,7 +1050,12 @@ function PlantRowActions({ plant, isPlaced }: { plant: CachedHydratedPlant; isPl
 							</DropdownMenuItem>
 						</ButtonTooltip>
 					) : (
-						<DropdownMenuItem onSelect={() => setDeleteOpen(true)} title={deleteTitle}>
+						<DropdownMenuItem
+							onSelect={() => setDeleteOpen(true)}
+							title={deleteTitle}
+							data-action="plant-row-actions-delete"
+							data-id={String(plant.id)}
+						>
 							<Trash2Icon />
 							{m.common_delete()}
 						</DropdownMenuItem>

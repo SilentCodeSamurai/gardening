@@ -24,6 +24,7 @@ export function SidebarLanguageMenu() {
 					size="sm"
 					className="w-full justify-between gap-2 font-normal"
 					aria-label={m.components_layout_lang_menuTriggerAria()}
+					id="language-menu-trigger"
 				>
 					<span className="flex items-center gap-2">
 						<LanguagesIcon className="size-3.5 shrink-0 opacity-70" />
@@ -40,9 +41,15 @@ export function SidebarLanguageMenu() {
 				<DropdownMenuLabel>{m.components_layout_lang_groupAria()}</DropdownMenuLabel>
 				<DropdownMenuSeparator />
 				<DropdownMenuRadioGroup value={current} onValueChange={(code) => void setLocale(code as Locale)}>
-					<DropdownMenuRadioItem value="en">{m.components_layout_lang_en()}</DropdownMenuRadioItem>
-					<DropdownMenuRadioItem value="de">{m.components_layout_lang_de()}</DropdownMenuRadioItem>
-					<DropdownMenuRadioItem value="ru">{m.components_layout_lang_ru()}</DropdownMenuRadioItem>
+					<DropdownMenuRadioItem value="en">
+						{m.components_layout_lang_en()}
+					</DropdownMenuRadioItem>
+					<DropdownMenuRadioItem value="de">
+						{m.components_layout_lang_de()}
+					</DropdownMenuRadioItem>
+					<DropdownMenuRadioItem value="ru">
+						{m.components_layout_lang_ru()}
+					</DropdownMenuRadioItem>
 				</DropdownMenuRadioGroup>
 			</DropdownMenuContent>
 		</DropdownMenu>
