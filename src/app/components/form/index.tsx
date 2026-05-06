@@ -2,7 +2,7 @@ import type { ItemPresentationValueObject } from "@backend/core/domain/gardening
 import { useStore } from "@tanstack/react-form";
 import { de, enUS, ru } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode, type WheelEvent } from "react";
 import { HexAlphaColorPicker } from "react-colorful";
 import { SELECT_NONE } from "@/components/form/select-sentinel";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
@@ -161,6 +161,164 @@ export function DatePicker({
 							if (next) field.handleChange(next);
 						}}
 					/>
+				</PopoverContent>
+			</Popover>
+			{field.state.meta.isTouched ? <ErrorMessages errors={errors} /> : null}
+		</div>
+	);
+}
+
+export function DateTimePicker({
+	label,
+	placeholder = "MM/DD/YYYY HH:mm",
+	className,
+}: {
+	label: string;
+	placeholder?: string;
+	className?: string;
+}) {
+	const field = useFieldContext<Date>();
+	const errors = useStore(field.store, (state) => state.meta.errors);
+	const triggerId = `${field.form.formId}-${String(field.name)}-date-time-picker`;
+	const value = field.state.value;
+	const hasValue = value instanceof Date && !Number.isNaN(value.getTime());
+	const locale = getLocale();
+	const calendarLocale = locale === "de" ? de : locale === "ru" ? ru : enUS;
+	const [calendarElement, setCalendarElement] = useState<HTMLDivElement | null>(null);
+	const [calendarHeight, setCalendarHeight] = useState<number | null>(null);
+	const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+
+	useEffect(() => {
+		if (!isPopoverOpen) return;
+		const element = calendarElement;
+		if (!element) return;
+		const updateHeight = () => {
+			setCalendarHeight(element.getBoundingClientRect().height);
+		};
+		updateHeight();
+		const observer = new ResizeObserver(() => {
+			updateHeight();
+		});
+		observer.observe(element);
+		return () => observer.disconnect();
+	}, [isPopoverOpen, calendarElement]);
+
+	useEffect(() => {
+		if (isPopoverOpen) return;
+		setCalendarHeight(null);
+		setCalendarElement(null);
+	}, [isPopoverOpen]);
+
+	const formatDateTime = (date: Date): string =>
+		new Intl.DateTimeFormat(locale, {
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+			hour: "2-digit",
+			minute: "2-digit",
+			hour12: false,
+		}).format(date);
+
+	const applyDate = (nextDate: Date) => {
+		const current = hasValue ? value : new Date();
+		const next = new Date(nextDate);
+		next.setHours(current.getHours(), current.getMinutes(), 0, 0);
+		field.handleChange(next);
+	};
+
+	const applyTime = (type: "hour" | "minute", nextValue: number) => {
+		const base = hasValue ? value : new Date();
+		const next = new Date(base);
+		if (type === "hour") {
+			next.setHours(nextValue);
+		} else {
+			next.setMinutes(nextValue);
+		}
+		next.setSeconds(0, 0);
+		field.handleChange(next);
+	};
+
+	const handleTimeColumnWheel = (event: WheelEvent<HTMLDivElement>) => {
+		const scroller = event.currentTarget;
+		scroller.scrollTop += event.deltaY;
+		event.preventDefault();
+	};
+
+	return (
+		<div className={cn("grid gap-1", className)}>
+			<Label htmlFor={triggerId} className="font-medium text-xs">
+				{label}
+			</Label>
+			<Popover
+				open={isPopoverOpen}
+				onOpenChange={(open) => {
+					setIsPopoverOpen(open);
+					if (!open) field.handleBlur();
+				}}
+			>
+				<PopoverTrigger asChild>
+					<Button
+						id={triggerId}
+						type="button"
+						variant="outline"
+						data-empty={!hasValue}
+						className="w-full justify-start text-left font-normal data-[empty=true]:text-muted-foreground"
+						aria-invalid={errors.length > 0}
+					>
+						<CalendarIcon />
+						{hasValue ? <span>{formatDateTime(value)}</span> : <span>{placeholder}</span>}
+					</Button>
+				</PopoverTrigger>
+				<PopoverContent className="w-auto p-0">
+					<div className="sm:flex sm:items-start">
+						<div ref={setCalendarElement} className="self-start">
+							<Calendar
+								mode="single"
+								locale={calendarLocale}
+								selected={hasValue ? value : undefined}
+								onSelect={(next) => {
+									if (next) applyDate(next);
+								}}
+							/>
+						</div>
+						<div
+							className="flex divide-x border-t sm:border-t-0"
+							style={calendarHeight ? { height: `${calendarHeight}px` } : undefined}
+						>
+							<div className="w-20 overflow-y-auto p-2" onWheel={handleTimeColumnWheel}>
+								<div className="grid gap-1">
+									{Array.from({ length: 24 }, (_, i) => i).map((hour) => (
+										<Button
+											key={hour}
+											type="button"
+											size="sm"
+											variant={hasValue && value.getHours() === hour ? "default" : "ghost"}
+											className="w-full justify-center tabular-nums"
+											onClick={() => applyTime("hour", hour)}
+										>
+											{String(hour).padStart(2, "0")}
+										</Button>
+									))}
+								</div>
+							</div>
+							<div className="w-20 overflow-y-auto p-2" onWheel={handleTimeColumnWheel}>
+								<div className="grid gap-1">
+									{Array.from({ length: 12 }, (_, i) => i * 5).map((minute) => (
+										<Button
+											key={minute}
+											type="button"
+											size="sm"
+											variant={hasValue && value.getMinutes() === minute ? "default" : "ghost"}
+											className="w-full justify-center tabular-nums"
+											onClick={() => applyTime("minute", minute)}
+										>
+											{String(minute).padStart(2, "0")}
+										</Button>
+									))}
+								</div>
+							</div>
+						</div>
+					</div>
 				</PopoverContent>
 			</Popover>
 			{field.state.meta.isTouched ? <ErrorMessages errors={errors} /> : null}

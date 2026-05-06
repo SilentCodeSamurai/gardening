@@ -103,7 +103,7 @@ export function GardeningEventUpdateDialog({ event, open, onOpenChange }: Props)
 								},
 							}}
 						>
-							{(field) => <field.DatePicker label={m.fields_occurredAt()} />}
+							{(field) => <field.DateTimePicker label={m.fields_occurredAt()} />}
 						</form.AppField>
 						<form.AppField
 							name="actionType"
@@ -134,3 +134,4 @@ export function GardeningEventUpdateDialog({ event, open, onOpenChange }: Props)
 		</Dialog>
 	);
 }
+

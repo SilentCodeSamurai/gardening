@@ -385,16 +385,20 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 																				<ComboboxChip
 																					key={value.value}
 																					showRemove={!isPlantsLocked}
+																					className={
+																						value.presentation
+																							? "h-6 gap-1 pl-0"
+																							: "h-6"
+																					}
 																				>
 																					{value.presentation ? (
 																						<ItemPresentationIcon
 																							presentation={
 																								value.presentation
 																							}
-																							className="size-4"
 																						/>
 																					) : null}
-																					<span className="max-w-32 truncate">
+																					<span className="max-w-32 truncate pr-1">
 																						{value.label}
 																					</span>
 																				</ComboboxChip>
@@ -460,7 +464,7 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 								},
 							}}
 						>
-							{(field) => <field.DatePicker label={m.fields_occurredAt()} />}
+							{(field) => <field.DateTimePicker label={m.fields_occurredAt()} />}
 						</form.AppField>
 						<form.AppField
 							name="actionType"
@@ -529,3 +533,4 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 		</Dialog>
 	);
 }
+
