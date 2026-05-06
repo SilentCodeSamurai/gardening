@@ -92,7 +92,7 @@ function LocationDetailPage() {
 		entityId: String(data.id),
 	}).isPlaced;
 	return (
-		<div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+		<div id="location-details-page" className="flex min-h-0 flex-1 flex-col overflow-hidden">
 			<DashboardPageHeading className="min-w-0 flex-wrap" collection="location">
 				<div className="flex min-w-0 flex-wrap items-center gap-3">
 					<ItemPresentationIcon presentation={data.presentation} />
@@ -145,7 +145,7 @@ function LocationDetailPage() {
 			</DashboardPageHeading>
 			<DashboardPageContent className="flex flex-col gap-6 overflow-y-auto pb-6">
 				<div>
-					<Button asChild type="button" variant="outline" size="lg">
+					<Button asChild type="button" variant="outline" size="lg" id="location-open-layout-editor">
 						<Link
 							to="/location/$locationId/layout"
 							params={{ locationId: String(data.id) }}

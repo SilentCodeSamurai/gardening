@@ -77,6 +77,25 @@ export function getTourCopy(id: AppTourId): TourCopy {
 				{ title: m.tours_workingWithData_step14_title(), content: m.tours_workingWithData_step14_content() },
 			],
 		},
+		"layout-editor-guide": {
+			name: m.tours_layoutEditorGuide_name(),
+			steps: [
+				{ title: m.tours_layoutEditorGuide_step1_title(), content: m.tours_layoutEditorGuide_step1_content() },
+				{ title: m.tours_layoutEditorGuide_step2_title(), content: m.tours_layoutEditorGuide_step2_content() },
+				{ title: m.tours_layoutEditorGuide_step3_title(), content: m.tours_layoutEditorGuide_step3_content() },
+				{ title: m.tours_layoutEditorGuide_step4_title(), content: m.tours_layoutEditorGuide_step4_content() },
+				{ title: m.tours_layoutEditorGuide_step5_title(), content: m.tours_layoutEditorGuide_step5_content() },
+				{ title: m.tours_layoutEditorGuide_step6_title(), content: m.tours_layoutEditorGuide_step6_content() },
+				{ title: m.tours_layoutEditorGuide_step7_title(), content: m.tours_layoutEditorGuide_step7_content() },
+				{ title: m.tours_layoutEditorGuide_step8_title(), content: m.tours_layoutEditorGuide_step8_content() },
+				{ title: m.tours_layoutEditorGuide_step9_title(), content: m.tours_layoutEditorGuide_step9_content() },
+				{ title: m.tours_layoutEditorGuide_step10_title(), content: m.tours_layoutEditorGuide_step10_content() },
+				{ title: m.tours_layoutEditorGuide_step11_title(), content: m.tours_layoutEditorGuide_step11_content() },
+				{ title: m.tours_layoutEditorGuide_step12_title(), content: m.tours_layoutEditorGuide_step12_content() },
+				{ title: m.tours_layoutEditorGuide_step13_title(), content: m.tours_layoutEditorGuide_step13_content() },
+				{ title: m.tours_layoutEditorGuide_step14_title(), content: m.tours_layoutEditorGuide_step14_content() },
+			],
+		},
 	};
 	return registry[id];
 }

@@ -172,6 +172,8 @@ function LocationsPage() {
 					<Link
 						to="/location/$locationId"
 						params={{ locationId: String(row.original.id) }}
+						data-action="location-row-open"
+						data-id={String(row.original.id)}
 						className="flex min-w-0 items-center gap-2 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 					>
 						<ItemPresentationIcon presentation={row.original.presentation} className="size-6 shrink-0" />
@@ -339,6 +341,7 @@ function LocationsPage() {
 				</h1>
 				<ButtonTooltip label={m.collections_location_create()}>
 					<Button
+						id="locations-create-trigger"
 						type="button"
 						size="icon"
 						variant="outline"

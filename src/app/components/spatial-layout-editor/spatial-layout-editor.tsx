@@ -372,6 +372,10 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 		() => (createManyPlacement?.nodes[0] ? String(createManyPlacement.nodes[0].id) : null),
 		[createManyPlacement],
 	);
+	const primaryTourNodeId = useMemo(
+		() => (effectiveNodes.length > 0 ? String(effectiveNodes[0]?.id ?? "") : null),
+		[effectiveNodes],
+	);
 	const frameNodes = useMemo(() => effectiveNodes.filter((n) => n.acceptsChildren), [effectiveNodes]);
 	const localNodes = useMemo(() => effectiveNodes.filter((n) => !n.acceptsChildren), [effectiveNodes]);
 	const nodeById = useMemo(
@@ -1230,6 +1234,19 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 		if (isMiddleMouseButton(event)) {
 			startPan(event);
 			return;
+		}
+		if (isLeftMouseButton(event)) {
+			const target = event.target;
+			if (target instanceof Element) {
+				const onNodeShell = target.closest('[data-layout-node-shell="true"]') !== null;
+				const onRootResizeHandle = target.closest("#layout-editor-root-resize-handle") !== null;
+				const onRootSurface = target.closest("#layout-editor-root-surface") !== null;
+				const onViewportBackground = target === event.currentTarget;
+				if (!onNodeShell && !onRootResizeHandle && (onRootSurface || onViewportBackground)) {
+					startPan(event);
+					return;
+				}
+			}
 		}
 		// Touch/pen users can pan from empty canvas area.
 		if (event.pointerType !== "mouse" && event.target === event.currentTarget) {
@@ -2218,6 +2235,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 						<ContextMenuItem
 							key={option.id}
 							disabled={placementBlocked}
+							id={option.id === "location" ? "layout-editor-create-location" : undefined}
 							onClick={() => {
 								const node = getInitialPlacementNode(option.createNode(parent), parent);
 								setCreatePlacement({
@@ -2247,6 +2265,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 						<ContextMenuItem
 							key={option.id}
 							disabled={placementBlocked}
+							id={option.id === "location" ? "layout-editor-create-many-location" : undefined}
 							onClick={() => beginCreateMany(parent, option.id)}
 						>
 							{option.label}
@@ -2292,6 +2311,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 							<div className="grid gap-1">
 								<Label className="text-xs">{lb.createManyQuantity}</Label>
 								<Input
+									id="layout-editor-create-many-quantity"
 									type="number"
 									min={1}
 									max={99}
@@ -2374,6 +2394,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 						</div>
 						<div className="flex flex-wrap justify-center gap-2">
 							<Button
+								id="layout-editor-create-many-continue"
 								size="sm"
 								variant="secondary"
 								className="h-7 px-2"
@@ -2480,7 +2501,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 
 	// --- Render ---
 	return (
-		<div className={cn("space-y-3", cc.root)}>
+		<div id="layout-editor-root" className={cn("space-y-3", cc.root)}>
 			<div className="flex items-center justify-between">
 				<h3 className="font-semibold">{lb.headerLabel ?? lb.fallbackHeader}</h3>
 				<div className="flex items-center gap-2">
@@ -2489,6 +2510,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 							<Toggle
 								variant="outline"
 								size="sm"
+								id="layout-editor-lock-toggle"
 								className="size-8 shrink-0 p-0"
 								pressed={layoutInteractionLocked}
 								onPressedChange={setLayoutInteractionLocked}
@@ -2514,6 +2536,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 							<Toggle
 								variant="outline"
 								size="sm"
+								id="layout-editor-grid-toggle"
 								className="size-8 shrink-0 p-0"
 								pressed={gridDisplayVisible}
 								onPressedChange={setGridDisplayVisible}
@@ -2541,6 +2564,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 									type="button"
 									variant="outline"
 									size="icon-lg"
+									id="layout-editor-zoom-out"
 									aria-label={lb.zoomOut}
 									
 									onClick={() => setViewport((p) => ({ ...p, scale: Math.max(0.4, p.scale - 0.1) }))}
@@ -2556,6 +2580,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 									type="button"
 									variant="outline"
 									size="icon-lg"
+									id="layout-editor-zoom-in"
 									aria-label={lb.zoomIn}	
 									onClick={() => setViewport((p) => ({ ...p, scale: Math.min(3, p.scale + 0.1) }))}
 								>
@@ -2589,6 +2614,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 										type="button"
 										variant="outline"
 										size="icon-lg"
+										id="layout-editor-history-undo"
 										aria-label={lb.undo}
 										disabled={geometryEditFrozen || !layoutHistoryResolved.canUndo}
 										onClick={() => void layoutHistoryResolved.undo()}
@@ -2619,6 +2645,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 			</div>
 			<div
 				ref={viewportRef}
+				id="layout-editor-viewport"
 				className={cn(cc.viewport)}
 				style={{
 					width: "100%",
@@ -2645,6 +2672,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 				>
 					<ContextMenuTrigger>
 						<div
+							id="layout-editor-root-surface"
 							className="relative"
 							style={{
 								width: rootDraft?.width ?? root.geometry.width,
@@ -2662,7 +2690,11 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 							/>
 							{renderInteractionGhosts()}
 							{geometryEditFrozen ? null : (
-								<div className={cn(cc.rootResizeHandle)} onPointerDown={startResizeRoot} />
+								<div
+									id="layout-editor-root-resize-handle"
+									className={cn(cc.rootResizeHandle)}
+									onPointerDown={startResizeRoot}
+								/>
 							)}
 							{renderCreateManyPlacementForm(rootId)}
 							{effectiveNodes.map((node) => {
@@ -2687,6 +2719,8 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 									>
 										<ContextMenuTrigger>
 											<div
+												id={nodeId === primaryTourNodeId ? "layout-editor-primary-node" : undefined}
+												data-layout-node-shell="true"
 												className={cn(
 													cc.nodeShell(node, vis),
 													activeHighlightNodeId === nodeId ? cc.nodeHighlight : undefined,
@@ -2806,6 +2840,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 													(activePlacement?.kind === "external" &&
 														placementCompanionIds.has(nodeId)) ? null : (
 														<div
+															id={nodeId === primaryTourNodeId ? "layout-editor-primary-node-resize" : undefined}
 															className={cn(cc.nodeResizeHandle)}
 															onPointerDown={(event) =>
 																startResizeGeometry(event, {
@@ -2893,11 +2928,15 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 																				</ContextMenuSubContent>
 																			</ContextMenuSub>
 																			<ContextMenuSub>
-																				<ContextMenuSubTrigger className="text-destructive">
+																			<ContextMenuSubTrigger
+																				id="layout-editor-remove-menu"
+																				className="text-destructive"
+																			>
 																					{removeMenuLabel}
 																				</ContextMenuSubTrigger>
 																				<ContextMenuSubContent>
 																					<ContextMenuItem
+																						id="layout-editor-delete-without-children"
 																						variant="destructive"
 																						onClick={() =>
 																							void handleDeleteNodeWithChildren(

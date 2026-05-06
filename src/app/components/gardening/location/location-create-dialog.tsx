@@ -3,6 +3,7 @@ import { useStore } from "@tanstack/react-form";
 import { useEffect } from "react";
 import { SELECT_NONE } from "@/components/form/select-sentinel";
 import { Button } from "@/components/ui/button";
+import { useAppTours } from "@/components/tours/app-tours-provider";
 import {
 	Dialog,
 	DialogContent,
@@ -68,6 +69,8 @@ export function LocationCreateDialog({
 	onSubmit,
 	onSpatialNodeCreated,
 }: Props) {
+	const { activeTourId, setScopedValue } = useAppTours();
+	const isLayoutTourActive = activeTourId === "layout-editor-guide";
 	const mut = useLocationCreateMutation();
 	const spatialMut = useSpatialNodeCreateMutation();
 
@@ -99,6 +102,9 @@ export function LocationCreateDialog({
 			if (onSubmit) await onSubmit(payload);
 			else if (initialPlacement != null && onSpatialNodeCreated) {
 				const entity = await mut.mutateAsync({ name, presentation });
+				if (isLayoutTourActive) {
+					setScopedValue("createdLocationId", String(entity.id));
+				}
 				const spatialNode = await spatialMut.mutateAsync({
 					parentId: payload.parentSpatialNodeId,
 					kind: "frame",
@@ -118,7 +124,10 @@ export function LocationCreateDialog({
 					ref: spatialNode.ref,
 				});
 			} else {
-				await mut.mutateAsync({ name, presentation });
+				const entity = await mut.mutateAsync({ name, presentation });
+				if (isLayoutTourActive) {
+					setScopedValue("createdLocationId", String(entity.id));
+				}
 			}
 		},
 	});
@@ -146,8 +155,13 @@ export function LocationCreateDialog({
 	const close = () => onOpenChange(false);
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-md">
+		<Dialog open={open} onOpenChange={onOpenChange} modal={!isLayoutTourActive}>
+			<DialogContent
+				className="sm:max-w-md"
+				onInteractOutside={(event) => {
+					if (isLayoutTourActive) event.preventDefault();
+				}}
+			>
 				<DialogHeader>
 					<DialogTitle>{m.collections_location_create()}</DialogTitle>
 					<DialogDescription className="sr-only">{m.collections_location_create()}</DialogDescription>
@@ -163,39 +177,43 @@ export function LocationCreateDialog({
 							void form.handleSubmit();
 						}}
 					>
-						<form.AppField
-							name="name"
-							validators={{
-								onSubmit: ({ value }) => (!value?.trim() ? m.fields_required() : undefined),
-							}}
-						>
-							{(field) => <field.TextField label={m.fields_name()} placeholder={m.fields_name()} />}
-						</form.AppField>
-						<div className="grid grid-cols-3 gap-2">
-							<form.AppField name="iconKey">
-								{(field) => (
-									<field.IconPicker
-										label={m.fields_icon()}
-										noneLabel={m.fields_iconNone()}
-										iconColor={iconColor}
-										backgroundColor={backgroundColor}
-									/>
-								)}
+						<div id="location-create-form-fields" className="grid gap-3">
+							<form.AppField
+								name="name"
+								validators={{
+									onSubmit: ({ value }) => (!value?.trim() ? m.fields_required() : undefined),
+								}}
+							>
+								{(field) => <field.TextField label={m.fields_name()} placeholder={m.fields_name()} />}
 							</form.AppField>
-							<form.AppField name="iconColor">
-								{(field) => <field.ColorPicker label={m.fields_iconColor()} placeholder="#2f855a" />}
-							</form.AppField>
-							<form.AppField name="backgroundColor">
-								{(field) => (
-									<field.ColorPicker label={m.fields_backgroundColor()} placeholder="#e6ffed" />
-								)}
-							</form.AppField>
+							<div className="grid grid-cols-3 gap-2">
+								<form.AppField name="iconKey">
+									{(field) => (
+										<field.IconPicker
+											label={m.fields_icon()}
+											noneLabel={m.fields_iconNone()}
+											iconColor={iconColor}
+											backgroundColor={backgroundColor}
+										/>
+									)}
+								</form.AppField>
+								<form.AppField name="iconColor">
+									{(field) => <field.ColorPicker label={m.fields_iconColor()} placeholder="#2f855a" />}
+								</form.AppField>
+								<form.AppField name="backgroundColor">
+									{(field) => (
+										<field.ColorPicker label={m.fields_backgroundColor()} placeholder="#e6ffed" />
+									)}
+								</form.AppField>
+							</div>
 						</div>
 						<DialogFooter>
 							<Button type="button" variant="outline" onClick={close}>
 								{m.common_cancel()}
 							</Button>
-							<form.SubscribeButton label={m.common_save()} />
+							<div id="location-create-submit">
+								<form.SubscribeButton label={m.common_save()} />
+							</div>
 						</DialogFooter>
 					</form>
 				</form.AppForm>

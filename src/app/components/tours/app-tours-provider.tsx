@@ -669,6 +669,157 @@ export function AppToursProvider({ children }: { children: ReactNode }) {
 						}),
 					];
 				}
+				case "layout-editor-guide": {
+					const CREATED_LOCATION_ID_KEY = "createdLocationId";
+					const getCreatedLocationId = () => runtimeStore.getScopedValue<string>(CREATED_LOCATION_ID_KEY) ?? null;
+					const waitForCreatedLocationIdOrThrow = async (timeoutMs = 5000) => {
+						const existingId = getCreatedLocationId();
+						if (existingId) return existingId;
+						const start = window.performance.now();
+						return new Promise<string>((resolve, reject) => {
+							const timer = window.setInterval(() => {
+								const createdLocationId = getCreatedLocationId();
+								if (createdLocationId) {
+									window.clearInterval(timer);
+									resolve(createdLocationId);
+									return;
+								}
+								if (window.performance.now() - start > timeoutMs) {
+									window.clearInterval(timer);
+									reject(new Error("layout-editor-guide tour timed out waiting for createdLocationId."));
+								}
+							}, 80);
+						});
+					};
+					const createdLocationRowSelector = () => {
+						const createdLocationId = getCreatedLocationId();
+						return createdLocationId
+							? `[data-action='location-row-open'][data-id='${createdLocationId}']`
+							: null;
+					};
+					return [
+						step({
+							target: "#nav-locations",
+							copyIndex: 0,
+							requiredAction: { type: "click", mouseButton: 0 },
+						}),
+						step({
+							target: "#locations-page",
+							placement: "center",
+							copyIndex: 1,
+							before: async () => {
+								if (pathname !== "/locations") await navigate({ to: "/locations" });
+								await waitForSelector("#locations-page");
+							},
+						}),
+						step({
+							target: "#locations-create-trigger",
+							copyIndex: 2,
+							requiredAction: { type: "click", mouseButton: 0 },
+							before: async () => {
+								await waitForSelector("#locations-create-trigger");
+							},
+						}),
+						step({
+							target: "#location-create-form-fields",
+							copyIndex: 3,
+							allowInteraction: true,
+							before: async () => {
+								await waitForSelector("#location-create-form-fields");
+							},
+						}),
+						step({
+							target: "#location-create-submit",
+							copyIndex: 4,
+							requiredAction: { type: "click", mouseButton: 0 },
+							before: async () => {
+								await waitForSelector("#location-create-submit");
+							},
+						}),
+						step({
+							target: `#${DYNAMIC_TOUR_ANCHOR_ID}`,
+							copyIndex: 5,
+							requiredAction: { type: "click", mouseButton: 0 },
+							requiredActionTarget: () => {
+								const selector = createdLocationRowSelector();
+								return selector ? document.querySelector<HTMLElement>(selector) : null;
+							},
+							spotlightTarget: () => {
+								const selector = createdLocationRowSelector();
+								return selector ? document.querySelector<HTMLElement>(selector) : null;
+							},
+							anchorTargetSelector: () => {
+								const selector = createdLocationRowSelector();
+								return selector ? document.querySelector<HTMLElement>(selector) : null;
+							},
+							allowInteraction: true,
+							before: async () => {
+								const createdLocationId = await waitForCreatedLocationIdOrThrow();
+								await waitForSelector(`[data-action='location-row-open'][data-id='${createdLocationId}']`);
+							},
+						}),
+						step({
+							target: "#location-details-page",
+							placement: "center",
+							copyIndex: 6,
+							before: async () => {
+								await waitForSelector("#location-details-page");
+							},
+						}),
+						step({
+							target: "#location-open-layout-editor",
+							copyIndex: 7,
+							requiredAction: { type: "click", mouseButton: 0 },
+							before: async () => {
+								await waitForSelector("#location-open-layout-editor");
+							},
+						}),
+						step({
+							target: "#layout-editor-root",
+							placement: "center",
+							copyIndex: 8,
+							before: async () => {
+								await waitForSelector("#layout-editor-root");
+							},
+						}),
+						step({
+							target: "#layout-editor-lock-toggle",
+							copyIndex: 9,
+							before: async () => {
+								await waitForSelector("#layout-editor-lock-toggle");
+							},
+						}),
+						step({
+							target: "#layout-editor-grid-toggle",
+							copyIndex: 10,
+							before: async () => {
+								await waitForSelector("#layout-editor-grid-toggle");
+							},
+						}),
+						step({
+							target: "#layout-editor-zoom-out",
+							copyIndex: 11,
+							before: async () => {
+								await waitForSelector("#layout-editor-zoom-out");
+							},
+						}),
+						step({
+							target: "#layout-editor-history-undo",
+							copyIndex: 12,
+							before: async () => {
+								await waitForSelector("#layout-editor-history-undo");
+							},
+						}),
+						step({
+							target: "#layout-editor-viewport",
+							copyIndex: 13,
+							before: async () => {
+								await waitForSelector("#layout-editor-viewport");
+							},
+							placement: "center",
+						}),
+					];
+				}
 				default:
 					return [];
 			}
@@ -769,7 +920,49 @@ export function AppToursProvider({ children }: { children: ReactNode }) {
 		const requiredActionTarget = (currentStep.data as { requiredActionTarget?: Step["target"] } | undefined)
 			?.requiredActionTarget;
 		if (!requiredAction) return;
-		if (requiredAction.type === "drag") return;
+		if (requiredAction.type === "drag") {
+			let startPoint: { x: number; y: number } | null = null;
+			let dragMatched = false;
+			const minDistance = Math.max(1, requiredAction.minimalDistancePx);
+			const isAllowedButton = (event: PointerEvent) =>
+				requiredAction.mouseButton == null || event.button === requiredAction.mouseButton;
+			const matchTarget = (event: PointerEvent) => {
+				if (requiredActionTarget) {
+					return resolveRequiredActionTargetFromTarget(event as unknown as MouseEvent, requiredActionTarget);
+				}
+				return resolveRequiredActionTargetFromTarget(event as unknown as MouseEvent, currentStep.target);
+			};
+			const onPointerDown = (event: PointerEvent) => {
+				if (!isAllowedButton(event)) return;
+				if (!matchTarget(event)) return;
+				startPoint = { x: event.clientX, y: event.clientY };
+				dragMatched = false;
+			};
+			const onPointerMove = (event: PointerEvent) => {
+				if (!startPoint || dragMatched) return;
+				const dx = event.clientX - startPoint.x;
+				const dy = event.clientY - startPoint.y;
+				if (Math.hypot(dx, dy) < minDistance) return;
+				if (typeof controls.next === "function") {
+					dragMatched = true;
+					controls.next();
+				}
+			};
+			const clearPointerState = () => {
+				startPoint = null;
+				dragMatched = false;
+			};
+			document.addEventListener("pointerdown", onPointerDown, true);
+			document.addEventListener("pointermove", onPointerMove, true);
+			document.addEventListener("pointerup", clearPointerState, true);
+			document.addEventListener("pointercancel", clearPointerState, true);
+			return () => {
+				document.removeEventListener("pointerdown", onPointerDown, true);
+				document.removeEventListener("pointermove", onPointerMove, true);
+				document.removeEventListener("pointerup", clearPointerState, true);
+				document.removeEventListener("pointercancel", clearPointerState, true);
+			};
+		}
 
 		const eventName = requiredAction.type === "doubleclick" ? "dblclick" : "click";
 		// Capture phase listener ensures we can validate required actions
