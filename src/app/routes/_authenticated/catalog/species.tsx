@@ -27,6 +27,7 @@ import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-hea
 import type { SpeciesWithSystemCatalog } from "#/backend/core/application/use-cases/gardening/species.use-cases";
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
 import { SpeciesCreateDialog } from "@/components/gardening/species/species-create-dialog";
+import { SpeciesUpdateManyDialog } from "@/components/gardening/species/species-update-many-dialog";
 import { SpeciesUpdateDialog } from "@/components/gardening/species/species-update-dialog";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
 import { DataTable } from "@/components/table/data-table";
@@ -129,6 +130,7 @@ function SpeciesPage() {
 	const [globalFilter, setGlobalFilter] = useState(qFromSearch ?? "");
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [createOpen, setCreateOpen] = useState(false);
+	const [bulkUpdateOpen, setBulkUpdateOpen] = useState(false);
 	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 	const bulkDeleteMany = useSpeciesDeleteManyMutation();
 
@@ -415,16 +417,28 @@ function SpeciesPage() {
 		() => table.getFilteredSelectedRowModel().rows.map((row) => row.original.id),
 		[table],
 	);
+	const selectedSpecies = useMemo(
+		() => table.getFilteredSelectedRowModel().rows.map((row) => row.original),
+		[table],
+	);
 	const selectionIncludesSystemCatalog = useMemo(
 		() => table.getFilteredSelectedRowModel().rows.some((row) => row.original.systemCatalog),
 		[table],
 	);
 	const bulkDeleteDisabled = selectedSpeciesIds.length === 0 || selectionIncludesSystemCatalog;
+	const bulkUpdateDisabled = selectedSpeciesIds.length === 0 || selectionIncludesSystemCatalog;
 	const bulkDeleteTooltip = tableSelectionBulkTooltip({
 		selectedCount: selectedSpeciesIds.length,
 		hasPlacedInSelection: false,
 		selectionIncludesDefaultCatalog: selectionIncludesSystemCatalog,
 		enabledTooltip: m.collections_species_deleteManyTooltip(),
+	});
+	const bulkUpdateTooltip = tableSelectionBulkTooltip({
+		selectedCount: selectedSpeciesIds.length,
+		hasPlacedInSelection: false,
+		selectionIncludesDefaultCatalog: selectionIncludesSystemCatalog,
+		defaultCatalogAction: "update",
+		enabledTooltip: m.common_updateSelected(),
 	});
 	const emptyMessage =
 		items.length === 0
@@ -493,21 +507,29 @@ function SpeciesPage() {
 						}}
 						highlightPendingRows
 						selectedActions={
-							<ButtonTooltip label={bulkDeleteTooltip} disabled={bulkDeleteDisabled}>
-								<Button
-									type="button"
-									variant="outline"
-									disabled={bulkDeleteDisabled}
-									onClick={() => setBulkDeleteOpen(true)}
-								>
-									{m.collections_species_deleteMany()}
-								</Button>
-							</ButtonTooltip>
+							<div className="flex items-center gap-2">
+								<ButtonTooltip label={bulkUpdateTooltip} disabled={bulkUpdateDisabled}>
+									<Button type="button" variant="outline" disabled={bulkUpdateDisabled} onClick={() => setBulkUpdateOpen(true)}>
+										{m.common_updateSelected()}
+									</Button>
+								</ButtonTooltip>
+								<ButtonTooltip label={bulkDeleteTooltip} disabled={bulkDeleteDisabled}>
+									<Button
+										type="button"
+										variant="outline"
+										disabled={bulkDeleteDisabled}
+										onClick={() => setBulkDeleteOpen(true)}
+									>
+										{m.collections_species_deleteMany()}
+									</Button>
+								</ButtonTooltip>
+							</div>
 						}
 					/>
 				</div>
 			</DashboardPageContent>
 			<SpeciesCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
+			<SpeciesUpdateManyDialog open={bulkUpdateOpen} onOpenChange={setBulkUpdateOpen} items={selectedSpecies} />
 			<DeleteConfirmDialog
 				open={bulkDeleteOpen}
 				onOpenChange={setBulkDeleteOpen}

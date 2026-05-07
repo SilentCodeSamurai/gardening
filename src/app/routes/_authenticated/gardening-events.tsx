@@ -17,6 +17,7 @@ import { DashboardPageContent } from "#/app/components/layout/dashboard-page-con
 import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
 import { GardeningActionPresentationIcon } from "@/components/gardening/gardening-action-icon";
 import { GardeningEventCreateDialog } from "@/components/gardening/gardening-event/gardening-event-create-dialog";
+import { GardeningEventUpdateManyDialog } from "@/components/gardening/gardening-event/gardening-event-update-many-dialog";
 import { GardeningEventUpdateDialog } from "@/components/gardening/gardening-event/gardening-event-update-dialog";
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
 import { DataTable } from "@/components/table/data-table";
@@ -72,6 +73,7 @@ function GardeningEventsPage() {
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => parseUrlColumnFilters(search.cf));
 	const [globalFilter, setGlobalFilter] = useState(search.q ?? "");
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+	const [bulkUpdateOpen, setBulkUpdateOpen] = useState(false);
 	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 	const bulkDeleteMany = useGardeningEventDeleteManyMutation();
 	const columnHelper = useMemo(() => createColumnHelper<GardeningEventEntity>(), []);
@@ -217,6 +219,11 @@ function GardeningEventsPage() {
 		() => table.getFilteredSelectedRowModel().rows.map((row) => row.original.id as GardeningEventEntityId),
 		[table],
 	);
+	const selectedEvents = useMemo(
+		() => table.getFilteredSelectedRowModel().rows.map((row) => row.original),
+		[table],
+	);
+	const bulkUpdateEventsDisabled = selectedEventIds.length === 0;
 	const bulkDeleteEventsDisabled = selectedEventIds.length === 0;
 	const bulkDeleteManyTooltip = tableSelectionBulkTooltip({
 		selectedCount: selectedEventIds.length,
@@ -285,6 +292,9 @@ function GardeningEventsPage() {
 						highlightPendingRows
 						selectedActions={
 							<div className="flex flex-wrap items-center gap-2">
+								<Button type="button" variant="outline" disabled={bulkUpdateEventsDisabled} onClick={() => setBulkUpdateOpen(true)}>
+									{m.common_updateSelected()}
+								</Button>
 								<ButtonTooltip label={bulkDeleteManyTooltip} disabled={bulkDeleteEventsDisabled}>
 									<Button
 										type="button"
@@ -301,6 +311,11 @@ function GardeningEventsPage() {
 				</div>
 			</DashboardPageContent>
 			<GardeningEventCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
+			<GardeningEventUpdateManyDialog
+				open={bulkUpdateOpen}
+				onOpenChange={setBulkUpdateOpen}
+				items={selectedEvents}
+			/>
 			<DeleteConfirmDialog
 				open={bulkDeleteOpen}
 				onOpenChange={setBulkDeleteOpen}

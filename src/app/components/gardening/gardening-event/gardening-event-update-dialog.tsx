@@ -126,7 +126,7 @@ export function GardeningEventUpdateDialog({ event, open, onOpenChange }: Props)
 							<Button type="button" variant="outline" onClick={close}>
 								{m.common_cancel()}
 							</Button>
-							<form.SubscribeButton label={m.common_save()} />
+							<form.SubscribeButton label={m.common_save()} requireDirty />
 						</DialogFooter>
 					</form>
 				</form.AppForm>

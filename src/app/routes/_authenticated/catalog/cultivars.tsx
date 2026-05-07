@@ -19,6 +19,7 @@ import { useCallback, useMemo, useState } from "react";
 import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
 import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
 import { CultivarCreateDialog } from "@/components/gardening/cultivar/cultivar-create-dialog";
+import { CultivarUpdateManyDialog } from "@/components/gardening/cultivar/cultivar-update-many-dialog";
 import { CultivarUpdateDialog } from "@/components/gardening/cultivar/cultivar-update-dialog";
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
@@ -275,6 +276,7 @@ function CultivarsPage() {
 	const [globalFilter, setGlobalFilter] = useState(qFromSearch ?? "");
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [createOpen, setCreateOpen] = useState(false);
+	const [bulkUpdateOpen, setBulkUpdateOpen] = useState(false);
 	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 	const bulkDeleteMany = useCultivarDeleteManyMutation();
 
@@ -587,7 +589,12 @@ function CultivarsPage() {
 		() => table.getFilteredSelectedRowModel().rows.map((row) => row.original.id),
 		[table],
 	);
+	const selectedCultivars = useMemo(
+		() => table.getFilteredSelectedRowModel().rows.map((row) => row.original),
+		[table],
+	);
 	const bulkDeleteDisabled = selectedCultivarIds.length === 0;
+	const bulkUpdateDisabled = selectedCultivarIds.length === 0;
 	const bulkDeleteTooltip = tableSelectionBulkTooltip({
 		selectedCount: selectedCultivarIds.length,
 		hasPlacedInSelection: false,
@@ -660,21 +667,27 @@ function CultivarsPage() {
 						}}
 						highlightPendingRows
 						selectedActions={
-							<ButtonTooltip label={bulkDeleteTooltip} disabled={bulkDeleteDisabled}>
-								<Button
-									type="button"
-									variant="outline"
-									disabled={bulkDeleteDisabled}
-									onClick={() => setBulkDeleteOpen(true)}
-								>
-									{m.collections_cultivar_deleteMany()}
+							<div className="flex items-center gap-2">
+								<Button type="button" variant="outline" disabled={bulkUpdateDisabled} onClick={() => setBulkUpdateOpen(true)}>
+									{m.common_updateSelected()}
 								</Button>
-							</ButtonTooltip>
+								<ButtonTooltip label={bulkDeleteTooltip} disabled={bulkDeleteDisabled}>
+									<Button
+										type="button"
+										variant="outline"
+										disabled={bulkDeleteDisabled}
+										onClick={() => setBulkDeleteOpen(true)}
+									>
+										{m.collections_cultivar_deleteMany()}
+									</Button>
+								</ButtonTooltip>
+							</div>
 						}
 					/>
 				</div>
 			</DashboardPageContent>
 			<CultivarCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
+			<CultivarUpdateManyDialog open={bulkUpdateOpen} onOpenChange={setBulkUpdateOpen} items={selectedCultivars} />
 			<DeleteConfirmDialog
 				open={bulkDeleteOpen}
 				onOpenChange={setBulkDeleteOpen}

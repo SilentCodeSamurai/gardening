@@ -25,6 +25,7 @@ import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-hea
 import type { SpeciesCategoryWithSystemCatalog } from "#/backend/core/application/use-cases/gardening/species-category.use-cases";
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
 import { SpeciesCategoryCreateDialog } from "@/components/gardening/species-category/species-category-create-dialog";
+import { SpeciesCategoryUpdateManyDialog } from "@/components/gardening/species-category/species-category-update-many-dialog";
 import { SpeciesCategoryUpdateDialog } from "@/components/gardening/species-category/species-category-update-dialog";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
 import { DataTable } from "@/components/table/data-table";
@@ -100,6 +101,7 @@ function SpeciesCategoriesPage() {
 	const [globalFilter, setGlobalFilter] = useState(qFromSearch ?? "");
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [createOpen, setCreateOpen] = useState(false);
+	const [bulkUpdateOpen, setBulkUpdateOpen] = useState(false);
 	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 	const bulkDeleteMany = useSpeciesCategoryDeleteManyMutation();
 	const columnHelper = useMemo(() => createColumnHelper<SpeciesCategoryWithSystemCatalog>(), []);
@@ -289,16 +291,28 @@ function SpeciesCategoriesPage() {
 		() => table.getFilteredSelectedRowModel().rows.map((row) => row.original.id),
 		[table],
 	);
+	const selectedCategories = useMemo(
+		() => table.getFilteredSelectedRowModel().rows.map((row) => row.original),
+		[table],
+	);
 	const selectionIncludesSystemCatalog = useMemo(
 		() => table.getFilteredSelectedRowModel().rows.some((row) => row.original.systemCatalog),
 		[table],
 	);
 	const bulkDeleteDisabled = selectedCategoryIds.length === 0 || selectionIncludesSystemCatalog;
+	const bulkUpdateDisabled = selectedCategoryIds.length === 0 || selectionIncludesSystemCatalog;
 	const bulkDeleteTooltip = tableSelectionBulkTooltip({
 		selectedCount: selectedCategoryIds.length,
 		hasPlacedInSelection: false,
 		selectionIncludesDefaultCatalog: selectionIncludesSystemCatalog,
 		enabledTooltip: m.collections_speciesCategory_deleteManyTooltip(),
+	});
+	const bulkUpdateTooltip = tableSelectionBulkTooltip({
+		selectedCount: selectedCategoryIds.length,
+		hasPlacedInSelection: false,
+		selectionIncludesDefaultCatalog: selectionIncludesSystemCatalog,
+		defaultCatalogAction: "update",
+		enabledTooltip: m.common_updateSelected(),
 	});
 	useTableUrlSync({
 		searchQ: qFromSearch,
@@ -361,21 +375,33 @@ function SpeciesCategoriesPage() {
 						}}
 						highlightPendingRows
 						selectedActions={
-							<ButtonTooltip label={bulkDeleteTooltip} disabled={bulkDeleteDisabled}>
-								<Button
-									type="button"
-									variant="outline"
-									disabled={bulkDeleteDisabled}
-									onClick={() => setBulkDeleteOpen(true)}
-								>
-									{m.collections_speciesCategory_deleteMany()}
-								</Button>
-							</ButtonTooltip>
+							<div className="flex items-center gap-2">
+								<ButtonTooltip label={bulkUpdateTooltip} disabled={bulkUpdateDisabled}>
+									<Button type="button" variant="outline" disabled={bulkUpdateDisabled} onClick={() => setBulkUpdateOpen(true)}>
+										{m.common_updateSelected()}
+									</Button>
+								</ButtonTooltip>
+								<ButtonTooltip label={bulkDeleteTooltip} disabled={bulkDeleteDisabled}>
+									<Button
+										type="button"
+										variant="outline"
+										disabled={bulkDeleteDisabled}
+										onClick={() => setBulkDeleteOpen(true)}
+									>
+										{m.collections_speciesCategory_deleteMany()}
+									</Button>
+								</ButtonTooltip>
+							</div>
 						}
 					/>
 				</div>
 			</DashboardPageContent>
 			<SpeciesCategoryCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
+			<SpeciesCategoryUpdateManyDialog
+				open={bulkUpdateOpen}
+				onOpenChange={setBulkUpdateOpen}
+				items={selectedCategories}
+			/>
 			<DeleteConfirmDialog
 				open={bulkDeleteOpen}
 				onOpenChange={setBulkDeleteOpen}

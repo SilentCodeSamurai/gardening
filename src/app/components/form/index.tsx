@@ -29,12 +29,22 @@ import { ITEM_PRESENTATION_ICON_KEYS, type ItemPresentationIconKey } from "@/lib
 import { cn } from "@/lib/utils";
 import { getLocale } from "@/paraglide/runtime";
 
-export function SubscribeButton({ label }: { label: string }) {
+export function SubscribeButton({
+	label,
+	requireDirty = false,
+}: {
+	label: string;
+	requireDirty?: boolean;
+}) {
 	const form = useFormContext();
 	return (
-		<form.Subscribe selector={(state) => state.isSubmitting}>
-			{(isSubmitting) => (
-				<Button id={`${form.formId}-submit-button`} type="submit" disabled={isSubmitting}>
+		<form.Subscribe selector={(state) => ({ isSubmitting: state.isSubmitting, isDirty: state.isDirty })}>
+			{({ isSubmitting, isDirty }) => (
+				<Button
+					id={`${form.formId}-submit-button`}
+					type="submit"
+					disabled={isSubmitting || (requireDirty && !isDirty)}
+				>
 					{label}
 				</Button>
 			)}

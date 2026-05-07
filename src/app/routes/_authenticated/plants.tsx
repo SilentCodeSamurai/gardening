@@ -25,6 +25,7 @@ import {
 	GardeningEventCreateDialogWithData,
 } from "@/components/gardening/gardening-event/gardening-event-create-dialog";
 import { PlantCreateDialog } from "@/components/gardening/plant/plant-create-dialog";
+import { PlantUpdateManyDialog } from "@/components/gardening/plant/plant-update-many-dialog";
 import { PlantUpdateDialogWithCultivars } from "@/components/gardening/plant/plant-update-dialog";
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
@@ -376,6 +377,7 @@ function PlantsPage() {
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [createOpen, setCreateOpen] = useState(false);
 	const [createEventOpen, setCreateEventOpen] = useState(false);
+	const [bulkUpdateOpen, setBulkUpdateOpen] = useState(false);
 	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 	const bulkDeleteMany = usePlantDeleteManyMutation();
 
@@ -900,6 +902,10 @@ function PlantsPage() {
 		() => table.getFilteredSelectedRowModel().rows.map((row) => row.original.id as PlantEntityId),
 		[table],
 	);
+	const selectedPlants = useMemo(
+		() => table.getFilteredSelectedRowModel().rows.map((row) => row.original),
+		[table],
+	);
 	const selectedPlantsEventInitialValues = useMemo<GardeningEventCreateDialogInitialValues>(
 		() => ({
 			target: "plants",
@@ -912,6 +918,7 @@ function PlantsPage() {
 		[placedPlantIds, selectedPlantIds],
 	);
 	const bulkCreateEventDisabled = selectedPlantIds.length === 0;
+	const bulkUpdateManyDisabled = selectedPlantIds.length === 0;
 	const bulkDeleteManyDisabled = selectedPlantIds.length === 0 || selectionHasPlacedPlant;
 	const bulkCreateEventTooltip = useMemo(
 		() =>
@@ -1004,6 +1011,9 @@ function PlantsPage() {
 										{m.collections_gardeningEvent_create()}
 									</Button>
 								</ButtonTooltip>
+								<Button type="button" variant="outline" disabled={bulkUpdateManyDisabled} onClick={() => setBulkUpdateOpen(true)}>
+									{m.common_updateSelected()}
+								</Button>
 								<ButtonTooltip label={bulkDeleteManyTooltip} disabled={bulkDeleteManyDisabled}>
 									<Button
 										type="button"
@@ -1020,6 +1030,7 @@ function PlantsPage() {
 				</div>
 			</DashboardPageContent>
 			<PlantCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
+			<PlantUpdateManyDialog open={bulkUpdateOpen} onOpenChange={setBulkUpdateOpen} items={selectedPlants} />
 			<GardeningEventCreateDialog
 				open={createEventOpen}
 				onOpenChange={setCreateEventOpen}

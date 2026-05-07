@@ -187,7 +187,7 @@ function PlantUpdateDialogContent({ plant, open, onOpenChange, cultivarItems }: 
 										form.setFieldValue("backgroundColor", next.backgroundColor);
 									}}
 								>
-									Select from parent cultivar
+								{m.collections_selectFromCultivar()}
 								</Button>
 							</div>
 						</div>
@@ -196,7 +196,7 @@ function PlantUpdateDialogContent({ plant, open, onOpenChange, cultivarItems }: 
 								{m.common_cancel()}
 							</Button>
 							<div id="submit">
-								<form.SubscribeButton label={m.common_save()} />
+								<form.SubscribeButton label={m.common_save()} requireDirty />
 							</div>
 						</DialogFooter>
 					</form>

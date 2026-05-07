@@ -20,6 +20,7 @@ import {
 	type GardeningEventCreateDialogInitialValues,
 } from "@/components/gardening/gardening-event/gardening-event-create-dialog";
 import { LocationCreateDialog } from "@/components/gardening/location/location-create-dialog";
+import { LocationUpdateManyDialog } from "@/components/gardening/location/location-update-many-dialog";
 import { LocationUpdateDialog } from "@/components/gardening/location/location-update-dialog";
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
@@ -141,6 +142,7 @@ function LocationsPage() {
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [createOpen, setCreateOpen] = useState(false);
 	const [createEventOpen, setCreateEventOpen] = useState(false);
+	const [bulkUpdateOpen, setBulkUpdateOpen] = useState(false);
 	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 	const bulkDeleteMany = useLocationDeleteManyMutation();
 	const columnHelper = useMemo(() => createColumnHelper<CachedLocation>(), []);
@@ -321,11 +323,16 @@ function LocationsPage() {
 		() => table.getFilteredSelectedRowModel().rows.map((row) => row.original.id as LocationEntityId),
 		[table],
 	);
+	const selectedLocations = useMemo(
+		() => table.getFilteredSelectedRowModel().rows.map((row) => row.original),
+		[table],
+	);
 	const selectionHasPlacedLocation = useMemo(
 		() => selectedLocationIds.some((id) => placedLocationIds.has(String(id))),
 		[placedLocationIds, selectedLocationIds],
 	);
 	const bulkLocationDeleteDisabled = selectedLocationIds.length === 0 || selectionHasPlacedLocation;
+	const bulkLocationUpdateDisabled = selectedLocationIds.length === 0;
 	const bulkLocationCreateEventDisabled =
 		selectedLocationIds.length === 0 || selectionHasPlacedLocation || selectedLocationIds.length !== 1;
 	const bulkCreateEventTooltip = tableSelectionBulkTooltip({
@@ -429,6 +436,9 @@ function LocationsPage() {
 										{m.collections_gardeningEvent_create()}
 									</Button>
 								</ButtonTooltip>
+								<Button type="button" variant="outline" disabled={bulkLocationUpdateDisabled} onClick={() => setBulkUpdateOpen(true)}>
+									{m.common_updateSelected()}
+								</Button>
 								<ButtonTooltip label={bulkDeleteManyTooltip} disabled={bulkLocationDeleteDisabled}>
 									<Button
 										type="button"
@@ -445,6 +455,11 @@ function LocationsPage() {
 				</div>
 			</DashboardPageContent>
 			<LocationCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
+			<LocationUpdateManyDialog
+				open={bulkUpdateOpen}
+				onOpenChange={setBulkUpdateOpen}
+				items={selectedLocations}
+			/>
 			<GardeningEventCreateDialog
 				open={createEventOpen}
 				onOpenChange={setCreateEventOpen}

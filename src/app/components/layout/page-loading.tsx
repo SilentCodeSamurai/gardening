@@ -43,7 +43,7 @@ export function PageLoading({ className, label, showLabel = true, variant = "pag
 		>
 			<Spinner
 				aria-hidden
-				className={cn("size-5 text-white transition-opacity duration-500", showSpinner ? "opacity-100" : "opacity-0")}
+				className={cn("size-5 text-foreground transition-opacity duration-500", showSpinner ? "opacity-100" : "opacity-0")}
 			/>
 			<span className="sr-only">{showLabel ? resolved : m.common_loading()}</span>
 		</div>

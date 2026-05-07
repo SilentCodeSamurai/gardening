@@ -177,14 +177,14 @@ export function CultivarUpdateDialog({ cultivar, open, onOpenChange }: Props) {
 									form.setFieldValue("backgroundColor", next.backgroundColor);
 								}}
 							>
-								Select from parent species
+								{m.collections_selectFromSpecies()}
 							</Button>
 						</div>
 						<DialogFooter>
 							<Button type="button" variant="outline" onClick={close}>
 								{m.common_cancel()}
 							</Button>
-							<form.SubscribeButton label={m.common_save()} />
+							<form.SubscribeButton label={m.common_save()} requireDirty />
 						</DialogFooter>
 					</form>
 				</form.AppForm>
