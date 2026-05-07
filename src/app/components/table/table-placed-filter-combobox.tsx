@@ -52,7 +52,7 @@ export function TablePlacementFilterCombobox({
 			isItemEqualToValue={(a, b) => a.id === b.id}
 		>
 			<ComboboxInput
-				className="min-w-0 w-full"
+				className="w-full min-w-0"
 				placeholder={allPlaceholder}
 				aria-label={ariaLabel}
 				showClear={selected.filter !== ""}

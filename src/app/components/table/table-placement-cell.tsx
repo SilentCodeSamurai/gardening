@@ -2,8 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { XIcon } from "lucide-react";
 
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
-import { cn } from "@/lib/utils";
 import type { LocationPlacementSummary, PlantPlacementSummary } from "@/lib/spatial-placement-summary";
+import { cn } from "@/lib/utils";
 
 type LocationProps = {
 	mode: "location";
@@ -33,7 +33,7 @@ export function TablePlacementCell(props: TablePlacementCellProps) {
 		const { summary } = props;
 		if (summary.kind === "unplaced") {
 			return (
-				<div className="flex min-w-0 items-center text-muted-foreground" aria-label={unplacedAria}>
+				<div className="flex min-w-0 items-center text-muted-foreground" role="img" aria-label={unplacedAria}>
 					<XIcon className="size-3.5 shrink-0" aria-hidden />
 				</div>
 			);
@@ -50,7 +50,7 @@ export function TablePlacementCell(props: TablePlacementCellProps) {
 
 	if (summary.kind === "unplaced") {
 		return (
-			<div className="flex min-w-0 items-center text-muted-foreground" aria-label={unplacedAria}>
+			<div className="flex min-w-0 items-center text-muted-foreground" role="img" aria-label={unplacedAria}>
 				<XIcon className="size-3.5 shrink-0" aria-hidden />
 			</div>
 		);
