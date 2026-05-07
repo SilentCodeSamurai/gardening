@@ -211,6 +211,55 @@ export function usePlantUpdateMutation() {
 	);
 }
 
+export function usePlantUpdateManyMutation() {
+	const queryClient = useQueryClient();
+	return useMutation(
+		orpc.plant.bulkEditByIds.mutationOptions({
+		onMutate: async (variables) => {
+			await cancelQueriesByKeys(queryClient, [queryKeys.plant.all.queryKey]);
+			const snapshots = snapshotQueries(queryClient, [queryKeys.plant.all.queryKey]);
+			queryClient.setQueryData<CachedHydratedPlantList>(queryKeys.plant.all.queryKey, (prev) => {
+				if (!prev) return prev;
+				const ids = new Set(variables.ids.map(String));
+				return {
+					...prev,
+					items: prev.items.map((item) => {
+						if (!ids.has(String(item.id)) || isQueryObjectPending(item)) return item;
+						const cultivarId = (variables.cultivarId !== undefined
+							? variables.cultivarId
+							: item.cultivarId) as HydratedPlantEntity["cultivarId"];
+						const nextCultivar =
+							variables.cultivarId === undefined
+								? item.cultivar
+								: variables.cultivarId === null
+									? null
+									: (getHydratedCultivar(queryClient, String(variables.cultivarId)) ?? null);
+						return markQueryObjectPending({
+							...item,
+							...(variables.title !== undefined ? { title: variables.title } : {}),
+							...(variables.description !== undefined ? { description: variables.description } : {}),
+							cultivarId,
+							...(variables.presentation !== undefined ? { presentation: variables.presentation } : {}),
+							cultivar: nextCultivar,
+							updatedAt: new Date(),
+						});
+					}),
+				};
+			});
+			return { snapshots };
+		},
+		onError: (error, _variables, ctx) => {
+			if (ctx) restoreQuerySnapshots(queryClient, ctx.snapshots);
+			toast.error(renderError(error, m.collections_plant_actionError()));
+		},
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({ queryKey: queryKeys.plant.all.queryKey });
+			toast.success(m.collections_plant_updateSuccess());
+		},
+		}),
+	);
+}
+
 export function usePlantDeleteMutation() {
 	const queryClient = useQueryClient();
 

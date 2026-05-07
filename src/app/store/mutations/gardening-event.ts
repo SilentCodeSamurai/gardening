@@ -91,6 +91,50 @@ export function useGardeningEventUpdateMutation() {
 	);
 }
 
+export function useGardeningEventUpdateManyMutation() {
+	const qc = useQueryClient();
+	return useMutation(
+		orpc.gardeningEvent.bulkEditByIds.mutationOptions({
+		onMutate: async (variables) => {
+			await cancelQueriesByKeys(qc, [queryKeys.gardeningEvent.all.queryKey]);
+			const snapshots = snapshotQueries(qc, [queryKeys.gardeningEvent.all.queryKey]);
+			qc.setQueryData<CachedGardeningEventList>(queryKeys.gardeningEvent.all.queryKey, (prev) => {
+				if (!prev) return prev;
+				const ids = new Set(variables.ids.map(String));
+				const now = new Date();
+				const nextItems = prev.items.map((item) => {
+					if (!ids.has(String(item.id)) || isQueryObjectPending(item)) return item;
+					const occurredAt =
+						variables.occurredAt !== undefined ? toDateOrNull(variables.occurredAt) : item.occurredAt;
+					const optimistic = markQueryObjectPending({
+						...item,
+						...(variables.action !== undefined ? { action: variables.action } : {}),
+						occurredAt,
+						updatedAt: now,
+					});
+					upsertInGardeningEventScopedLists(qc, optimistic);
+					return optimistic;
+				});
+				return { ...prev, items: nextItems };
+			});
+			return { snapshots };
+		},
+		onError: (error, _variables, ctx) => {
+			if (ctx) restoreQuerySnapshots(qc, ctx.snapshots);
+			toast.error(renderError(error, m.collections_gardeningEvent_actionError()));
+		},
+		onSuccess: async () => {
+			await Promise.all([
+				qc.invalidateQueries({ queryKey: queryKeys.gardeningEvent.all.queryKey }),
+				qc.invalidateQueries({ queryKey: queryKeys.gardeningEvent.forPlant._def }),
+				qc.invalidateQueries({ queryKey: queryKeys.gardeningEvent.forLocation._def }),
+			]);
+			toast.success(m.collections_gardeningEvent_updateSuccess());
+		},
+		}),
+	);
+}
+
 export function useGardeningEventDeleteMutation() {
 	const qc = useQueryClient();
 	return useMutation(

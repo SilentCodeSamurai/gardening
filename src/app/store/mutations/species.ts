@@ -151,6 +151,53 @@ export function useSpeciesUpdateMutation() {
 	);
 }
 
+export function useSpeciesUpdateManyMutation() {
+	const queryClient = useQueryClient();
+	return useMutation(
+		orpc.species.bulkEditByIds.mutationOptions({
+		onMutate: async (variables) => {
+			await cancelQueriesByKeys(queryClient, [queryKeys.species.all.queryKey]);
+			const snapshots = snapshotQueries(queryClient, [queryKeys.species.all.queryKey]);
+			queryClient.setQueryData<CachedSpeciesList>(queryKeys.species.all.queryKey, (prev) => {
+				if (!prev) return prev;
+				const ids = new Set(variables.ids.map(String));
+				return {
+					...prev,
+					items: prev.items.map((item) => {
+						if (!ids.has(String(item.id)) || isQueryObjectPending(item)) return item;
+						const categoryId = (variables.categoryId !== undefined
+							? variables.categoryId
+							: item.categoryId) as SpeciesWithSystemCatalog["categoryId"];
+						return markQueryObjectPending({
+							...item,
+							categoryId,
+							...(variables.characteristics !== undefined
+								? { characteristics: variables.characteristics }
+								: {}),
+							...(variables.presentation !== undefined ? { presentation: variables.presentation } : {}),
+							updatedAt: new Date(),
+						});
+					}),
+				};
+			});
+			return { snapshots };
+		},
+		onError: (error, _variables, ctx) => {
+			if (ctx) restoreQuerySnapshots(queryClient, ctx.snapshots);
+			toast.error(renderError(error, m.collections_species_actionError()));
+		},
+		onSuccess: async () => {
+			await Promise.all([
+				queryClient.invalidateQueries({ queryKey: queryKeys.species.all.queryKey }),
+				queryClient.invalidateQueries({ queryKey: queryKeys.plant.all.queryKey }),
+				queryClient.invalidateQueries({ queryKey: queryKeys.cultivar.all.queryKey }),
+			]);
+			toast.success(m.collections_species_updateSuccess());
+		},
+		}),
+	);
+}
+
 export function useSpeciesDeleteMutation() {
 	const queryClient = useQueryClient();
 

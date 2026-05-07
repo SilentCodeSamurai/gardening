@@ -121,6 +121,43 @@ export function useSpeciesCategoryUpdateMutation() {
 	);
 }
 
+export function useSpeciesCategoryUpdateManyMutation() {
+	const queryClient = useQueryClient();
+	return useMutation(
+		orpc.speciesCategory.bulkEditByIds.mutationOptions({
+		onMutate: async (variables) => {
+			await cancelQueriesByKeys(queryClient, [queryKeys.speciesCategory.all.queryKey]);
+			const snapshots = snapshotQueries(queryClient, [queryKeys.speciesCategory.all.queryKey]);
+			queryClient.setQueryData<CachedSpeciesCategoryList>(queryKeys.speciesCategory.all.queryKey, (prev) => {
+				if (!prev) return prev;
+				const ids = new Set(variables.ids.map(String));
+				return {
+					...prev,
+					items: prev.items.map((item) => {
+						if (!ids.has(String(item.id)) || isQueryObjectPending(item)) return item;
+						return markQueryObjectPending({
+							...item,
+							...(variables.title !== undefined ? { title: variables.title } : {}),
+							...(variables.presentation !== undefined ? { presentation: variables.presentation } : {}),
+							updatedAt: new Date(),
+						});
+					}),
+				};
+			});
+			return { snapshots };
+		},
+		onError: (error, _variables, ctx) => {
+			if (ctx) restoreQuerySnapshots(queryClient, ctx.snapshots);
+			toast.error(renderError(error, m.collections_speciesCategory_actionError()));
+		},
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({ queryKey: queryKeys.speciesCategory.all.queryKey });
+			toast.success(m.collections_speciesCategory_updateSuccess());
+		},
+		}),
+	);
+}
+
 export function useSpeciesCategoryDeleteMutation() {
 	const queryClient = useQueryClient();
 

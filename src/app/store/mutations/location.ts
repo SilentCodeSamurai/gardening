@@ -116,6 +116,43 @@ export function useLocationUpdateMutation() {
 	);
 }
 
+export function useLocationUpdateManyMutation() {
+	const queryClient = useQueryClient();
+	return useMutation(
+		orpc.location.bulkEditByIds.mutationOptions({
+		onMutate: async (variables) => {
+			await cancelQueriesByKeys(queryClient, [queryKeys.location.all.queryKey]);
+			const snapshots = snapshotQueries(queryClient, [queryKeys.location.all.queryKey]);
+			queryClient.setQueryData<CachedLocationList>(queryKeys.location.all.queryKey, (prev) => {
+				if (!prev) return prev;
+				const ids = new Set(variables.ids.map(String));
+				return {
+					...prev,
+					items: prev.items.map((item) => {
+						if (!ids.has(String(item.id)) || isQueryObjectPending(item)) return item;
+						return markQueryObjectPending({
+							...item,
+							...(variables.name !== undefined ? { name: variables.name } : {}),
+							...(variables.presentation !== undefined ? { presentation: variables.presentation } : {}),
+							updatedAt: new Date(),
+						});
+					}),
+				};
+			});
+			return { snapshots };
+		},
+		onError: (error, _variables, ctx) => {
+			if (ctx) restoreQuerySnapshots(queryClient, ctx.snapshots);
+			toast.error(renderError(error, m.collections_location_actionError()));
+		},
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({ queryKey: queryKeys.location.all.queryKey });
+			toast.success(m.collections_location_updateSuccess());
+		},
+		}),
+	);
+}
+
 export function useLocationDeleteMutation() {
 	const queryClient = useQueryClient();
 

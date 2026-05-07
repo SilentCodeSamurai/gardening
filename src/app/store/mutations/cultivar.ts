@@ -142,6 +142,52 @@ export function useCultivarUpdateMutation() {
 	);
 }
 
+export function useCultivarUpdateManyMutation() {
+	const queryClient = useQueryClient();
+	return useMutation(
+		orpc.cultivar.bulkEditByIds.mutationOptions({
+		onMutate: async (variables) => {
+			await cancelQueriesByKeys(queryClient, [queryKeys.cultivar.all.queryKey]);
+			const snapshots = snapshotQueries(queryClient, [queryKeys.cultivar.all.queryKey]);
+			queryClient.setQueryData<CachedCultivarList>(queryKeys.cultivar.all.queryKey, (prev) => {
+				if (!prev) return prev;
+				const ids = new Set(variables.ids.map(String));
+				return {
+					...prev,
+					items: prev.items.map((item) => {
+						if (!ids.has(String(item.id)) || isQueryObjectPending(item)) return item;
+						const speciesId = (variables.speciesId !== undefined
+							? variables.speciesId
+							: item.speciesId) as CultivarEntity["speciesId"];
+						return markQueryObjectPending({
+							...item,
+							speciesId,
+							...(variables.characteristics !== undefined
+								? { characteristics: variables.characteristics }
+								: {}),
+							...(variables.presentation !== undefined ? { presentation: variables.presentation } : {}),
+							updatedAt: new Date(),
+						});
+					}),
+				};
+			});
+			return { snapshots };
+		},
+		onError: (error, _variables, ctx) => {
+			if (ctx) restoreQuerySnapshots(queryClient, ctx.snapshots);
+			toast.error(renderError(error, m.collections_cultivar_actionError()));
+		},
+		onSuccess: async () => {
+			await Promise.all([
+				queryClient.invalidateQueries({ queryKey: queryKeys.cultivar.all.queryKey }),
+				queryClient.invalidateQueries({ queryKey: queryKeys.plant.all.queryKey }),
+			]);
+			toast.success(m.collections_cultivar_updateSuccess());
+		},
+		}),
+	);
+}
+
 export function useCultivarDeleteMutation() {
 	const queryClient = useQueryClient();
 
