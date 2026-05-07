@@ -1,4 +1,5 @@
 import type { ComponentProps } from "react";
+import { useEffect, useState } from "react";
 
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
@@ -19,26 +20,32 @@ export type PageLoadingProps = {
 
 export function PageLoading({ className, label, showLabel = true, variant = "page" }: PageLoadingProps) {
 	const resolved = label ?? m.common_loading();
+	const [showSpinner, setShowSpinner] = useState(false);
+
+	useEffect(() => {
+		const showTimeoutId = window.setTimeout(() => setShowSpinner(true), 350);
+		return () => {
+			window.clearTimeout(showTimeoutId);
+		};
+	}, []);
 
 	return (
 		<div
-			role="progressbar"
 			aria-live="polite"
 			aria-busy={true}
 			className={cn(
-				"flex flex-col items-center justify-center gap-3",
+				"flex flex-col items-center justify-center gap-3 bg-transparent",
 				variant === "page" && "min-h-0 min-w-0 flex-1",
 				variant === "section" && "w-full py-8",
 				variant === "inline" && "justify-center py-12",
 				className,
 			)}
 		>
-			<Spinner className="size-8" aria-hidden />
-			{showLabel ? (
-				<p className="text-muted-foreground text-sm">{resolved}</p>
-			) : (
-				<span className="sr-only">{resolved}</span>
-			)}
+			<Spinner
+				aria-hidden
+				className={cn("size-5 text-white transition-opacity duration-500", showSpinner ? "opacity-100" : "opacity-0")}
+			/>
+			<span className="sr-only">{showLabel ? resolved : m.common_loading()}</span>
 		</div>
 	);
 }

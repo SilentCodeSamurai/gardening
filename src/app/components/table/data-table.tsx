@@ -3,8 +3,9 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import type { ReactNode } from "react";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { PageLoading } from "@/components/layout/page-loading";
+import { TableGlobalSearch } from "@/components/table/table-global-search";
 import { TABLE_LIST_SELECT_COLUMN_WIDTH_PX } from "@/components/table/table-list-column-sizes";
-import { Input } from "@/components/ui/input";
+import { DebouncedInput } from "@/components/ui/debounced-input";
 import { pendingItemSurfaceClassName } from "@/components/ui/pending-item-surface";
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,14 @@ type DataTableProps<TData extends RowData> = {
 	emptyMessage: string;
 	selectedLabel?: string;
 	selectedActions?: ReactNode;
+	globalSearch?: {
+		value: string;
+		onValueChange: (value: string) => void;
+		onClearFilters: () => void;
+		searchPlaceholder: string;
+		clearSearchLabel: string;
+		clearFiltersLabel: string;
+	};
 	/** When true, rows with {@link isQueryObjectPending} originals get a left accent and tinted background. */
 	highlightPendingRows?: boolean;
 };
@@ -96,6 +105,7 @@ export function DataTable<TData extends RowData>({
 	emptyMessage,
 	selectedLabel = "selected",
 	selectedActions,
+	globalSearch,
 	highlightPendingRows = false,
 }: DataTableProps<TData>) {
 	const rows = table.getRowModel().rows;
@@ -223,10 +233,12 @@ export function DataTable<TData extends RowData>({
 								filterRenderer ? (
 									filterRenderer({ table, column: header.column as Column<TData, unknown> })
 								) : (
-									<Input
+									<DebouncedInput
 										value={(header.column.getFilterValue() as string) ?? ""}
-										onChange={(event) => header.column.setFilterValue(event.target.value)}
+										onChange={(value) => header.column.setFilterValue(value)}
 										placeholder={m.filtering_searchPlaceholder()}
+										showClear
+										clearAriaLabel={m.filtering_clearFilters()}
 									/>
 								)
 							) : null}
@@ -240,6 +252,16 @@ export function DataTable<TData extends RowData>({
 	if (rowCount === 0) {
 		return (
 			<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
+				{globalSearch ? (
+					<TableGlobalSearch
+						value={globalSearch.value}
+						onValueChange={globalSearch.onValueChange}
+						onClearFilters={globalSearch.onClearFilters}
+						searchPlaceholder={globalSearch.searchPlaceholder}
+						clearSearchLabel={globalSearch.clearSearchLabel}
+						clearFiltersLabel={globalSearch.clearFiltersLabel}
+					/>
+				) : null}
 				<DataTableToolbar
 					selectedCount={selectedCount}
 					rowCount={rowCount}
@@ -286,6 +308,16 @@ export function DataTable<TData extends RowData>({
 
 	return (
 		<div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
+			{globalSearch ? (
+				<TableGlobalSearch
+					value={globalSearch.value}
+					onValueChange={globalSearch.onValueChange}
+					onClearFilters={globalSearch.onClearFilters}
+					searchPlaceholder={globalSearch.searchPlaceholder}
+					clearSearchLabel={globalSearch.clearSearchLabel}
+					clearFiltersLabel={globalSearch.clearFiltersLabel}
+				/>
+			) : null}
 			<DataTableToolbar
 				selectedCount={selectedCount}
 				rowCount={rowCount}
