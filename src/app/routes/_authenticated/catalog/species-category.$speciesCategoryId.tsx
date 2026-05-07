@@ -12,6 +12,7 @@ import { ItemNotFound } from "@/components/layout/item-not-found";
 import { PageLoading } from "@/components/layout/page-loading";
 import { Button } from "@/components/ui/button";
 import { ButtonTooltip } from "@/components/ui/button-tooltip";
+import { serializeUrlColumnFilters } from "@/lib/table-url-filters";
 import { translateCatalogField } from "@/lib/translate-catalog-field";
 import * as m from "@/paraglide/messages.js";
 import { getLocale } from "@/paraglide/runtime";
@@ -142,7 +143,7 @@ function SpeciesCategoryDetailPage() {
 							<dd className="min-w-0">
 								<Link
 									to="/catalog/species"
-									search={{ category: String(data.id) }}
+									search={{ cf: serializeUrlColumnFilters([{ id: "category", value: String(data.id) }]) }}
 									className="text-primary underline-offset-4 hover:underline"
 								>
 									{m.components_detail_link_speciesInCategory()}
@@ -154,7 +155,7 @@ function SpeciesCategoryDetailPage() {
 							<dd className="min-w-0">
 								<Link
 									to="/catalog/cultivars"
-									search={{ category: String(data.id), species: "" }}
+									search={{ cf: serializeUrlColumnFilters([{ id: "category", value: String(data.id) }]) }}
 									className="text-primary underline-offset-4 hover:underline"
 								>
 									{m.components_detail_link_cultivarsInCategory()}
@@ -166,7 +167,7 @@ function SpeciesCategoryDetailPage() {
 							<dd className="min-w-0">
 								<Link
 									to="/plants"
-									search={{ category: String(data.id), species: "", cultivar: "" }}
+									search={{ cf: serializeUrlColumnFilters([{ id: "category", value: String(data.id) }]) }}
 									className="text-primary underline-offset-4 hover:underline"
 								>
 									{m.components_detail_link_plantsInCategory()}

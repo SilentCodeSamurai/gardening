@@ -4,6 +4,7 @@ import { useStore } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import { SELECT_NONE } from "@/components/form/select-sentinel";
+import { useAppTours } from "@/components/tours/app-tours-provider";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -13,18 +14,21 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { useAppTours } from "@/components/tours/app-tours-provider";
 import { useAppForm } from "@/hooks/form";
 import { normalizePresentationInput } from "@/lib/item-presentation";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import { usePlantUpdateMutation } from "@/store/mutations";
-import type { CachedHydratedPlant } from "@/store/query-cache-types";
+import type { CachedCultivar, CachedHydratedPlant } from "@/store/query-cache-types";
 
 type Props = {
 	plant: CachedHydratedPlant;
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+};
+
+type PlantUpdateDialogContentProps = Props & {
+	cultivarItems: CachedCultivar[];
 };
 
 type FormValues = {
@@ -36,7 +40,9 @@ type FormValues = {
 	backgroundColor: string;
 };
 
-function toPresentationFields(presentation: ItemPresentationValueObject | null): Pick<FormValues, "iconKey" | "iconColor" | "backgroundColor"> {
+function toPresentationFields(
+	presentation: ItemPresentationValueObject | null,
+): Pick<FormValues, "iconKey" | "iconColor" | "backgroundColor"> {
 	return {
 		iconKey: presentation?.iconKey ? String(presentation.iconKey) : SELECT_NONE,
 		iconColor: presentation?.iconColor ?? "",
@@ -44,20 +50,18 @@ function toPresentationFields(presentation: ItemPresentationValueObject | null):
 	};
 }
 
-export function PlantUpdateDialog({ plant, open, onOpenChange }: Props) {
+function PlantUpdateDialogContent({ plant, open, onOpenChange, cultivarItems }: PlantUpdateDialogContentProps) {
 	const { activeTourId } = useAppTours();
 	const isCrudTourActive = activeTourId === "working-with-data";
-	const { data: cultivarData } = useQuery({ ...queryKeys.cultivar.all });
 	const mut = usePlantUpdateMutation();
 
 	const cultivarOptions = useMemo(() => {
-		const cultivars = cultivarData?.items ?? [];
-		return cultivars.map((c) => ({
+		return cultivarItems.map((c) => ({
 			value: String(c.id),
 			label: c.characteristics.name,
 			presentation: c.presentation,
 		}));
-	}, [cultivarData?.items]);
+	}, [cultivarItems]);
 
 	const form = useAppForm({
 		defaultValues: {
@@ -139,7 +143,10 @@ export function PlantUpdateDialog({ plant, open, onOpenChange }: Props) {
 							</form.AppField>
 							<form.AppField name="description">
 								{(field) => (
-									<field.TextField label={m.fields_description()} placeholder={m.fields_description()} />
+									<field.TextField
+										label={m.fields_description()}
+										placeholder={m.fields_description()}
+									/>
 								)}
 							</form.AppField>
 							<div className="grid grid-cols-3 gap-2">
@@ -154,7 +161,9 @@ export function PlantUpdateDialog({ plant, open, onOpenChange }: Props) {
 									)}
 								</form.AppField>
 								<form.AppField name="iconColor">
-									{(field) => <field.ColorPicker label={m.fields_iconColor()} placeholder="#2f855a" />}
+									{(field) => (
+										<field.ColorPicker label={m.fields_iconColor()} placeholder="#2f855a" />
+									)}
 								</form.AppField>
 								<form.AppField name="backgroundColor">
 									{(field) => (
@@ -169,7 +178,7 @@ export function PlantUpdateDialog({ plant, open, onOpenChange }: Props) {
 									size="sm"
 									disabled={selectedCultivarId === SELECT_NONE}
 									onClick={() => {
-										const cultivar = cultivarData?.items.find(
+										const cultivar = cultivarItems.find(
 											(item) => String(item.id) === selectedCultivarId,
 										);
 										const next = toPresentationFields(cultivar?.presentation ?? null);
@@ -194,5 +203,28 @@ export function PlantUpdateDialog({ plant, open, onOpenChange }: Props) {
 				</form.AppForm>
 			</DialogContent>
 		</Dialog>
+	);
+}
+
+export function PlantUpdateDialog({ plant, open, onOpenChange }: Props) {
+	const { data: cultivarData } = useQuery({ ...queryKeys.cultivar.all });
+	return (
+		<PlantUpdateDialogContent
+			plant={plant}
+			open={open}
+			onOpenChange={onOpenChange}
+			cultivarItems={cultivarData?.items ?? []}
+		/>
+	);
+}
+
+export function PlantUpdateDialogWithCultivars({
+	plant,
+	open,
+	onOpenChange,
+	cultivarItems,
+}: Props & { cultivarItems: CachedCultivar[] }) {
+	return (
+		<PlantUpdateDialogContent plant={plant} open={open} onOpenChange={onOpenChange} cultivarItems={cultivarItems} />
 	);
 }

@@ -1,7 +1,7 @@
 import type { SpeciesEntity } from "@backend/core/domain/gardening/entities";
 import type { ItemPresentationValueObject } from "@backend/core/domain/gardening/value-objects";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
 	type Column,
 	type ColumnFiltersState,
@@ -14,7 +14,7 @@ import {
 	type SortingState,
 	type Updater,
 } from "@tanstack/react-table";
-import { EllipsisVerticalIcon, ExternalLinkIcon, PencilIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
+import { EllipsisVerticalIcon, ExternalLinkIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
 import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
@@ -52,10 +52,11 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { CATALOG_FILTER_NO_VALUE } from "@/lib/catalog-filter-sentinel";
 import { renderError } from "@/lib/render-error";
 import { tableSelectionBulkTooltip } from "@/lib/table-selection-tooltips";
+import { parseUrlColumnFilters, serializeUrlColumnFilters } from "@/lib/table-url-filters";
+import { useTableUrlSync } from "@/lib/use-table-url-sync";
 import { translateCatalogField } from "@/lib/translate-catalog-field";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
@@ -77,10 +78,14 @@ type CultivarSpeciesFilterOption = {
 };
 
 export const Route = createFileRoute("/_authenticated/catalog/cultivars")({
-	validateSearch: (search: Record<string, unknown>) => ({
-		category: typeof search.category === "string" ? search.category : "",
-		species: typeof search.species === "string" ? search.species : "",
-	}),
+	validateSearch: (search: Record<string, unknown>) => {
+		const next: { q?: string; sortBy?: string; sortDesc?: boolean; cf?: string } = {};
+		if (typeof search.q === "string") next.q = search.q;
+		if (typeof search.sortBy === "string") next.sortBy = search.sortBy;
+		if (typeof search.sortDesc === "boolean") next.sortDesc = search.sortDesc;
+		if (typeof search.cf === "string") next.cf = search.cf;
+		return next;
+	},
 	component: CultivarsPage,
 });
 
@@ -160,10 +165,17 @@ function reconcileCultivarColumnFilters(
 }
 
 function CultivarsPage() {
-	const { category: categoryFromSearch, species: speciesFromSearch } = Route.useSearch();
+	const navigate = useNavigate({ from: Route.fullPath });
+	const {
+		q: qFromSearch,
+		sortBy: sortByFromSearch,
+		sortDesc: sortDescFromSearch,
+		cf: cfFromSearch,
+	} = Route.useSearch();
 	const { data, isPending, isError, error } = useQuery({ ...queryKeys.cultivar.all });
 	const { data: speciesData } = useQuery({ ...queryKeys.species.all });
 	const { data: categoriesData } = useQuery({ ...queryKeys.speciesCategory.all });
+	const { data: plantsData } = useQuery({ ...queryKeys.plant.all });
 
 	const items = useMemo(() => data?.items ?? [], [data?.items]);
 
@@ -181,6 +193,14 @@ function CultivarsPage() {
 		}
 		return map;
 	}, [categoriesData?.items]);
+	const linkedPlantsCountByCultivarId = useMemo(() => {
+		const map = new Map<string, number>();
+		for (const plant of plantsData?.items ?? []) {
+			const key = String(plant.cultivarId ?? "");
+			map.set(key, (map.get(key) ?? 0) + 1);
+		}
+		return map;
+	}, [plantsData?.items]);
 
 	const categoryFilterOptions = useMemo((): CultivarCategoryFilterOption[] => {
 		const seen = new Set<string>();
@@ -244,14 +264,15 @@ function CultivarsPage() {
 		return sorted;
 	}, [items, speciesById]);
 
-	const [sorting, setSorting] = useState<SortingState>([{ id: "title", desc: false }]);
+	const [sorting, setSorting] = useState<SortingState>([
+		{ id: sortByFromSearch ?? "title", desc: Boolean(sortDescFromSearch) },
+	]);
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
-		const initial: ColumnFiltersState = [];
-		if (categoryFromSearch) initial.push({ id: "category", value: categoryFromSearch });
-		if (speciesFromSearch) initial.push({ id: "species", value: speciesFromSearch });
-		return initial;
+		const parsed = parseUrlColumnFilters(cfFromSearch);
+		if (parsed.length > 0) return parsed;
+		return [];
 	});
-	const [globalFilter, setGlobalFilter] = useState("");
+	const [globalFilter, setGlobalFilter] = useState(qFromSearch ?? "");
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [createOpen, setCreateOpen] = useState(false);
 	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -515,10 +536,22 @@ function CultivarsPage() {
 					headerClassName: tableListHeaderClasses.actions,
 					cellClassName: tableListCellClasses.actions,
 				},
-				cell: ({ row }) => <CultivarRowActions cultivar={row.original} />,
+				cell: ({ row }) => (
+					<CultivarRowActions
+						cultivar={row.original}
+						linkedPlantsCount={linkedPlantsCountByCultivarId.get(String(row.original.id)) ?? 0}
+					/>
+				),
 			}),
 		],
-		[categoryFilterOptions, categoryLabelById, columnHelper, speciesById, speciesFilterOptions],
+		[
+			categoryFilterOptions,
+			categoryLabelById,
+			columnHelper,
+			linkedPlantsCountByCultivarId,
+			speciesById,
+			speciesFilterOptions,
+		],
 	);
 
 	const table = useMemo(
@@ -566,6 +599,26 @@ function CultivarsPage() {
 			: filteredRowCount === 0
 				? m.filtering_noFilteredElements()
 				: m.items_noElements();
+	useTableUrlSync({
+		searchQ: qFromSearch,
+		searchSortBy: sortByFromSearch,
+		searchSortDesc: sortDescFromSearch,
+		searchCf: cfFromSearch,
+		initialSorting: [{ id: "title", desc: false }],
+		sorting,
+		setSorting,
+		globalFilter,
+		setGlobalFilter,
+		columnFilters: effectiveColumnFilters,
+		setColumnFilters,
+		navigate,
+		currentSearch: {
+			q: qFromSearch,
+			sortBy: sortByFromSearch,
+			sortDesc: sortDescFromSearch,
+			cf: cfFromSearch,
+		},
+	});
 
 	return (
 		<div id="cultivars-page" className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -586,30 +639,6 @@ function CultivarsPage() {
 				</ButtonTooltip>
 			</DashboardPageHeading>
 			<DashboardPageContent className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
-				<div className="flex flex-wrap items-end gap-2">
-					<Input
-						className="w-full min-w-40 sm:w-56"
-						placeholder={m.filtering_searchPlaceholder()}
-						value={globalFilter}
-						onChange={(event) => setGlobalFilter(event.target.value)}
-						aria-label={m.filtering_searchPlaceholder()}
-					/>
-					<ButtonTooltip label={m.filtering_clearFilters()}>
-						<Button
-							type="button"
-							variant="outline"
-							size="icon"
-							onClick={() => {
-								table.resetGlobalFilter();
-								table.resetColumnFilters();
-								setRowSelection({});
-							}}
-							aria-label={m.filtering_clearFilters()}
-						>
-							<XIcon />
-						</Button>
-					</ButtonTooltip>
-				</div>
 				<div className="flex min-h-0 min-w-0 flex-1 flex-col px-1 pt-1 pb-2">
 					<DataTable
 						table={table}
@@ -617,6 +646,18 @@ function CultivarsPage() {
 						isError={isError}
 						errorMessage={renderError(error, m.common_loadError())}
 						emptyMessage={emptyMessage}
+						globalSearch={{
+							value: globalFilter,
+							onValueChange: setGlobalFilter,
+							searchPlaceholder: m.filtering_searchPlaceholder(),
+							clearSearchLabel: m.filtering_clearSearch(), 
+							clearFiltersLabel: m.filtering_clearFilters(),
+							onClearFilters: () => {
+								setGlobalFilter("");
+								setColumnFilters([]);
+								setRowSelection({});
+							},
+						}}
 						highlightPendingRows
 						selectedActions={
 							<ButtonTooltip label={bulkDeleteTooltip} disabled={bulkDeleteDisabled}>
@@ -652,15 +693,18 @@ function CultivarsPage() {
 	);
 }
 
-function CultivarRowActions({ cultivar }: { cultivar: CachedCultivar }) {
+function CultivarRowActions({
+	cultivar,
+	linkedPlantsCount,
+}: {
+	cultivar: CachedCultivar;
+	linkedPlantsCount: number;
+}) {
 	const [editOpen, setEditOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const del = useCultivarDeleteMutation();
-	const { data: plantsData } = useQuery({ ...queryKeys.plant.all });
 	const linkedTitle = m.common_related();
 	const syncPending = isQueryObjectPending(cultivar);
-	const linkedPlantsCount =
-		plantsData?.items.filter((plant) => String(plant.cultivarId ?? "") === String(cultivar.id)).length ?? 0;
 
 	return (
 		<div className="flex w-full items-center justify-center">
@@ -697,7 +741,9 @@ function CultivarRowActions({ cultivar }: { cultivar: CachedCultivar }) {
 								<Button asChild variant="outline" size="xs" title={linkedTitle}>
 									<Link
 										to="/plants"
-										search={{ category: "", species: "", cultivar: String(cultivar.id) }}
+										search={{
+											cf: serializeUrlColumnFilters([{ id: "cultivar", value: String(cultivar.id) }]),
+										}}
 										aria-label={linkedTitle}
 									>
 										<ExternalLinkIcon />
@@ -731,3 +777,7 @@ function CultivarRowActions({ cultivar }: { cultivar: CachedCultivar }) {
 		</div>
 	);
 }
+
+
+
+

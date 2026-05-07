@@ -6,6 +6,13 @@ import { ACTIONS, type EventData, STATUS, type Step, type TooltipRenderProps, us
 import { getTourCopy } from "@/components/tours/tour-copy";
 import { APP_TOUR_IDS, type AppTourId } from "@/components/tours/tour-ids";
 import { Button } from "@/components/ui/button";
+import {
+	resetCultivarsSearch,
+	resetGardeningEventsSearch,
+	resetLocationsSearch,
+	resetPlantsSearch,
+	resetSpeciesSearch,
+} from "@/lib/table-search-reset";
 import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages.js";
 
@@ -388,7 +395,7 @@ export function AppToursProvider({ children }: { children: ReactNode }) {
 							copyIndex: 12,
 							before: async () => {
 								if (pathname !== "/catalog/species")
-									await navigate({ to: "/catalog/species", search: { category: "" } });
+									await navigate({ to: "/catalog/species", search: resetSpeciesSearch });
 								await waitForSelector("#species-page");
 							},
 						}),
@@ -403,7 +410,7 @@ export function AppToursProvider({ children }: { children: ReactNode }) {
 							copyIndex: 17,
 							before: async () => {
 								if (pathname !== "/catalog/cultivars")
-									await navigate({ to: "/catalog/cultivars", search: { category: "", species: "" } });
+									await navigate({ to: "/catalog/cultivars", search: resetCultivarsSearch });
 								await waitForSelector("#cultivars-page");
 							},
 						}),
@@ -420,7 +427,7 @@ export function AppToursProvider({ children }: { children: ReactNode }) {
 								if (pathname !== "/plants") {
 									await navigate({
 										to: "/plants",
-										search: { category: "", species: "", cultivar: "" },
+										search: resetPlantsSearch,
 									});
 								}
 								await waitForSelector("#plants-page");
@@ -436,7 +443,7 @@ export function AppToursProvider({ children }: { children: ReactNode }) {
 							placement: "center",
 							copyIndex: 27,
 							before: async () => {
-								if (pathname !== "/locations") await navigate({ to: "/locations" });
+								if (pathname !== "/locations") await navigate({ to: "/locations", search: resetLocationsSearch });
 								await waitForSelector("#locations-page");
 							},
 						}),
@@ -451,7 +458,9 @@ export function AppToursProvider({ children }: { children: ReactNode }) {
 							placement: "center",
 							copyIndex: 32,
 							before: async () => {
-								if (pathname !== "/gardening-events") await navigate({ to: "/gardening-events" });
+								if (pathname !== "/gardening-events") {
+									await navigate({ to: "/gardening-events", search: resetGardeningEventsSearch });
+								}
 								await waitForSelector("#events-page");
 							},
 						}),
@@ -524,7 +533,7 @@ export function AppToursProvider({ children }: { children: ReactNode }) {
 								if (pathname !== "/plants") {
 									await navigate({
 										to: "/plants",
-										search: { category: "", species: "", cultivar: "" },
+										search: resetPlantsSearch,
 									});
 								}
 								await waitForSelector("#plants-page");
@@ -708,7 +717,7 @@ export function AppToursProvider({ children }: { children: ReactNode }) {
 							placement: "center",
 							copyIndex: 1,
 							before: async () => {
-								if (pathname !== "/locations") await navigate({ to: "/locations" });
+								if (pathname !== "/locations") await navigate({ to: "/locations", search: resetLocationsSearch });
 								await waitForSelector("#locations-page");
 							},
 						}),

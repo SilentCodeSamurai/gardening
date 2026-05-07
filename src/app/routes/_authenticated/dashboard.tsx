@@ -4,11 +4,11 @@ import { ArrowRightIcon, LayoutGridIcon } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
 import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
+import { GardeningActionPresentationIcon } from "@/components/gardening/gardening-action-icon";
 import { GardeningEventCreateDialog } from "@/components/gardening/gardening-event/gardening-event-create-dialog";
+import { LocationCreateDialog } from "@/components/gardening/location/location-create-dialog";
 import { PlantCreateDialog } from "@/components/gardening/plant/plant-create-dialog";
 import { getPlantDisplayTitle } from "@/components/gardening/plant/plant-list-card";
-import { LocationCreateDialog } from "@/components/gardening/location/location-create-dialog";
-import { GardeningActionPresentationIcon } from "@/components/gardening/gardening-action-icon";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
 import { Button } from "@/components/ui/button";
 import { ButtonTooltip } from "@/components/ui/button-tooltip";
@@ -16,6 +16,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { gardeningActionMessage } from "@/lib/gardening-action-messages";
 import { renderError } from "@/lib/render-error";
 import { getLocationPlacementSummary, getPlantPlacementSummary } from "@/lib/spatial-placement-summary";
+import {
+	resetCultivarsSearch,
+	resetGardeningEventsSearch,
+	resetLocationsSearch,
+	resetPlantsSearch,
+	resetSpeciesCategoriesSearch,
+	resetSpeciesSearch,
+} from "@/lib/table-search-reset";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 
@@ -72,10 +80,7 @@ function DashboardPage() {
 		[plantsData?.items],
 	);
 	const recentEvents = useMemo(() => sortedEvents.slice(0, DASHBOARD_PREVIEW_LIMIT), [sortedEvents]);
-	const rootLocations = useMemo(
-		() => allRootLocations.slice(0, DASHBOARD_PREVIEW_LIMIT),
-		[allRootLocations],
-	);
+	const rootLocations = useMemo(() => allRootLocations.slice(0, DASHBOARD_PREVIEW_LIMIT), [allRootLocations]);
 	const recentPlants = useMemo(() => sortedPlants.slice(0, DASHBOARD_PREVIEW_LIMIT), [sortedPlants]);
 
 	return (
@@ -108,7 +113,9 @@ function DashboardPage() {
 									>
 										<GardeningActionPresentationIcon action={event.action} />
 										<div className="min-w-0 flex-1">
-											<p className="truncate text-sm capitalize">{gardeningActionMessage(event.action.type)}</p>
+											<p className="truncate text-sm capitalize">
+												{gardeningActionMessage(event.action.type)}
+											</p>
 											<p className="truncate text-muted-foreground text-xs">
 												{event.occurredAt === null
 													? m.common_unknown()
@@ -143,7 +150,10 @@ function DashboardPage() {
 											params={{ locationId: String(location.id) }}
 											className="flex min-w-0 flex-1 items-center gap-2"
 										>
-											<ItemPresentationIcon presentation={location.presentation} className="size-6 shrink-0" />
+											<ItemPresentationIcon
+												presentation={location.presentation}
+												className="size-6 shrink-0"
+											/>
 											<span className="truncate font-medium text-sm">{location.name}</span>
 										</Link>
 										<ButtonTooltip label={m.components_locationLayoutEditor_openLayoutEditor()}>
@@ -182,9 +192,14 @@ function DashboardPage() {
 											params={{ plantId: String(plant.id) }}
 											className="flex min-w-0 flex-1 items-center gap-2"
 										>
-											<ItemPresentationIcon presentation={plant.presentation} className="size-6 shrink-0" />
+											<ItemPresentationIcon
+												presentation={plant.presentation}
+												className="size-6 shrink-0"
+											/>
 											<div className="min-w-0 flex-1">
-												<p className="truncate font-medium text-sm">{getPlantDisplayTitle(plant)}</p>
+												<p className="truncate font-medium text-sm">
+													{getPlantDisplayTitle(plant)}
+												</p>
 												<p className="truncate text-muted-foreground text-xs">
 													{plant.updatedAt.toLocaleString(undefined, {
 														dateStyle: "short",
@@ -221,7 +236,9 @@ function DashboardPage() {
 																to="/location/$locationId/layout"
 																params={{
 																	locationId:
-																		placement.kind === "underLocation" ? placement.locationId : "",
+																		placement.kind === "underLocation"
+																			? placement.locationId
+																			: "",
 																}}
 																aria-label={m.components_locationLayoutEditor_openLayoutEditor()}
 															>
@@ -249,6 +266,7 @@ function DashboardPage() {
 							<li>
 								<Link
 									to="/catalog/species-categories"
+									search={resetSpeciesCategoriesSearch}
 									className="flex items-center justify-between rounded-md border border-border/70 bg-card/40 px-3 py-2 text-sm transition-colors hover:bg-muted/30"
 								>
 									<span>{m.collections_speciesCategory_titlePlural()}</span>
@@ -258,7 +276,7 @@ function DashboardPage() {
 							<li>
 								<Link
 									to="/catalog/species"
-									search={{ category: "" }}
+									search={resetSpeciesSearch}
 									className="flex items-center justify-between rounded-md border border-border/70 bg-card/40 px-3 py-2 text-sm transition-colors hover:bg-muted/30"
 								>
 									<span>{m.collections_species_titlePlural()}</span>
@@ -268,7 +286,7 @@ function DashboardPage() {
 							<li>
 								<Link
 									to="/catalog/cultivars"
-									search={{ category: "", species: "" }}
+									search={resetCultivarsSearch}
 									className="flex items-center justify-between rounded-md border border-border/70 bg-card/40 px-3 py-2 text-sm transition-colors hover:bg-muted/30"
 								>
 									<span>{m.collections_cultivar_titlePlural()}</span>
@@ -323,17 +341,21 @@ function DashboardCollectionCard({
 					</CardTitle>
 					<div className="flex items-center gap-2">
 						{onCreate && createLabel ? (
-							<Button
-								size="sm"
-								variant="outline"
-								type="button"
-								onClick={onCreate}
-							>
+							<Button size="sm" variant="outline" type="button" onClick={onCreate}>
 								{createLabel}
 							</Button>
 						) : null}
 						<Link
 							to={to}
+							search={
+								to === "/plants"
+									? resetPlantsSearch
+									: to === "/locations"
+										? resetLocationsSearch
+										: to === "/gardening-events"
+											? resetGardeningEventsSearch
+											: undefined
+							}
 							className="inline-flex items-center gap-1 text-muted-foreground text-xs hover:text-foreground"
 						>
 							<span>{m.common_open()}</span>

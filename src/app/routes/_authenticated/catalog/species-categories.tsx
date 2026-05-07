@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
 	type ColumnFiltersState,
 	createColumnHelper,
@@ -50,25 +50,54 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { renderError } from "@/lib/render-error";
 import { tableSelectionBulkTooltip } from "@/lib/table-selection-tooltips";
+import { parseUrlColumnFilters, serializeUrlColumnFilters } from "@/lib/table-url-filters";
+import { useTableUrlSync } from "@/lib/use-table-url-sync";
 import { translateCatalogField } from "@/lib/translate-catalog-field";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import { useSpeciesCategoryDeleteManyMutation, useSpeciesCategoryDeleteMutation } from "@/store/mutations";
 
 export const Route = createFileRoute("/_authenticated/catalog/species-categories")({
+	validateSearch: (search: Record<string, unknown>) => {
+		const next: { q?: string; sortBy?: string; sortDesc?: boolean; cf?: string } = {};
+		if (typeof search.q === "string") next.q = search.q;
+		if (typeof search.sortBy === "string") next.sortBy = search.sortBy;
+		if (typeof search.sortDesc === "boolean") next.sortDesc = search.sortDesc;
+		if (typeof search.cf === "string") next.cf = search.cf;
+		return next;
+	},
 	component: SpeciesCategoriesPage,
 });
 
 function SpeciesCategoriesPage() {
+	const navigate = useNavigate({ from: Route.fullPath });
+	const {
+		q: qFromSearch,
+		sortBy: sortByFromSearch,
+		sortDesc: sortDescFromSearch,
+		cf: cfFromSearch,
+	} = Route.useSearch();
 	const { data, isPending, isError, error } = useQuery({ ...queryKeys.speciesCategory.all });
+	const { data: speciesData } = useQuery({ ...queryKeys.species.all });
 	const items = useMemo(() => data?.items ?? [], [data?.items]);
+	const linkedSpeciesCountByCategoryId = useMemo(() => {
+		const map = new Map<string, number>();
+		for (const species of speciesData?.items ?? []) {
+			const key = String(species.categoryId ?? "");
+			map.set(key, (map.get(key) ?? 0) + 1);
+		}
+		return map;
+	}, [speciesData?.items]);
 
-	const [sorting, setSorting] = useState<SortingState>([{ id: "title", desc: false }]);
-	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-	const [globalFilter, setGlobalFilter] = useState("");
+	const [sorting, setSorting] = useState<SortingState>([
+		{ id: sortByFromSearch ?? "title", desc: Boolean(sortDescFromSearch) },
+	]);
+	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() =>
+		parseUrlColumnFilters(cfFromSearch),
+	);
+	const [globalFilter, setGlobalFilter] = useState(qFromSearch ?? "");
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [createOpen, setCreateOpen] = useState(false);
 	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -218,10 +247,15 @@ function SpeciesCategoriesPage() {
 					headerClassName: tableListHeaderClasses.actions,
 					cellClassName: tableListCellClasses.actions,
 				},
-				cell: ({ row }) => <SpeciesCategoryRowActions category={row.original} />,
+				cell: ({ row }) => (
+					<SpeciesCategoryRowActions
+						category={row.original}
+						linkedSpeciesCount={linkedSpeciesCountByCategoryId.get(String(row.original.id)) ?? 0}
+					/>
+				),
 			}),
 		],
-		[columnHelper],
+		[columnHelper, linkedSpeciesCountByCategoryId],
 	);
 	const table = useMemo(
 		() =>
@@ -266,6 +300,26 @@ function SpeciesCategoriesPage() {
 		selectionIncludesDefaultCatalog: selectionIncludesSystemCatalog,
 		enabledTooltip: m.collections_speciesCategory_deleteManyTooltip(),
 	});
+	useTableUrlSync({
+		searchQ: qFromSearch,
+		searchSortBy: sortByFromSearch,
+		searchSortDesc: sortDescFromSearch,
+		searchCf: cfFromSearch,
+		initialSorting: [{ id: "title", desc: false }],
+		sorting,
+		setSorting,
+		globalFilter,
+		setGlobalFilter,
+		columnFilters,
+		setColumnFilters,
+		navigate,
+		currentSearch: {
+			q: qFromSearch,
+			sortBy: sortByFromSearch,
+			sortDesc: sortDescFromSearch,
+			cf: cfFromSearch,
+		},
+	});
 
 	return (
 		<div id="species-categories-page" className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -286,29 +340,6 @@ function SpeciesCategoriesPage() {
 				</ButtonTooltip>
 			</DashboardPageHeading>
 			<DashboardPageContent className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
-				<div className="flex flex-wrap items-end gap-2">
-					<Input
-						className="w-full min-w-40 sm:w-56"
-						placeholder={m.filtering_searchPlaceholder()}
-						value={globalFilter}
-						onChange={(event) => setGlobalFilter(event.target.value)}
-					/>
-					<ButtonTooltip label={m.filtering_clearFilters()}>
-						<Button
-							type="button"
-							variant="outline"
-							size="icon"
-							onClick={() => {
-								table.resetGlobalFilter();
-								table.resetColumnFilters();
-								setRowSelection({});
-							}}
-							aria-label={m.filtering_clearFilters()}
-						>
-							<XIcon />
-						</Button>
-					</ButtonTooltip>
-				</div>
 				<div className="flex min-h-0 min-w-0 flex-1 flex-col px-1 pt-1 pb-2">
 					<DataTable
 						table={table}
@@ -316,6 +347,18 @@ function SpeciesCategoriesPage() {
 						isError={isError}
 						errorMessage={renderError(error, m.common_loadError())}
 						emptyMessage={m.items_noElements()}
+						globalSearch={{
+							value: globalFilter,
+							onValueChange: setGlobalFilter,
+							searchPlaceholder: m.filtering_searchPlaceholder(),
+							clearSearchLabel: m.filtering_clearSearch(), 
+							clearFiltersLabel: m.filtering_clearFilters(),
+							onClearFilters: () => {
+								setGlobalFilter("");
+								setColumnFilters([]);
+								setRowSelection({});
+							},
+						}}
 						highlightPendingRows
 						selectedActions={
 							<ButtonTooltip label={bulkDeleteTooltip} disabled={bulkDeleteDisabled}>
@@ -351,14 +394,17 @@ function SpeciesCategoriesPage() {
 	);
 }
 
-function SpeciesCategoryRowActions({ category }: { category: SpeciesCategoryWithSystemCatalog }) {
+function SpeciesCategoryRowActions({
+	category,
+	linkedSpeciesCount,
+}: {
+	category: SpeciesCategoryWithSystemCatalog;
+	linkedSpeciesCount: number;
+}) {
 	const [editOpen, setEditOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const del = useSpeciesCategoryDeleteMutation();
-	const { data: speciesData } = useQuery({ ...queryKeys.species.all });
 	const label = translateCatalogField(category.title, category.systemCatalog);
-	const linkedSpeciesCount =
-		speciesData?.items.filter((species) => String(species.categoryId ?? "") === String(category.id)).length ?? 0;
 	const editTitle = category.systemCatalog ? m.common_editDisabledDefaultCatalog() : m.common_edit();
 	const deleteTitle = category.systemCatalog ? m.common_editDisabledDefaultCatalog() : m.common_delete();
 	const linkedTitle = m.common_related();
@@ -409,7 +455,7 @@ function SpeciesCategoryRowActions({ category }: { category: SpeciesCategoryWith
 								<Button asChild variant="outline" size="xs" title={linkedTitle}>
 									<Link
 										to="/catalog/species"
-										search={{ category: String(category.id) }}
+										search={{ cf: serializeUrlColumnFilters([{ id: "category", value: String(category.id) }]) }}
 										aria-label={linkedTitle}
 									>
 										<ExternalLinkIcon />
@@ -421,7 +467,7 @@ function SpeciesCategoryRowActions({ category }: { category: SpeciesCategoryWith
 								<Button asChild variant="outline" size="xs" title={linkedTitle}>
 									<Link
 										to="/catalog/cultivars"
-										search={{ category: String(category.id), species: "" }}
+										search={{ cf: serializeUrlColumnFilters([{ id: "category", value: String(category.id) }]) }}
 										aria-label={linkedTitle}
 									>
 										<ExternalLinkIcon />
@@ -433,7 +479,7 @@ function SpeciesCategoryRowActions({ category }: { category: SpeciesCategoryWith
 								<Button asChild variant="outline" size="xs" title={linkedTitle}>
 									<Link
 										to="/plants"
-										search={{ category: String(category.id), species: "", cultivar: "" }}
+										search={{ cf: serializeUrlColumnFilters([{ id: "category", value: String(category.id) }]) }}
 										aria-label={linkedTitle}
 									>
 										<ExternalLinkIcon />
@@ -469,3 +515,7 @@ function SpeciesCategoryRowActions({ category }: { category: SpeciesCategoryWith
 		</div>
 	);
 }
+
+
+
+

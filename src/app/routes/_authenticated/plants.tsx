@@ -1,7 +1,7 @@
 import type { CultivarEntity, PlantEntityId } from "@backend/core/domain/gardening/entities";
 import type { ItemPresentationValueObject } from "@backend/core/domain/gardening/value-objects";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
 	type Column,
 	type ColumnFiltersState,
@@ -15,16 +15,17 @@ import {
 	type Table,
 	type Updater,
 } from "@tanstack/react-table";
-import { EllipsisVerticalIcon, PencilIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
+import { EllipsisVerticalIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
 import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
 import {
 	GardeningEventCreateDialog,
 	type GardeningEventCreateDialogInitialValues,
+	GardeningEventCreateDialogWithData,
 } from "@/components/gardening/gardening-event/gardening-event-create-dialog";
 import { PlantCreateDialog } from "@/components/gardening/plant/plant-create-dialog";
-import { PlantUpdateDialog } from "@/components/gardening/plant/plant-update-dialog";
+import { PlantUpdateDialogWithCultivars } from "@/components/gardening/plant/plant-update-dialog";
 import { DeleteConfirmDialog } from "@/components/gardening/shared/delete-confirm-dialog";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
 import { DataTable } from "@/components/table/data-table";
@@ -60,24 +61,33 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { CATALOG_FILTER_NO_VALUE } from "@/lib/catalog-filter-sentinel";
 import { renderError } from "@/lib/render-error";
 import { getPlantPlacementSummary, plantPlacementFilterToken } from "@/lib/spatial-placement-summary";
 import { tableSelectionBulkTooltip } from "@/lib/table-selection-tooltips";
+import { parseUrlColumnFilters } from "@/lib/table-url-filters";
+import { useTableUrlSync } from "@/lib/use-table-url-sync";
 import { translateCatalogField } from "@/lib/translate-catalog-field";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import { usePlantDeleteManyMutation, usePlantDeleteMutation } from "@/store/mutations";
-import type { CachedHydratedPlant } from "@/store/query-cache-types";
+import type { CachedCultivar, CachedHydratedPlant, CachedLocation } from "@/store/query-cache-types";
 import { collectPlacedEntityIds } from "@/store/spatial-placement";
 
 export const Route = createFileRoute("/_authenticated/plants")({
-	validateSearch: (search: Record<string, unknown>) => ({
-		category: typeof search.category === "string" ? search.category : "",
-		species: typeof search.species === "string" ? search.species : "",
-		cultivar: typeof search.cultivar === "string" ? search.cultivar : "",
-	}),
+	validateSearch: (search: Record<string, unknown>) => {
+		const next: {
+			q?: string;
+			sortBy?: string;
+			sortDesc?: boolean;
+			cf?: string;
+		} = {};
+		if (typeof search.q === "string") next.q = search.q;
+		if (typeof search.sortBy === "string") next.sortBy = search.sortBy;
+		if (typeof search.sortDesc === "boolean") next.sortDesc = search.sortDesc;
+		if (typeof search.cf === "string") next.cf = search.cf;
+		return next;
+	},
 	component: PlantsPage,
 });
 
@@ -202,10 +212,12 @@ type CultivarOption = {
 };
 
 function PlantsPage() {
+	const navigate = useNavigate({ from: Route.fullPath });
 	const {
-		category: categoryFromSearch,
-		species: speciesFromSearch,
-		cultivar: cultivarFromSearch,
+		q: qFromSearch,
+		sortBy: sortByFromSearch,
+		sortDesc: sortDescFromSearch,
+		cf: cfFromSearch,
 	} = Route.useSearch();
 	const { data, isPending, isError, error } = useQuery({ ...queryKeys.plant.all });
 	const { data: spatialData } = useQuery({
@@ -218,6 +230,8 @@ function PlantsPage() {
 	const { data: locationData } = useQuery({ ...queryKeys.location.all });
 	const items = useMemo(() => data?.items ?? [], [data?.items]);
 	const allLocations = useMemo(() => locationData?.items ?? [], [locationData?.items]);
+	const cultivarItems = useMemo(() => cultivarData?.items ?? [], [cultivarData?.items]);
+	const locationItems = useMemo(() => locationData?.items ?? [], [locationData?.items]);
 	const speciesCategoryById = useMemo(() => {
 		const map = new Map<string, string>();
 		for (const s of speciesData?.items ?? []) {
@@ -352,14 +366,12 @@ function PlantsPage() {
 		return opts;
 	}, [items, speciesById]);
 
-	const [sorting, setSorting] = useState<SortingState>([{ id: "title", desc: false }]);
-	const [globalFilter, setGlobalFilter] = useState("");
+	const [sorting, setSorting] = useState<SortingState>([
+		{ id: sortByFromSearch || "title", desc: Boolean(sortDescFromSearch) },
+	]);
+	const [globalFilter, setGlobalFilter] = useState(qFromSearch ?? "");
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => {
-		const initial: ColumnFiltersState = [];
-		if (categoryFromSearch) initial.push({ id: "category", value: categoryFromSearch });
-		if (speciesFromSearch) initial.push({ id: "species", value: speciesFromSearch });
-		if (cultivarFromSearch) initial.push({ id: "cultivar", value: cultivarFromSearch });
-		return initial;
+		return parseUrlColumnFilters(cfFromSearch);
 	});
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [createOpen, setCreateOpen] = useState(false);
@@ -573,7 +585,13 @@ function PlantsPage() {
 					matchesCatalogColumnFilter(plantSpeciesFilterKey(row.original), filterValue),
 				enableGlobalFilter: false,
 				meta: {
-					filter: ({ column, table }: { column: Column<CachedHydratedPlant, unknown>; table: Table<CachedHydratedPlant> }) => {
+					filter: ({
+						column,
+						table,
+					}: {
+						column: Column<CachedHydratedPlant, unknown>;
+						table: Table<CachedHydratedPlant>;
+					}) => {
 						const categoryFilter = String(table.getColumn("category")?.getFilterValue() ?? "");
 						const filteredSpeciesOptions =
 							categoryFilter === CATALOG_FILTER_NO_VALUE
@@ -646,7 +664,13 @@ function PlantsPage() {
 					matchesCatalogColumnFilter(plantCultivarFilterKey(row.original), filterValue),
 				enableGlobalFilter: false,
 				meta: {
-					filter: ({ column, table }: { column: Column<CachedHydratedPlant, unknown>; table: Table<CachedHydratedPlant> }) => {
+					filter: ({
+						column,
+						table,
+					}: {
+						column: Column<CachedHydratedPlant, unknown>;
+						table: Table<CachedHydratedPlant>;
+					}) => {
 						const categoryFilter = String(table.getColumn("category")?.getFilterValue() ?? "");
 						const speciesFilter = String(table.getColumn("species")?.getFilterValue() ?? "");
 						let filteredCultivarOptions = cultivarComboboxOptions;
@@ -816,7 +840,13 @@ function PlantsPage() {
 					cellClassName: tableListCellClasses.actions,
 				},
 				cell: ({ row }) => (
-					<PlantRowActions plant={row.original} isPlaced={placedPlantIds.has(String(row.original.id))} />
+					<PlantRowActions
+						plant={row.original}
+						isPlaced={placedPlantIds.has(String(row.original.id))}
+						cultivarItems={cultivarItems}
+						locationItems={locationItems}
+						plantItems={items}
+					/>
 				),
 			}),
 		],
@@ -825,7 +855,9 @@ function PlantsPage() {
 			categoryLabelById,
 			columnHelper,
 			cultivarComboboxOptions,
+			cultivarItems,
 			items,
+			locationItems,
 			placedPlantIds,
 			plantCategoryFilterOptions,
 			plantPlacementFilterItems,
@@ -899,6 +931,26 @@ function PlantsPage() {
 			: filteredRowCount === 0
 				? m.filtering_noFilteredElements()
 				: m.items_noElements();
+	useTableUrlSync({
+		searchQ: qFromSearch,
+		searchSortBy: sortByFromSearch,
+		searchSortDesc: sortDescFromSearch,
+		searchCf: cfFromSearch,
+		initialSorting: [{ id: "title", desc: false }],
+		sorting,
+		setSorting,
+		globalFilter,
+		setGlobalFilter,
+		columnFilters: effectiveColumnFilters,
+		setColumnFilters,
+		navigate,
+		currentSearch: {
+			q: qFromSearch,
+			sortBy: sortByFromSearch,
+			sortDesc: sortDescFromSearch,
+			cf: cfFromSearch,
+		},
+	});
 
 	return (
 		<div id="plants-page" className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -920,30 +972,6 @@ function PlantsPage() {
 				</ButtonTooltip>
 			</DashboardPageHeading>
 			<DashboardPageContent className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
-				<div className="flex flex-wrap items-end gap-2">
-					<Input
-						className="w-full min-w-40 sm:w-56"
-						placeholder={m.filtering_searchPlaceholder()}
-						value={globalFilter}
-						onChange={(event) => setGlobalFilter(event.target.value)}
-						aria-label={m.filtering_searchPlaceholder()}
-					/>
-					<ButtonTooltip label={m.filtering_clearFilters()}>
-						<Button
-							type="button"
-							variant="outline"
-							size="icon"
-							onClick={() => {
-								table.resetGlobalFilter();
-								table.resetColumnFilters();
-								setRowSelection({});
-							}}
-							aria-label={m.filtering_clearFilters()}
-						>
-							<XIcon />
-						</Button>
-					</ButtonTooltip>
-				</div>
 				<div className="flex min-h-0 min-w-0 flex-1 flex-col px-1 pt-1 pb-2">
 					<DataTable
 						table={table}
@@ -951,6 +979,18 @@ function PlantsPage() {
 						isError={isError}
 						errorMessage={renderError(error, m.common_loadError())}
 						emptyMessage={emptyMessage}
+						globalSearch={{
+							value: globalFilter,
+							onValueChange: setGlobalFilter,
+							searchPlaceholder: m.filtering_searchPlaceholder(),
+							clearSearchLabel: m.filtering_clearSearch(), 
+							clearFiltersLabel: m.filtering_clearFilters(),
+							onClearFilters: () => {
+								setGlobalFilter("");
+								setColumnFilters([]);
+								setRowSelection({});
+							},
+						}}
 						highlightPendingRows
 						selectedActions={
 							<div className="flex flex-wrap items-center gap-2">
@@ -1003,7 +1043,19 @@ function PlantsPage() {
 	);
 }
 
-function PlantRowActions({ plant, isPlaced }: { plant: CachedHydratedPlant; isPlaced: boolean }) {
+function PlantRowActions({
+	plant,
+	isPlaced,
+	cultivarItems,
+	locationItems,
+	plantItems,
+}: {
+	plant: CachedHydratedPlant;
+	isPlaced: boolean;
+	cultivarItems: CachedCultivar[];
+	locationItems: CachedLocation[];
+	plantItems: CachedHydratedPlant[];
+}) {
 	const [editOpen, setEditOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [createEventOpen, setCreateEventOpen] = useState(false);
@@ -1028,7 +1080,10 @@ function PlantRowActions({ plant, isPlaced }: { plant: CachedHydratedPlant; isPl
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent className="flex flex-col gap-1" align="end">
-					<DropdownMenuItem onSelect={() => setCreateEventOpen(true)} title={m.collections_gardeningEvent_createForPlantRowHint()}>
+					<DropdownMenuItem
+						onSelect={() => setCreateEventOpen(true)}
+						title={m.collections_gardeningEvent_createForPlantRowHint()}
+					>
 						<PlusIcon />
 						{m.collections_gardeningEvent_create()}
 					</DropdownMenuItem>
@@ -1063,10 +1118,17 @@ function PlantRowActions({ plant, isPlaced }: { plant: CachedHydratedPlant; isPl
 				</DropdownMenuContent>
 			</DropdownMenu>
 
-			<PlantUpdateDialog plant={plant} open={editOpen} onOpenChange={setEditOpen} />
-			<GardeningEventCreateDialog
+			<PlantUpdateDialogWithCultivars
+				plant={plant}
+				open={editOpen}
+				onOpenChange={setEditOpen}
+				cultivarItems={cultivarItems}
+			/>
+			<GardeningEventCreateDialogWithData
 				open={createEventOpen}
 				onOpenChange={setCreateEventOpen}
+				locationItems={locationItems}
+				plantItems={plantItems}
 				initialValues={{
 					target: "plants",
 					plantIds: [plant.id as PlantEntityId],
@@ -1086,3 +1148,7 @@ function PlantRowActions({ plant, isPlaced }: { plant: CachedHydratedPlant; isPl
 		</div>
 	);
 }
+
+
+
+

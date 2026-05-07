@@ -1,6 +1,6 @@
 import type { LocationEntityId } from "@backend/core/domain/gardening/entities";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
 	type ColumnFiltersState,
 	createColumnHelper,
@@ -11,7 +11,7 @@ import {
 	type RowSelectionState,
 	type SortingState,
 } from "@tanstack/react-table";
-import { EllipsisVerticalIcon, PencilIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
+import { EllipsisVerticalIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
 import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
@@ -48,10 +48,11 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { renderError } from "@/lib/render-error";
 import { getLocationPlacementSummary, locationPlacementFilterToken } from "@/lib/spatial-placement-summary";
 import { tableSelectionBulkTooltip } from "@/lib/table-selection-tooltips";
+import { parseUrlColumnFilters } from "@/lib/table-url-filters";
+import { useTableUrlSync } from "@/lib/use-table-url-sync";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import { useLocationDeleteManyMutation, useLocationDeleteMutation } from "@/store/mutations";
@@ -60,10 +61,26 @@ import { isQueryObjectPending } from "@/store/query-object-status";
 import { collectPlacedEntityIds } from "@/store/spatial-placement";
 
 export const Route = createFileRoute("/_authenticated/locations")({
+	validateSearch: (search: Record<string, unknown>) => {
+		const next: { q?: string; sortBy?: string; sortDesc?: boolean; cf?: string } = {};
+		if (typeof search.q === "string") next.q = search.q;
+		if (typeof search.sortBy === "string") next.sortBy = search.sortBy;
+		if (typeof search.sortDesc === "boolean") next.sortDesc = search.sortDesc;
+		if (typeof search.cf === "string") next.cf = search.cf;
+		return next;
+	},
 	component: LocationsPage,
 });
 
 function LocationsPage() {
+	const navigate = useNavigate({ from: Route.fullPath });
+	const {
+		q: qFromSearch,
+		sortBy: sortByFromSearch,
+		sortDesc: sortDescFromSearch,
+		cf: cfFromSearch,
+	} =
+		Route.useSearch();
 	const { data, isPending, isError, error } = useQuery({ ...queryKeys.location.all });
 	const { data: spatialData } = useQuery({
 		...queryKeys.spatial.allNodes,
@@ -72,7 +89,9 @@ function LocationsPage() {
 
 	const rootItems = useMemo(() => data?.items ?? [], [data?.items]);
 
-	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() =>
+		parseUrlColumnFilters(cfFromSearch),
+	);
 
 	const locationParentIdsFromTable = useMemo(() => {
 		const spatial = spatialData?.items ?? [];
@@ -115,8 +134,10 @@ function LocationsPage() {
 		[spatialData?.items],
 	);
 
-	const [sorting, setSorting] = useState<SortingState>([{ id: "name", desc: false }]);
-	const [globalFilter, setGlobalFilter] = useState("");
+	const [sorting, setSorting] = useState<SortingState>([
+		{ id: sortByFromSearch ?? "name", desc: Boolean(sortDescFromSearch) },
+	]);
+	const [globalFilter, setGlobalFilter] = useState(qFromSearch ?? "");
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [createOpen, setCreateOpen] = useState(false);
 	const [createEventOpen, setCreateEventOpen] = useState(false);
@@ -332,6 +353,26 @@ function LocationsPage() {
 			: filteredRowCount === 0
 				? m.filtering_noFilteredElements()
 				: m.items_noElements();
+	useTableUrlSync({
+		searchQ: qFromSearch,
+		searchSortBy: sortByFromSearch,
+		searchSortDesc: sortDescFromSearch,
+		searchCf: cfFromSearch,
+		initialSorting: [{ id: "name", desc: false }],
+		sorting,
+		setSorting,
+		globalFilter,
+		setGlobalFilter,
+		columnFilters,
+		setColumnFilters,
+		navigate,
+		currentSearch: {
+			q: qFromSearch,
+			sortBy: sortByFromSearch,
+			sortDesc: sortDescFromSearch,
+			cf: cfFromSearch,
+		},
+	});
 
 	return (
 		<div id="locations-page" className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -353,29 +394,6 @@ function LocationsPage() {
 				</ButtonTooltip>
 			</DashboardPageHeading>
 			<DashboardPageContent className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
-				<div className="flex flex-wrap items-end gap-2">
-					<Input
-						className="w-full min-w-40 sm:w-56"
-						placeholder={m.filtering_searchPlaceholder()}
-						value={globalFilter}
-						onChange={(event) => setGlobalFilter(event.target.value)}
-					/>
-					<ButtonTooltip label={m.filtering_clearFilters()}>
-						<Button
-							type="button"
-							variant="outline"
-							size="icon"
-							onClick={() => {
-								table.resetGlobalFilter();
-								table.resetColumnFilters();
-								setRowSelection({});
-							}}
-							aria-label={m.filtering_clearFilters()}
-						>
-							<XIcon />
-						</Button>
-					</ButtonTooltip>
-				</div>
 				<div className="flex min-h-0 min-w-0 flex-1 flex-col px-1 pt-1 pb-2">
 					<DataTable
 						table={table}
@@ -383,6 +401,18 @@ function LocationsPage() {
 						isError={isError}
 						errorMessage={renderError(error, m.common_loadError())}
 						emptyMessage={emptyMessage}
+						globalSearch={{
+							value: globalFilter,
+							onValueChange: setGlobalFilter,
+							searchPlaceholder: m.filtering_searchPlaceholder(),
+							clearSearchLabel: m.filtering_clearSearch(), 
+							clearFiltersLabel: m.filtering_clearFilters(),
+							onClearFilters: () => {
+								setGlobalFilter("");
+								setColumnFilters([]);
+								setRowSelection({});
+							},
+						}}
 						highlightPendingRows
 						selectedActions={
 							<div className="flex flex-wrap items-center gap-2">
@@ -521,3 +551,7 @@ function LocationRowActions({ location, isPlaced }: { location: CachedLocation; 
 		</div>
 	);
 }
+
+
+
+

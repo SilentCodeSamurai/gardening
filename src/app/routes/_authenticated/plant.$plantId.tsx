@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { ButtonTooltip } from "@/components/ui/button-tooltip";
 import { gardeningActionMessage } from "@/lib/gardening-action-messages";
 import { getPlantPlacementSummary } from "@/lib/spatial-placement-summary";
+import { resetPlantsSearch } from "@/lib/table-search-reset";
 import { translateCatalogField } from "@/lib/translate-catalog-field";
 import * as m from "@/paraglide/messages.js";
 import { getLocale } from "@/paraglide/runtime";
@@ -117,7 +118,7 @@ function PlantDetailPage() {
 							await del.mutateAsync({ id: data.id });
 							await navigate({
 								to: "/plants",
-								search: { category: "", species: "", cultivar: "" },
+								search: resetPlantsSearch,
 							});
 						}}
 					/>

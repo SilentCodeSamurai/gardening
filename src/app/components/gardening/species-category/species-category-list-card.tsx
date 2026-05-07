@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { pendingItemSurfaceClassName } from "@/components/ui/pending-item-surface";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { serializeUrlColumnFilters } from "@/lib/table-url-filters";
 import { translateCatalogField } from "@/lib/translate-catalog-field";
 import { cn } from "@/lib/utils";
 import * as m from "@/paraglide/messages.js";
@@ -150,7 +151,7 @@ export function SpeciesCategoryListCard({ category }: Props) {
 								<Button asChild variant="outline" size="xs">
 									<Link
 										to="/catalog/species"
-										search={{ category: String(category.id) }}
+										search={{ cf: serializeUrlColumnFilters([{ id: "category", value: String(category.id) }]) }}
 										aria-label={m.common_openRelatedList()}
 									>
 										{m.collections_species_titlePlural()}
@@ -161,7 +162,7 @@ export function SpeciesCategoryListCard({ category }: Props) {
 								<Button asChild variant="outline" size="xs">
 									<Link
 										to="/catalog/cultivars"
-										search={{ category: String(category.id), species: "" }}
+										search={{ cf: serializeUrlColumnFilters([{ id: "category", value: String(category.id) }]) }}
 										aria-label={m.common_openRelatedList()}
 									>
 										{m.collections_cultivar_titlePlural()}
@@ -172,7 +173,7 @@ export function SpeciesCategoryListCard({ category }: Props) {
 								<Button asChild variant="outline" size="xs">
 									<Link
 										to="/plants"
-										search={{ category: String(category.id), species: "", cultivar: "" }}
+										search={{ cf: serializeUrlColumnFilters([{ id: "category", value: String(category.id) }]) }}
 										aria-label={m.common_openRelatedList()}
 									>
 										{m.collections_plant_titlePlural()}

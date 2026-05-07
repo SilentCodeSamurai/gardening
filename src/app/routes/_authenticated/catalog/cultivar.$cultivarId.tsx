@@ -12,6 +12,7 @@ import { ItemNotFound } from "@/components/layout/item-not-found";
 import { PageLoading } from "@/components/layout/page-loading";
 import { Button } from "@/components/ui/button";
 import { ButtonTooltip } from "@/components/ui/button-tooltip";
+import { serializeUrlColumnFilters } from "@/lib/table-url-filters";
 import { translateCatalogField } from "@/lib/translate-catalog-field";
 import * as m from "@/paraglide/messages.js";
 import { getLocale } from "@/paraglide/runtime";
@@ -96,8 +97,14 @@ function CultivarDetailPage() {
 							await navigate({
 								to: "/catalog/cultivars",
 								search: {
-									category: species ? String(species.categoryId ?? "") : "",
-									species: species ? String(species.id) : "",
+									cf: serializeUrlColumnFilters(
+										species
+											? [
+													{ id: "category", value: String(species.categoryId ?? "") },
+													{ id: "species", value: String(species.id) },
+												]
+											: [],
+									),
 								},
 							});
 						}}
@@ -167,7 +174,7 @@ function CultivarDetailPage() {
 							<dd className="wrap-break-word min-w-0">
 								<Link
 									to="/plants"
-									search={{ category: "", species: "", cultivar: String(data.id) }}
+									search={{ cf: serializeUrlColumnFilters([{ id: "cultivar", value: String(data.id) }]) }}
 									className="text-primary underline-offset-4 hover:underline"
 								>
 									{m.components_detail_link_plantsWithCultivar()}

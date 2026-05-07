@@ -1,6 +1,6 @@
 import type { GardeningEventEntity, GardeningEventEntityId } from "@backend/core/domain/gardening/entities";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
 	type ColumnFiltersState,
 	createColumnHelper,
@@ -11,7 +11,7 @@ import {
 	type RowSelectionState,
 	type SortingState,
 } from "@tanstack/react-table";
-import { EllipsisVerticalIcon, PencilIcon, PlusIcon, Trash2Icon, XIcon } from "lucide-react";
+import { EllipsisVerticalIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { DashboardPageContent } from "#/app/components/layout/dashboard-page-content";
 import { DashboardPageHeading } from "#/app/components/layout/dashboard-page-heading";
@@ -38,26 +38,39 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { gardeningActionMessage } from "@/lib/gardening-action-messages";
 import { renderError } from "@/lib/render-error";
 import { tableSelectionBulkTooltip } from "@/lib/table-selection-tooltips";
+import { parseUrlColumnFilters } from "@/lib/table-url-filters";
+import { useTableUrlSync } from "@/lib/use-table-url-sync";
 import * as m from "@/paraglide/messages.js";
 import { queryKeys } from "@/store/keys";
 import { useGardeningEventDeleteManyMutation, useGardeningEventDeleteMutation } from "@/store/mutations";
 
 export const Route = createFileRoute("/_authenticated/gardening-events")({
+	validateSearch: (search: Record<string, unknown>) => {
+		const next: { q?: string; sortBy?: string; sortDesc?: boolean; cf?: string } = {};
+		if (typeof search.q === "string") next.q = search.q;
+		if (typeof search.sortBy === "string") next.sortBy = search.sortBy;
+		if (typeof search.sortDesc === "boolean") next.sortDesc = search.sortDesc;
+		if (typeof search.cf === "string") next.cf = search.cf;
+		return next;
+	},
 	component: GardeningEventsPage,
 });
 
 function GardeningEventsPage() {
+	const navigate = useNavigate({ from: Route.fullPath });
+	const search = Route.useSearch();
 	const { data, isPending, isError, error } = useQuery({ ...queryKeys.gardeningEvent.all });
 	const items = useMemo(() => data?.items ?? [], [data?.items]);
 	const [createOpen, setCreateOpen] = useState(false);
 
-	const [sorting, setSorting] = useState<SortingState>([{ id: "occurredAt", desc: true }]);
-	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-	const [globalFilter, setGlobalFilter] = useState("");
+	const [sorting, setSorting] = useState<SortingState>([
+		{ id: search.sortBy ?? "occurredAt", desc: Boolean(search.sortDesc) },
+	]);
+	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() => parseUrlColumnFilters(search.cf));
+	const [globalFilter, setGlobalFilter] = useState(search.q ?? "");
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 	const bulkDeleteMany = useGardeningEventDeleteManyMutation();
@@ -210,6 +223,26 @@ function GardeningEventsPage() {
 		hasPlacedInSelection: false,
 		enabledTooltip: m.collections_gardeningEvent_deleteManyTooltip(),
 	});
+	useTableUrlSync({
+		searchQ: search.q,
+		searchSortBy: search.sortBy,
+		searchSortDesc: search.sortDesc,
+		searchCf: search.cf,
+		initialSorting: [{ id: "occurredAt", desc: true }],
+		sorting,
+		setSorting,
+		globalFilter,
+		setGlobalFilter,
+		columnFilters,
+		setColumnFilters,
+		navigate,
+		currentSearch: {
+			q: search.q,
+			sortBy: search.sortBy,
+			sortDesc: search.sortDesc,
+			cf: search.cf,
+		},
+	});
 
 	return (
 		<div id="events-page" className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -230,29 +263,6 @@ function GardeningEventsPage() {
 				</ButtonTooltip>
 			</DashboardPageHeading>
 			<DashboardPageContent className="flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-hidden">
-				<div className="flex flex-wrap items-end gap-2">
-					<Input
-						className="w-full min-w-40 sm:w-56"
-						placeholder={m.filtering_searchPlaceholder()}
-						value={globalFilter}
-						onChange={(event) => setGlobalFilter(event.target.value)}
-					/>
-					<ButtonTooltip label={m.filtering_clearFilters()}>
-						<Button
-							type="button"
-							variant="outline"
-							size="icon"
-							onClick={() => {
-								table.resetGlobalFilter();
-								table.resetColumnFilters();
-								setRowSelection({});
-							}}
-							aria-label={m.filtering_clearFilters()}
-						>
-							<XIcon />
-						</Button>
-					</ButtonTooltip>
-				</div>
 				<div className="flex min-h-0 min-w-0 flex-1 flex-col px-1 pt-1 pb-2">
 					<DataTable
 						table={table}
@@ -260,6 +270,18 @@ function GardeningEventsPage() {
 						isError={isError}
 						errorMessage={renderError(error, m.common_loadError())}
 						emptyMessage={m.items_noElements()}
+						globalSearch={{
+							value: globalFilter,
+							onValueChange: setGlobalFilter,
+							searchPlaceholder: m.filtering_searchPlaceholder(),
+							clearSearchLabel: m.filtering_clearSearch(),
+							clearFiltersLabel: m.filtering_clearFilters(),
+							onClearFilters: () => {
+								setGlobalFilter("");
+								setColumnFilters([]);
+								setRowSelection({});
+							},
+						}}
 						highlightPendingRows
 						selectedActions={
 							<div className="flex flex-wrap items-center gap-2">
@@ -336,3 +358,6 @@ function GardeningEventRowActions({ event }: { event: GardeningEventEntity }) {
 		</div>
 	);
 }
+
+
+

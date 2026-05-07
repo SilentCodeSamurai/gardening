@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { ButtonTooltip } from "@/components/ui/button-tooltip";
 import { gardeningActionMessage } from "@/lib/gardening-action-messages";
 import { getLocationPlacementSummary } from "@/lib/spatial-placement-summary";
+import { resetLocationsSearch } from "@/lib/table-search-reset";
 import * as m from "@/paraglide/messages.js";
 import { getLocale } from "@/paraglide/runtime";
 import { queryKeys } from "@/store/keys";
@@ -138,7 +139,7 @@ function LocationDetailPage() {
 						onConfirm={async () => {
 							setDeleteOpen(false);
 							await del.mutateAsync({ id: data.id });
-							await navigate({ to: "/locations" });
+							await navigate({ to: "/locations", search: resetLocationsSearch });
 						}}
 					/>
 				</div>

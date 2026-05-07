@@ -20,6 +20,14 @@ import {
 	SidebarRail,
 } from "@/components/ui/sidebar";
 import { markIntentToOpenPublicHome } from "@/lib/public-home-navigation";
+import {
+	resetCultivarsSearch,
+	resetGardeningEventsSearch,
+	resetLocationsSearch,
+	resetPlantsSearch,
+	resetSpeciesCategoriesSearch,
+	resetSpeciesSearch,
+} from "@/lib/table-search-reset";
 import * as m from "@/paraglide/messages.js";
 
 export function DashboardSidebar() {
@@ -80,6 +88,7 @@ export function DashboardSidebar() {
 										>
 											<Link
 												to="/catalog/species-categories"
+												search={resetSpeciesCategoriesSearch}
 												className="flex w-full min-w-0 items-center gap-2"
 												id="nav-catalog-categories"
 											>
@@ -92,7 +101,7 @@ export function DashboardSidebar() {
 										<SidebarMenuButton asChild isActive={isActivePath("/catalog/species")}>
 											<Link
 												to="/catalog/species"
-												search={{ category: "" }}
+												search={resetSpeciesSearch}
 												className="flex w-full min-w-0 items-center gap-2"
 												id="nav-catalog-species"
 											>
@@ -105,7 +114,7 @@ export function DashboardSidebar() {
 										<SidebarMenuButton asChild isActive={isActivePath("/catalog/cultivars")}>
 											<Link
 												to="/catalog/cultivars"
-												search={{ category: "", species: "" }}
+												search={resetCultivarsSearch}
 												className="flex w-full min-w-0 items-center gap-2"
 												id="nav-catalog-cultivars"
 											>
@@ -126,7 +135,7 @@ export function DashboardSidebar() {
 								<SidebarMenuButton asChild isActive={isActivePath("/plants")}>
 									<Link
 										to="/plants"
-										search={{ category: "", species: "", cultivar: "" }}
+										search={resetPlantsSearch}
 										className="flex w-full min-w-0 items-center gap-2"
 										id="nav-plants"
 									>
@@ -137,7 +146,12 @@ export function DashboardSidebar() {
 							</SidebarMenuItem>
 							<SidebarMenuItem>
 								<SidebarMenuButton asChild isActive={isActivePath("/locations")}>
-									<Link to="/locations" className="flex w-full min-w-0 items-center gap-2" id="nav-locations">
+									<Link
+										to="/locations"
+										search={resetLocationsSearch}
+										className="flex w-full min-w-0 items-center gap-2"
+										id="nav-locations"
+									>
 										<CollectionIcon collection="location" className="size-4" />
 										{m.collections_location_titlePlural()}
 									</Link>
@@ -147,6 +161,7 @@ export function DashboardSidebar() {
 								<SidebarMenuButton asChild isActive={isActivePath("/gardening-events")}>
 									<Link
 										to="/gardening-events"
+										search={resetGardeningEventsSearch}
 										className="flex w-full min-w-0 items-center gap-2"
 										id="nav-events"
 									>

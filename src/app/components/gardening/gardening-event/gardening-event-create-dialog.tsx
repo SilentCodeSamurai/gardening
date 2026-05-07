@@ -39,6 +39,7 @@ import {
 	useGardeningEventCreateForPlantListMutation,
 	useGardeningEventCreateMutation,
 } from "@/store/mutations";
+import type { CachedHydratedPlant, CachedLocation } from "@/store/query-cache-types";
 
 type GardeningEventCreateTargetLocationInitialValues = {
 	target: "location";
@@ -74,6 +75,11 @@ type Props = {
 	initialValues?: GardeningEventCreateDialogInitialValues;
 };
 
+type GardeningEventCreateDialogContentProps = Props & {
+	locationItems: CachedLocation[];
+	plantItems: CachedHydratedPlant[];
+};
+
 type FormValues = {
 	actionType: string;
 	content: string;
@@ -92,9 +98,13 @@ type PlantOption = {
 
 type ActionTypeOption = { value: GardeningAction["type"]; label: string };
 
-export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }: Props) {
-	const { data: locationData } = useQuery({ ...queryKeys.location.all });
-	const { data: plantData } = useQuery({ ...queryKeys.plant.all });
+function GardeningEventCreateDialogContent({
+	open,
+	onOpenChange,
+	initialValues,
+	locationItems,
+	plantItems,
+}: GardeningEventCreateDialogContentProps) {
 	const createMut = useGardeningEventCreateMutation();
 	const locationMut = useGardeningEventCreateForLocationMutation();
 	const plantsMut = useGardeningEventCreateForPlantListMutation();
@@ -110,22 +120,22 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 
 	const locationValues = useMemo(
 		() =>
-			(locationData?.items ?? []).map((location) => ({
+			locationItems.map((location) => ({
 				value: String(location.id),
 				label: location.name,
 				presentation: location.presentation,
 			})),
-		[locationData?.items],
+		[locationItems],
 	);
 
 	const plantOptions = useMemo<PlantOption[]>(
 		() =>
-			(plantData?.items ?? []).map((plant) => ({
+			plantItems.map((plant) => ({
 				value: String(plant.id),
 				label: getPlantDisplayTitle(plant),
 				presentation: plant.presentation,
 			})),
-		[plantData?.items],
+		[plantItems],
 	);
 
 	const form = useAppForm({
@@ -531,6 +541,41 @@ export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }
 				</form.AppForm>
 			</DialogContent>
 		</Dialog>
+	);
+}
+
+export function GardeningEventCreateDialog({ open, onOpenChange, initialValues }: Props) {
+	const { data: locationData } = useQuery({ ...queryKeys.location.all });
+	const { data: plantData } = useQuery({ ...queryKeys.plant.all });
+	return (
+		<GardeningEventCreateDialogContent
+			open={open}
+			onOpenChange={onOpenChange}
+			initialValues={initialValues}
+			locationItems={locationData?.items ?? []}
+			plantItems={plantData?.items ?? []}
+		/>
+	);
+}
+
+export function GardeningEventCreateDialogWithData({
+	open,
+	onOpenChange,
+	initialValues,
+	locationItems,
+	plantItems,
+}: Props & {
+	locationItems: CachedLocation[];
+	plantItems: CachedHydratedPlant[];
+}) {
+	return (
+		<GardeningEventCreateDialogContent
+			open={open}
+			onOpenChange={onOpenChange}
+			initialValues={initialValues}
+			locationItems={locationItems}
+			plantItems={plantItems}
+		/>
 	);
 }
 
