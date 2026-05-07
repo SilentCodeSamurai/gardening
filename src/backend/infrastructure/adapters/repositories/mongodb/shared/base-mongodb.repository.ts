@@ -1,4 +1,4 @@
-import { BaseRepositoryErrors } from "@backend/core/application/ports/repositories/shared/base-repository.errors";
+import { BaseRepository } from "@backend/core/application/ports/repositories/shared/base.repository";
 import { SubjectVO } from "@backend/core/domain/access/subject.vo";
 import { WorkspaceVO } from "@backend/core/domain/access/workspace.vo";
 import { TransactionManagerMongoDB } from "@backend/infrastructure/adapters/transaction/transaction-manager.mongodb";
@@ -8,7 +8,7 @@ import { inject } from "tsyringe";
 import type { MongoDBCollectionType } from "./mongodb.constants";
 import type { MongoDBCollectionDocMap } from "./mongodb.models";
 
-export abstract class BaseMongoDBRepository extends BaseRepositoryErrors {
+export abstract class BaseMongoDBRepository extends BaseRepository {
 	constructor(
 		@inject(TransactionManagerMongoDB) protected readonly tx: TransactionManagerMongoDB,
 		@inject(MongoDBDatabaseNameToken) protected readonly databaseName: string,

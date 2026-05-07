@@ -41,7 +41,7 @@ describe("Plant use-cases", () => {
 
     const p = await create.run({
       context,
-      dto: { cultivarId: cultivar.id, title: "Tomato", description: null },
+      dto: { cultivarId: cultivar.id, title: "Tomato", description: null, presentation: null },
     });
 
     expect((await getById.run({ context, dto: { id: p.id } })).id).toEqual(p.id);
@@ -61,8 +61,8 @@ describe("Plant use-cases", () => {
     const res = await createMany.run({
       context,
       dto: { rows: [
-        { cultivarId: cultivar.id, title: "A", description: null },
-        { cultivarId: cultivar.id, title: "B", description: "d" },
+        { cultivarId: cultivar.id, title: "A", description: null, presentation: null },
+        { cultivarId: cultivar.id, title: "B", description: "d", presentation: null },
       ] },
     });
 
@@ -75,7 +75,7 @@ describe("Plant use-cases", () => {
     const getById = c.resolve(PlantGetByIdUseCase);
     const p = await create.run({
       context,
-      dto: { cultivarId: null, title: "Wild", description: null },
+      dto: { cultivarId: null, title: "Wild", description: null, presentation: null },
     });
     expect(p.cultivar).toBeNull();
     const got = await getById.run({ context, dto: { id: p.id } });
@@ -90,7 +90,7 @@ describe("Plant use-cases", () => {
 
     const placedPlant = await createPlant.run({
       context,
-      dto: { cultivarId: cultivar.id, title: "Parent", description: null },
+      dto: { cultivarId: cultivar.id, title: "Parent", description: null, presentation: null },
     });
 
     const rootFrame = await createSpatial.run({
@@ -129,7 +129,7 @@ describe("Plant use-cases", () => {
 
     const plant = await createPlant.run({
       context,
-      dto: { cultivarId: cultivar.id, title: "Isolated", description: null },
+      dto: { cultivarId: cultivar.id, title: "Isolated", description: null, presentation: null },
     });
     const isolatedNode = await createSpatial.run({
       context,
@@ -156,11 +156,11 @@ describe("Plant use-cases", () => {
 
     const p1 = await createPlant.run({
       context,
-      dto: { cultivarId: cultivar.id, title: "One", description: null },
+      dto: { cultivarId: cultivar.id, title: "One", description: null, presentation: null },
     });
     const p2 = await createPlant.run({
       context,
-      dto: { cultivarId: cultivar.id, title: "Two", description: null },
+      dto: { cultivarId: cultivar.id, title: "Two", description: null, presentation: null },
     });
     const n1 = await createSpatial.run({
       context,
@@ -198,11 +198,11 @@ describe("Plant use-cases", () => {
 
     const ok = await createPlant.run({
       context,
-      dto: { cultivarId: cultivar.id, title: "Ok", description: null },
+      dto: { cultivarId: cultivar.id, title: "Ok", description: null, presentation: null },
     });
     const placed = await createPlant.run({
       context,
-      dto: { cultivarId: cultivar.id, title: "Placed", description: null },
+      dto: { cultivarId: cultivar.id, title: "Placed", description: null, presentation: null },
     });
     const rootFrame = await createSpatial.run({
       context,
@@ -244,7 +244,7 @@ describe("Plant use-cases", () => {
 
     const existing = await createPlant.run({
       context,
-      dto: { cultivarId: cultivar.id, title: "Rollback target", description: null },
+      dto: { cultivarId: cultivar.id, title: "Rollback target", description: null, presentation: null },
     });
     const missing = "missing-plant-id" as never;
 

@@ -25,11 +25,11 @@ export function registerLocationRepositoryContract(
 		});
 
 		it("createOne, createMany, getOne, getMany variants", async () => {
-			const a = await location.createOne({ workspace: wk, name: "A" });
+			const a = await location.createOne({ workspace: wk, presentation: null, name: "A" });
 			const { count } = await location.createMany({
 				items: [
-					{ workspace: wk, name: "B" },
-					{ workspace: wk, name: "C" },
+					{ workspace: wk, presentation: null, name: "B" },
+					{ workspace: wk, presentation: null, name: "C" },
 				],
 			});
 			expect(count).toBe(2);
@@ -49,7 +49,7 @@ export function registerLocationRepositoryContract(
 		});
 
 		it("getOne OR filters", async () => {
-			const loc = await location.createOne({ workspace: wk, name: "OR-loc" });
+			const loc = await location.createOne({ workspace: wk, presentation: null, name: "OR-loc" });
 			const got = await location.getOne({
 				filters: [{ id: locationId("00000000-0000-4000-8000-00000000bad") }, { id: loc.id }],
 			});
@@ -57,8 +57,8 @@ export function registerLocationRepositoryContract(
 		});
 
 		it("updateOne and updateMany", async () => {
-			const x = await location.createOne({ workspace: wk, name: "x" });
-			const y = await location.createOne({ workspace: wk, name: "y" });
+			const x = await location.createOne({ workspace: wk, presentation: null, name: "x" });
+			const y = await location.createOne({ workspace: wk, presentation: null, name: "y" });
 			const u = await location.updateOne({
 				filters: [{ id: x.id }],
 				dto: { name: "x2", presentation: { iconColor: "#abc" } },
@@ -82,8 +82,8 @@ export function registerLocationRepositoryContract(
 		});
 
 		it("deleteOne clears gardening event-location links", async () => {
-			const loc = await location.createOne({ workspace: wk, name: "Bench" });
-			const ev = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction() });
+			const loc = await location.createOne({ workspace: wk, presentation: null, name: "Bench" });
+			const ev = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction(), occurredAt: null });
 			await gardeningEvent.bindToLocationOne({ filters: [{ id: ev.id }], locationId: loc.id });
 			const before = await gardeningEvent.getBindingsOne({ filters: [{ id: ev.id }] });
 			expect(before.locationIds.map(String)).toContain(String(loc.id));
@@ -101,9 +101,9 @@ export function registerLocationRepositoryContract(
 		});
 
 		it("deleteMany removes locations and clears links", async () => {
-			const l1 = await location.createOne({ workspace: wk, name: "L1" });
-			const l2 = await location.createOne({ workspace: wk, name: "L2" });
-			const ev = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction() });
+			const l1 = await location.createOne({ workspace: wk, presentation: null, name: "L1" });
+			const l2 = await location.createOne({ workspace: wk, presentation: null, name: "L2" });
+			const ev = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction(), occurredAt: null });
 			await gardeningEvent.bindToLocationOne({ filters: [{ id: ev.id }], locationId: l1.id });
 			await gardeningEvent.bindToLocationOne({ filters: [{ id: ev.id }], locationId: l2.id });
 			const { count } = await location.deleteMany({ filters: [{ id: l1.id }, { id: l2.id }] });
@@ -126,20 +126,20 @@ export function registerLocationRepositoryContract(
 		});
 
 		it("getMany single-field filter by id", async () => {
-			const loc = await location.createOne({ workspace: wk, name: "single-id" });
+			const loc = await location.createOne({ workspace: wk, presentation: null, name: "single-id" });
 			const { items } = await location.getMany({ filters: [{ id: loc.id }] });
 			expect(items).toHaveLength(1);
 			expect(items[0]?.id).toEqual(loc.id);
 		});
 
 		it("getMany multi-field AND: wrong workspaceKey excludes row", async () => {
-			const loc = await location.createOne({ workspace: wk, name: "scoped" });
+			const loc = await location.createOne({ workspace: wk, presentation: null, name: "scoped" });
 			const { items } = await location.getMany({ filters: [{ id: loc.id, workspace: wkB }] });
 			expect(items).toHaveLength(0);
 		});
 
 		it("getMany OR combines different field shapes (id miss vs name hit)", async () => {
-			const loc = await location.createOne({ workspace: wk, name: "or-mixed" });
+			const loc = await location.createOne({ workspace: wk, presentation: null, name: "or-mixed" });
 			const { items } = await location.getMany({
 				filters: [{ id: locationId("00000000-0000-4000-8000-00000000bad") }, { name: "or-mixed", workspace: wk }],
 			});
@@ -148,7 +148,7 @@ export function registerLocationRepositoryContract(
 		});
 
 		it("updateOne OR filters: first clause misses, second hits", async () => {
-			const loc = await location.createOne({ workspace: wk, name: "up-or" });
+			const loc = await location.createOne({ workspace: wk, presentation: null, name: "up-or" });
 			const u = await location.updateOne({
 				filters: [{ id: locationId("00000000-0000-4000-8000-00000000bad") }, { id: loc.id }],
 				dto: { name: "up-or-done" },
@@ -157,8 +157,8 @@ export function registerLocationRepositoryContract(
 		});
 
 		it("updateMany OR patches every matched row; count 0 when nothing matches", async () => {
-			const a = await location.createOne({ workspace: wk, name: "um-a" });
-			const b = await location.createOne({ workspace: wk, name: "um-b" });
+			const a = await location.createOne({ workspace: wk, presentation: null, name: "um-a" });
+			const b = await location.createOne({ workspace: wk, presentation: null, name: "um-b" });
 			const { count } = await location.updateMany({
 				filters: [{ id: a.id }, { id: b.id }],
 				dto: { name: "um-both" },
@@ -172,7 +172,7 @@ export function registerLocationRepositoryContract(
 		});
 
 		it("deleteOne OR filters", async () => {
-			const loc = await location.createOne({ workspace: wk, name: "del-or" });
+			const loc = await location.createOne({ workspace: wk, presentation: null, name: "del-or" });
 			await location.deleteOne({
 				filters: [{ id: locationId("00000000-0000-4000-8000-00000000bad") }, { id: loc.id }],
 			});

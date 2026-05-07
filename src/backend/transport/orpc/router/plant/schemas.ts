@@ -1,10 +1,16 @@
 import { z } from "zod";
-import { CultivarEntityIdSchema, PlantEntityIdSchema, PlantEntityIdsSchema } from "../../shared/schemas";
+import {
+	CultivarEntityIdSchema,
+	ItemPresentationSchema,
+	PlantEntityIdSchema,
+	PlantEntityIdsSchema,
+} from "../../shared/schemas";
 
 export const CreatePlantInputSchema = z.object({
 	title: z.string().nullable(),
 	description: z.string().nullable(),
 	cultivarId: CultivarEntityIdSchema.nullable(),
+	presentation: ItemPresentationSchema,
 });
 export const CreateManyPlantInputSchema = z.object({
 	rows: z.array(CreatePlantInputSchema).min(1),
@@ -17,6 +23,7 @@ export const UpdatePlantInputSchema = z.object({
 	title: z.string().nullable(),
 	description: z.string().nullable(),
 	cultivarId: z.union([CultivarEntityIdSchema, z.null()]).optional(),
+	presentation: ItemPresentationSchema,
 });
 export const DeletePlantInputSchema = z.object({
 	id: PlantEntityIdSchema,

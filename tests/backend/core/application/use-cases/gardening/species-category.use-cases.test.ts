@@ -33,7 +33,7 @@ describe("Species category use-cases", () => {
   });
 
   const tinyDefaultCatalog = defineDefaultCatalog({
-    categories: [{ slug: "seeded", title: "Seeded category" }],
+    categories: [{ slug: "seeded", title: "Seeded category", presentation: null }],
     species: [],
   });
 
@@ -67,7 +67,7 @@ describe("Species category use-cases", () => {
     const update = c.resolve(SpeciesCategoryUpdateUseCase);
     const del = c.resolve(SpeciesCategoryDeleteUseCase);
 
-    const row = await create.run({ context, dto: { title: "Vegetables" } });
+    const row = await create.run({ context, dto: { title: "Vegetables", presentation: null } });
     expect(row.title).toBe("Vegetables");
     expect(row.systemCatalog).toBe(true);
 
@@ -168,8 +168,8 @@ describe("Species category use-cases", () => {
     const deleteMany = c.resolve(SpeciesCategoryDeleteManyUseCase);
     const getAll = c.resolve(SpeciesCategoryGetAllUseCase);
 
-    const c1 = await create.run({ context, dto: { title: "DM-1" } });
-    const c2 = await create.run({ context, dto: { title: "DM-2" } });
+    const c1 = await create.run({ context, dto: { title: "DM-1", presentation: null } });
+    const c2 = await create.run({ context, dto: { title: "DM-2", presentation: null } });
 
     const out = await deleteMany.run({ context, dto: { ids: [c1.id, c2.id] } });
     expect(out.count).toBe(2);
@@ -201,7 +201,10 @@ describe("Species category use-cases", () => {
     expect(seeded).toBeTruthy();
 
     const create = c.resolve(SpeciesCategoryCreateUseCase);
-    const custom = await create.run({ context: userCtx, dto: { title: "User category for bulk" } });
+    const custom = await create.run({
+      context: userCtx,
+      dto: { title: "User category for bulk", presentation: null },
+    });
 
     const deleteMany = c.resolve(SpeciesCategoryDeleteManyUseCase);
     const out = await deleteMany.run({ context: userCtx, dto: { ids: [custom.id, seeded!.id] } });

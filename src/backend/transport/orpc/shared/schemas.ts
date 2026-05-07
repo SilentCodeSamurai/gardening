@@ -44,7 +44,7 @@ export const ItemPresentationSchema = z
 		iconColor: z.string().optional(),
 		backgroundColor: z.string().optional(),
 	})
-	.optional();
+	.nullable();
 
 export const SpeciesCharacteristicsSchema = z.object({
 	name: z.string().min(1),

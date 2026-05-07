@@ -38,6 +38,7 @@ describe("Cultivar use-cases", () => {
       dto: {
         speciesId: species.id,
         characteristics: fixtureCultivarCharacteristics({ name: "A" }),
+        presentation: null,
       },
     });
     expect((await getById.run({ context, dto: { id: row.id } })).speciesId).toEqual(species.id);
@@ -77,7 +78,11 @@ describe("Cultivar use-cases", () => {
     await expect(
       c.resolve(CultivarCreateUseCase).run({
         context,
-        dto: { speciesId: "missing-species-id" as never, characteristics: fixtureCultivarCharacteristics() },
+        dto: {
+          speciesId: "missing-species-id" as never,
+          characteristics: fixtureCultivarCharacteristics(),
+          presentation: null,
+        },
       }),
     ).rejects.toBeInstanceOf(RepositoryNotFoundError);
   });
@@ -111,7 +116,7 @@ describe("Cultivar use-cases", () => {
     const { cultivar } = await seedMinimalCatalog(c);
     const linkedPlant = await c.resolve(PlantCreateUseCase).run({
       context,
-      dto: { cultivarId: cultivar.id, title: null, description: null },
+      dto: { cultivarId: cultivar.id, title: null, description: null, presentation: null },
     });
     await c.resolve(CultivarDeleteUseCase).run({ context, dto: { id: cultivar.id } });
 
@@ -128,11 +133,19 @@ describe("Cultivar use-cases", () => {
 
     const c1 = await create.run({
       context,
-      dto: { speciesId: species.id, characteristics: fixtureCultivarCharacteristics({ name: "DM-1" }) },
+      dto: {
+        speciesId: species.id,
+        characteristics: fixtureCultivarCharacteristics({ name: "DM-1" }),
+        presentation: null,
+      },
     });
     const c2 = await create.run({
       context,
-      dto: { speciesId: species.id, characteristics: fixtureCultivarCharacteristics({ name: "DM-2" }) },
+      dto: {
+        speciesId: species.id,
+        characteristics: fixtureCultivarCharacteristics({ name: "DM-2" }),
+        presentation: null,
+      },
     });
 
     const out = await deleteMany.run({ context, dto: { ids: [c1.id, c2.id] } });

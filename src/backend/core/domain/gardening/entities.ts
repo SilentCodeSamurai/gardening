@@ -22,7 +22,7 @@ export type LocationEntityId = BaseEntityId<string, "Location">;
 export type SpeciesCategoryEntity = BaseEntity<SpeciesCategoryEntityId> & {
 	workspace: WorkspaceVO;
 	title: string;
-	presentation?: ItemPresentationValueObject;
+	presentation: ItemPresentationValueObject | null;
 };
 
 /**
@@ -36,7 +36,7 @@ export type SpeciesEntity = BaseEntity<SpeciesEntityId> & {
 	workspace: WorkspaceVO;
 	categoryId: SpeciesCategoryEntityId | null;
 	characteristics: SpeciesCharacteristics;
-	presentation?: ItemPresentationValueObject;
+	presentation: ItemPresentationValueObject | null;
 };
 
 /**
@@ -48,7 +48,7 @@ export type CultivarEntity = BaseEntity<CultivarEntityId> & {
 	workspace: WorkspaceVO;
 	speciesId: SpeciesEntityId | null;
 	characteristics: CultivarCharacteristics;
-	presentation?: ItemPresentationValueObject;
+	presentation: ItemPresentationValueObject | null;
 };
 
 export type HydratedCultivarEntity = CultivarEntity & {
@@ -63,7 +63,7 @@ export type HydratedCultivarEntity = CultivarEntity & {
 export type GardeningEventEntity = BaseEntity<GardeningEventEntityId> & {
 	workspace: WorkspaceVO;
 	action: GardeningAction;
-	occurredAt: Date;
+	occurredAt: Date | null;
 };
 
 /**
@@ -74,6 +74,7 @@ export type PlantEntity = BaseEntity<PlantEntityId> & {
 	title: string | null;
 	description: string | null;
 	cultivarId: CultivarEntityId | null;
+	presentation: ItemPresentationValueObject | null;
 };
 
 export type HydratedPlantEntity = PlantEntity & {
@@ -88,6 +89,6 @@ export type HydratedPlantEntity = PlantEntity & {
 export type LocationEntity = BaseEntity<LocationEntityId> & {
 	workspace: WorkspaceVO;
 	name: string;
-	/** Optional UI presentation (icon, colors) for the layout editor and lists. */
-	presentation?: ItemPresentationValueObject;
+	/** UI presentation (icon, colors) for the layout editor and lists; explicit null when absent. */
+	presentation: ItemPresentationValueObject | null;
 };

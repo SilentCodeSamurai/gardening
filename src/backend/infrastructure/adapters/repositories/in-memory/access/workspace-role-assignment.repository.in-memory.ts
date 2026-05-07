@@ -15,7 +15,7 @@ import type {
 	WorkspaceRoleAssignmentRepositoryUpsertInputDTO,
 	WorkspaceRoleAssignmentRepositoryUpsertOutputDTO,
 } from "@backend/core/application/ports/repositories/access/workspace-role-assignment.repository.port";
-import { BaseRepositoryErrors } from "@backend/core/application/ports/repositories/shared/base-repository.errors";
+import { BaseRepository } from "@backend/core/application/ports/repositories/shared/base.repository";
 import type { WorkspaceRoleAssignmentEntity } from "@backend/core/domain/access/entities";
 import type { SubjectKey } from "@backend/core/domain/access/subject.vo";
 import type { WorkspaceKey } from "@backend/core/domain/access/workspace.vo";
@@ -34,7 +34,7 @@ function compositeKey(subjectKey: SubjectKey, workspaceKey: WorkspaceKey): `${Su
 
 @injectable()
 export class WorkspaceRoleAssignmentInMemoryRepository
-	extends BaseRepositoryErrors
+	extends BaseRepository
 	implements WorkspaceRoleAssignmentRepositoryPort
 {
 	constructor(

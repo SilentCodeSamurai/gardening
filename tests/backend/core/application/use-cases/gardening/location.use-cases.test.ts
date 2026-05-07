@@ -35,8 +35,8 @@ describe("Location use-cases", () => {
     const update = c.resolve(LocationUpdateUseCase);
     const del = c.resolve(LocationDeleteUseCase);
 
-    const a = await create.run({ context, dto: { name: "Garden" } });
-    const b = await create.run({ context, dto: { name: "Bed" } });
+    const a = await create.run({ context, dto: { name: "Garden", presentation: null } });
+    const b = await create.run({ context, dto: { name: "Bed", presentation: null } });
 
     expect((await getById.run({ context, dto: { id: b.id } })).name).toBe("Bed");
     expect((await getAll.run({ context })).items.length).toBeGreaterThanOrEqual(2);
@@ -63,8 +63,8 @@ describe("Location use-cases", () => {
     const createSpatial = c.resolve(SpatialNodeCreateUseCase);
     const del = c.resolve(LocationDeleteUseCase);
 
-    const rootLocation = await createLocation.run({ context, dto: { name: "Root" } });
-    const placedLocation = await createLocation.run({ context, dto: { name: "Placed" } });
+    const rootLocation = await createLocation.run({ context, dto: { name: "Root", presentation: null } });
+    const placedLocation = await createLocation.run({ context, dto: { name: "Placed", presentation: null } });
 
     const rootNode = await createSpatial.run({
       context,
@@ -99,7 +99,7 @@ describe("Location use-cases", () => {
     const getAllSpatial = c.resolve(SpatialNodeGetAllUseCase);
     const del = c.resolve(LocationDeleteUseCase);
 
-    const location = await createLocation.run({ context, dto: { name: "Unplaced" } });
+    const location = await createLocation.run({ context, dto: { name: "Unplaced", presentation: null } });
     const isolatedNode = await createSpatial.run({
       context,
       dto: {
@@ -122,8 +122,8 @@ describe("Location use-cases", () => {
     const getAllSpatial = c.resolve(SpatialNodeGetAllUseCase);
     const getById = c.resolve(LocationGetByIdUseCase);
 
-    const l1 = await createLocation.run({ context, dto: { name: "L1" } });
-    const l2 = await createLocation.run({ context, dto: { name: "L2" } });
+    const l1 = await createLocation.run({ context, dto: { name: "L1", presentation: null } });
+    const l2 = await createLocation.run({ context, dto: { name: "L2", presentation: null } });
     const n1 = await createSpatial.run({
       context,
       dto: {
@@ -157,9 +157,9 @@ describe("Location use-cases", () => {
     const deleteMany = c.resolve(LocationDeleteManyUseCase);
     const createSpatial = c.resolve(SpatialNodeCreateUseCase);
 
-    const rootLocation = await createLocation.run({ context, dto: { name: "Root" } });
-    const ok = await createLocation.run({ context, dto: { name: "Ok" } });
-    const placed = await createLocation.run({ context, dto: { name: "Placed" } });
+    const rootLocation = await createLocation.run({ context, dto: { name: "Root", presentation: null } });
+    const ok = await createLocation.run({ context, dto: { name: "Ok", presentation: null } });
+    const placed = await createLocation.run({ context, dto: { name: "Placed", presentation: null } });
     const rootNode = await createSpatial.run({
       context,
       dto: {
@@ -197,7 +197,7 @@ describe("Location use-cases", () => {
     const deleteMany = c.resolve(LocationDeleteManyUseCase);
     const getById = c.resolve(LocationGetByIdUseCase);
 
-    const existing = await createLocation.run({ context, dto: { name: "Rollback target" } });
+    const existing = await createLocation.run({ context, dto: { name: "Rollback target", presentation: null } });
     const missing = "missing-location-id" as never;
 
     await expect(deleteMany.run({ context, dto: { ids: [existing.id, missing] } })).rejects.toMatchObject({

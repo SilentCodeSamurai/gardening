@@ -17,14 +17,17 @@ export async function seedMinimalCatalog(
 	const category = await speciesCategoryRepository.createOne({
 		title: "Test category",
 		workspace,
+		presentation: null,
 	});
 	const species = await speciesRepository.createOne({
 		workspace,
+		presentation: null,
 		categoryId: category.id,
 		characteristics: fixtureSpeciesCharacteristics(),
 	});
 	const cultivar = await cultivarRepository.createOne({
 		workspace,
+		presentation: null,
 		speciesId: species.id,
 		characteristics: fixtureCultivarCharacteristics(),
 	});

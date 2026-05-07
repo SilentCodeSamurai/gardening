@@ -34,11 +34,12 @@ describe("Species use-cases", () => {
   });
 
   const tinyDefaultCatalog = defineDefaultCatalog({
-    categories: [{ slug: "seeded", title: "Seeded category" }],
+    categories: [{ slug: "seeded", title: "Seeded category", presentation: null }],
     species: [
       {
         categorySlug: "seeded",
         characteristics: { name: "Seeded species", description: null },
+        presentation: null,
       },
     ],
   });
@@ -53,7 +54,11 @@ describe("Species use-cases", () => {
 
     const row = await create.run({
       context,
-      dto: { categoryId: category.id, characteristics: fixtureSpeciesCharacteristics({ name: "Tomato" }) },
+      dto: {
+        categoryId: category.id,
+        characteristics: fixtureSpeciesCharacteristics({ name: "Tomato" }),
+        presentation: null,
+      },
     });
     expect(row.characteristics.name).toBe("Tomato");
 
@@ -83,7 +88,7 @@ describe("Species use-cases", () => {
     const missingCategoryId = "missing-category-id" as never;
     const createMissingCategory = create.run({
       context,
-      dto: { categoryId: missingCategoryId, characteristics: fixtureSpeciesCharacteristics() },
+      dto: { categoryId: missingCategoryId, characteristics: fixtureSpeciesCharacteristics(), presentation: null },
     });
     await expect(createMissingCategory).rejects.toBeInstanceOf(RepositoryNotFoundError);
     await expect(createMissingCategory).rejects.toMatchObject({
@@ -199,11 +204,19 @@ describe("Species use-cases", () => {
 
     const s1 = await create.run({
       context,
-      dto: { categoryId: category.id, characteristics: fixtureSpeciesCharacteristics({ name: "dm-1" }) },
+      dto: {
+        categoryId: category.id,
+        characteristics: fixtureSpeciesCharacteristics({ name: "dm-1" }),
+        presentation: null,
+      },
     });
     const s2 = await create.run({
       context,
-      dto: { categoryId: category.id, characteristics: fixtureSpeciesCharacteristics({ name: "dm-2" }) },
+      dto: {
+        categoryId: category.id,
+        characteristics: fixtureSpeciesCharacteristics({ name: "dm-2" }),
+        presentation: null,
+      },
     });
 
     const out = await deleteMany.run({ context, dto: { ids: [s1.id, s2.id] } });
@@ -241,6 +254,7 @@ describe("Species use-cases", () => {
       dto: {
         categoryId: seeded!.categoryId,
         characteristics: fixtureSpeciesCharacteristics({ name: "user-species-bulk" }),
+        presentation: null,
       },
     });
 

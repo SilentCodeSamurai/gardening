@@ -13,7 +13,7 @@ import type {
 	PlantRepositoryUpdateOutputDTO,
 	PlantRepositoryUpdatePatchDTO,
 } from "@backend/core/application/ports/repositories/gardening/plant.repository.port";
-import { BaseRepositoryErrors } from "@backend/core/application/ports/repositories/shared/base-repository.errors";
+import { BaseRepository } from "@backend/core/application/ports/repositories/shared/base.repository";
 import type { HydratedPlantEntity, PlantEntity, SpeciesEntity } from "@backend/core/domain/gardening/entities";
 import { InMemoryTransactionManagerAdapter } from "@backend/infrastructure/adapters/transaction/in-memory-transaction-manager.adapter";
 import type { InMemoryStore } from "@backend/infrastructure/integrations/in-memory-database/client";
@@ -25,7 +25,7 @@ import {
 } from "#/backend/infrastructure/adapters/repositories/in-memory/shared/in-memory-entity-filter";
 
 @injectable()
-export class PlantInMemoryRepository extends BaseRepositoryErrors implements PlantRepositoryPort {
+export class PlantInMemoryRepository extends BaseRepository implements PlantRepositoryPort {
 	constructor(
 		@inject(InMemoryTransactionManagerAdapter)
 		private readonly transactionManager: InMemoryTransactionManagerAdapter,
@@ -84,6 +84,7 @@ export class PlantInMemoryRepository extends BaseRepositoryErrors implements Pla
 			title: dto.title !== undefined ? dto.title : existing.title,
 			description: dto.description !== undefined ? dto.description : existing.description,
 			cultivarId: nextCultivarId,
+			presentation: dto.presentation !== undefined ? dto.presentation : existing.presentation,
 			updatedAt: new Date(),
 		};
 	}

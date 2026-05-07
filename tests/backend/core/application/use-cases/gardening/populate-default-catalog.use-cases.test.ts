@@ -19,11 +19,12 @@ import { createUseCaseTestContainer } from "./create-use-case-test-container";
 
 /** Inline strings: tests only assert persistence shape, not i18n (locale files stay product-only). */
 const tinyCatalog = defineDefaultCatalog({
-  categories: [{ slug: "a", title: "Category A" }],
+  categories: [{ slug: "a", title: "Category A", presentation: null }],
   species: [
     {
       categorySlug: "a",
       characteristics: { name: "Species one", description: null },
+      presentation: null,
     },
   ],
 });
@@ -72,7 +73,7 @@ describe("PopulateDefaultCatalogUseCase", () => {
   it("reconciles system catalog even when categories already exist", async () => {
     const context = createTestUseCaseContext();
     const preCreate = c.resolve(SpeciesCategoryCreateUseCase);
-    await preCreate.run({ context, dto: { title: "Pre-existing" } });
+    await preCreate.run({ context, dto: { title: "Pre-existing", presentation: null } });
 
     const populate = c.resolve(PopulateDefaultCatalogUseCase);
     const result = await populate.run({
@@ -130,17 +131,19 @@ describe("PopulateDefaultCatalogUseCase", () => {
 
     const migratedCatalog = defineDefaultCatalog({
       categories: [
-        { slug: "a", title: "Category A (renamed)" },
-        { slug: "b", title: "Category B" },
+        { slug: "a", title: "Category A (renamed)", presentation: null },
+        { slug: "b", title: "Category B", presentation: null },
       ],
       species: [
         {
           categorySlug: "a",
           characteristics: { name: "Species one", description: "updated description" },
+          presentation: null,
         },
         {
           categorySlug: "b",
           characteristics: { name: "Species two", description: null },
+          presentation: null,
         },
       ],
     });
@@ -183,23 +186,29 @@ describe("PopulateDefaultCatalogUseCase", () => {
     const getSpeciesAll = c.resolve(SpeciesGetAllUseCase);
 
     const v1 = defineDefaultCatalog({
-      categories: [{ id: speciesCategoryId("system-category:custom-a"), slug: "a", title: "Category A" }],
+      categories: [
+        { id: speciesCategoryId("system-category:custom-a"), slug: "a", title: "Category A", presentation: null },
+      ],
       species: [
         {
           id: speciesId("system-species:custom-a:one"),
           categorySlug: "a",
           characteristics: { name: "Species one", description: null },
+          presentation: null,
         },
       ],
     });
 
     const v2 = defineDefaultCatalog({
-      categories: [{ id: speciesCategoryId("system-category:custom-a"), slug: "a", title: "Category A" }],
+      categories: [
+        { id: speciesCategoryId("system-category:custom-a"), slug: "a", title: "Category A", presentation: null },
+      ],
       species: [
         {
           id: speciesId("system-species:custom-a:one"),
           categorySlug: "a",
           characteristics: { name: "Species one renamed", description: "desc v2" },
+          presentation: null,
         },
       ],
     });
@@ -230,8 +239,8 @@ describe("PopulateDefaultCatalogUseCase", () => {
 
     const bad = defineDefaultCatalog({
       categories: [
-        { slug: "dup", title: "One" },
-        { slug: "dup", title: "Two" },
+        { slug: "dup", title: "One", presentation: null },
+        { slug: "dup", title: "Two", presentation: null },
       ],
       species: [],
     });
@@ -253,12 +262,13 @@ describe("PopulateDefaultCatalogUseCase", () => {
     const populate = c.resolve(PopulateDefaultCatalogUseCase);
 
     const bad = defineDefaultCatalog({
-      categories: [{ slug: "known", title: "Known" }],
+      categories: [{ slug: "known", title: "Known", presentation: null }],
       species: [
         {
-          // @ts-expect-error: test error case
+          // @ts-expect-error: test invalid category slug handling
           categorySlug: "unknown",
           characteristics: { name: "Broken species", description: null },
+          presentation: null,
         },
       ],
     });

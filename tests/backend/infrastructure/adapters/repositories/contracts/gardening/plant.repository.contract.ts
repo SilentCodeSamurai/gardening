@@ -35,15 +35,13 @@ export function registerPlantRepositoryContract(
 		});
 
 		async function seedCultivar() {
-			const cat = await speciesCategory.createOne({ workspace: wk, title: "C" });
+			const cat = await speciesCategory.createOne({ workspace: wk, presentation: null, title: "C" });
 			const sp = await species.createOne({
-				workspace: wk,
-				categoryId: cat.id,
+				workspace: wk, presentation: null, categoryId: cat.id,
 				characteristics: fixtureSpeciesCharacteristics(),
 			});
 			return cultivar.createOne({
-				workspace: wk,
-				speciesId: sp.id,
+				workspace: wk, presentation: null, speciesId: sp.id,
 				characteristics: fixtureCultivarCharacteristics(),
 			});
 		}
@@ -52,8 +50,7 @@ export function registerPlantRepositoryContract(
 			await seedCultivar();
 			await expect(
 				plant.createOne({
-					workspace: wk,
-					title: null,
+					workspace: wk, presentation: null, title: null,
 					description: null,
 					cultivarId: cultivarId("00000000-0000-4000-8000-00000000dead"),
 				}),
@@ -64,8 +61,8 @@ export function registerPlantRepositoryContract(
 			const cv = await seedCultivar();
 			const { items } = await plant.createMany({
 				items: [
-					{ workspace: wk, title: null, description: null, cultivarId: cv.id },
-					{ workspace: wk, title: null, description: null, cultivarId: cv.id },
+					{ workspace: wk, presentation: null, title: null, description: null, cultivarId: cv.id },
+					{ workspace: wk, presentation: null, title: null, description: null, cultivarId: cv.id },
 				],
 			});
 			expect(items).toHaveLength(2);
@@ -76,8 +73,7 @@ export function registerPlantRepositoryContract(
 		it("getMany without filters lists all plants", async () => {
 			const cv = await seedCultivar();
 			await plant.createOne({
-				workspace: wk,
-				title: "listed",
+				workspace: wk, presentation: null, title: "listed",
 				description: null,
 				cultivarId: cv.id,
 			});
@@ -88,8 +84,7 @@ export function registerPlantRepositoryContract(
 		it("getMany filters: [] returns empty", async () => {
 			const cv = await seedCultivar();
 			await plant.createOne({
-				workspace: wk,
-				title: null,
+				workspace: wk, presentation: null, title: null,
 				description: null,
 				cultivarId: cv.id,
 			});
@@ -100,14 +95,12 @@ export function registerPlantRepositoryContract(
 		it("getMany OR by id and filter by cultivarId", async () => {
 			const cv = await seedCultivar();
 			const p1 = await plant.createOne({
-				workspace: wk,
-				title: "p1",
+				workspace: wk, presentation: null, title: "p1",
 				description: null,
 				cultivarId: cv.id,
 			});
 			const p2 = await plant.createOne({
-				workspace: wk,
-				title: "p2",
+				workspace: wk, presentation: null, title: "p2",
 				description: null,
 				cultivarId: cv.id,
 			});
@@ -120,8 +113,7 @@ export function registerPlantRepositoryContract(
 		it("getOne OR filters", async () => {
 			const cv = await seedCultivar();
 			const p = await plant.createOne({
-				workspace: wk,
-				title: "or",
+				workspace: wk, presentation: null, title: "or",
 				description: null,
 				cultivarId: cv.id,
 			});
@@ -134,8 +126,7 @@ export function registerPlantRepositoryContract(
 		it("updateOne patches title; updateMany sets title on all matches", async () => {
 			const cv = await seedCultivar();
 			const a = await plant.createOne({
-				workspace: wk,
-				title: "a",
+				workspace: wk, presentation: null, title: "a",
 				description: null,
 				cultivarId: cv.id,
 			});
@@ -145,8 +136,7 @@ export function registerPlantRepositoryContract(
 			});
 			expect(u.title).toBe("a-patched");
 			const b = await plant.createOne({
-				workspace: wk,
-				title: "b",
+				workspace: wk, presentation: null, title: "b",
 				description: null,
 				cultivarId: cv.id,
 			});
@@ -171,8 +161,7 @@ export function registerPlantRepositoryContract(
 		it("updateOne with invalid cultivarId throws", async () => {
 			const cv = await seedCultivar();
 			const p = await plant.createOne({
-				workspace: wk,
-				title: null,
+				workspace: wk, presentation: null, title: null,
 				description: null,
 				cultivarId: cv.id,
 			});
@@ -187,12 +176,11 @@ export function registerPlantRepositoryContract(
 		it("deleteOne clears event-plant links", async () => {
 			const cv = await seedCultivar();
 			const p = await plant.createOne({
-				workspace: wk,
-				title: null,
+				workspace: wk, presentation: null, title: null,
 				description: null,
 				cultivarId: cv.id,
 			});
-			const ev = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction() });
+			const ev = await gardeningEvent.createOne({ workspace: wk, action: fixtureNoteAction(), occurredAt: null });
 			await gardeningEvent.bindToPlantOne({ filters: [{ id: ev.id }], plantId: p.id });
 			const before = await gardeningEvent.getBindingsOne({ filters: [{ id: ev.id }] });
 			expect(before.plantIds.map(String)).toContain(String(p.id));
@@ -212,14 +200,12 @@ export function registerPlantRepositoryContract(
 		it("deleteMany removes rows matching OR filters", async () => {
 			const cv = await seedCultivar();
 			const a = await plant.createOne({
-				workspace: wk,
-				title: "da",
+				workspace: wk, presentation: null, title: "da",
 				description: null,
 				cultivarId: cv.id,
 			});
 			const b = await plant.createOne({
-				workspace: wk,
-				title: "db",
+				workspace: wk, presentation: null, title: "db",
 				description: null,
 				cultivarId: cv.id,
 			});
@@ -243,8 +229,7 @@ export function registerPlantRepositoryContract(
 		it("createOne succeeds with valid cultivar", async () => {
 			const cv = await seedCultivar();
 			const p = await plant.createOne({
-				workspace: wk,
-				title: "created-ok",
+				workspace: wk, presentation: null, title: "created-ok",
 				description: null,
 				cultivarId: cv.id,
 			});
@@ -255,8 +240,7 @@ export function registerPlantRepositoryContract(
 
 		it("createOne allows null cultivar", async () => {
 			const p = await plant.createOne({
-				workspace: wk,
-				title: "no-cv",
+				workspace: wk, presentation: null, title: "no-cv",
 				description: null,
 				cultivarId: null,
 			});
@@ -269,8 +253,7 @@ export function registerPlantRepositoryContract(
 		it("getMany single-field filter by id", async () => {
 			const cv = await seedCultivar();
 			const p = await plant.createOne({
-				workspace: wk,
-				title: "gmid",
+				workspace: wk, presentation: null, title: "gmid",
 				description: null,
 				cultivarId: cv.id,
 			});
@@ -282,8 +265,7 @@ export function registerPlantRepositoryContract(
 		it("getMany multi-field AND: wrong workspaceKey excludes row", async () => {
 			const cv = await seedCultivar();
 			const p = await plant.createOne({
-				workspace: wk,
-				title: null,
+				workspace: wk, presentation: null, title: null,
 				description: null,
 				cultivarId: cv.id,
 			});
@@ -294,8 +276,7 @@ export function registerPlantRepositoryContract(
 		it("getMany OR combines id miss with title hit", async () => {
 			const cv = await seedCultivar();
 			const p = await plant.createOne({
-				workspace: wk,
-				title: "title-or-only",
+				workspace: wk, presentation: null, title: "title-or-only",
 				description: null,
 				cultivarId: cv.id,
 			});
@@ -309,14 +290,12 @@ export function registerPlantRepositoryContract(
 		it("updateMany OR matches multiple plants", async () => {
 			const cv = await seedCultivar();
 			const a = await plant.createOne({
-				workspace: wk,
-				title: "uma",
+				workspace: wk, presentation: null, title: "uma",
 				description: null,
 				cultivarId: cv.id,
 			});
 			const b = await plant.createOne({
-				workspace: wk,
-				title: "umb",
+				workspace: wk, presentation: null, title: "umb",
 				description: null,
 				cultivarId: cv.id,
 			});
@@ -338,14 +317,12 @@ export function registerPlantRepositoryContract(
 		it("deleteMany OR by id merges distinct rows", async () => {
 			const cv = await seedCultivar();
 			const a = await plant.createOne({
-				workspace: wk,
-				title: "dma",
+				workspace: wk, presentation: null, title: "dma",
 				description: null,
 				cultivarId: cv.id,
 			});
 			const b = await plant.createOne({
-				workspace: wk,
-				title: "dmb",
+				workspace: wk, presentation: null, title: "dmb",
 				description: null,
 				cultivarId: cv.id,
 			});

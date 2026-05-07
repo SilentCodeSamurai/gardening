@@ -27,14 +27,13 @@ export function registerSpeciesRepositoryContract(
 		});
 
 		async function cat() {
-			return speciesCategory.createOne({ workspace: wk, title: "Cat" });
+			return speciesCategory.createOne({ workspace: wk, presentation: null, title: "Cat" });
 		}
 
 		it("createOne rejects invalid non-null categoryId", async () => {
 			await expect(
 				species.createOne({
-					workspace: wk,
-					categoryId: speciesCategoryId("00000000-0000-4000-8000-000000000001"),
+					workspace: wk, presentation: null, categoryId: speciesCategoryId("00000000-0000-4000-8000-000000000001"),
 					characteristics: fixtureSpeciesCharacteristics(),
 				}),
 			).rejects.toBeInstanceOf(RepositoryNotFoundError);
@@ -42,8 +41,7 @@ export function registerSpeciesRepositoryContract(
 
 		it("createOne allows null categoryId", async () => {
 			const row = await species.createOne({
-				workspace: wk,
-				categoryId: null,
+				workspace: wk, presentation: null, categoryId: null,
 				characteristics: fixtureSpeciesCharacteristics({ name: "uncategorized" }),
 			});
 			expect(row.categoryId).toBeNull();
@@ -54,13 +52,11 @@ export function registerSpeciesRepositoryContract(
 			const { count } = await species.createMany({
 				items: [
 					{
-						workspace: wk,
-						categoryId: c.id,
+						workspace: wk, presentation: null, categoryId: c.id,
 						characteristics: fixtureSpeciesCharacteristics({ name: "s1" }),
 					},
 					{
-						workspace: wk,
-						categoryId: c.id,
+						workspace: wk, presentation: null, categoryId: c.id,
 						characteristics: fixtureSpeciesCharacteristics({ name: "s2" }),
 					},
 				],
@@ -75,8 +71,7 @@ export function registerSpeciesRepositoryContract(
 			const providedId = speciesId("system-species:contract-test:provided");
 			const row = await species.createOne({
 				id: providedId,
-				workspace: wk,
-				categoryId: c.id,
+				workspace: wk, presentation: null, categoryId: c.id,
 				characteristics: fixtureSpeciesCharacteristics({ name: "provided-id-species" }),
 			});
 			expect(row.id).toEqual(providedId);
@@ -93,14 +88,12 @@ export function registerSpeciesRepositoryContract(
 				items: [
 					{
 						id: firstId,
-						workspace: wk,
-						categoryId: c.id,
+						workspace: wk, presentation: null, categoryId: c.id,
 						characteristics: fixtureSpeciesCharacteristics({ name: "provided-many-1" }),
 					},
 					{
 						id: secondId,
-						workspace: wk,
-						categoryId: c.id,
+						workspace: wk, presentation: null, categoryId: c.id,
 						characteristics: fixtureSpeciesCharacteristics({ name: "provided-many-2" }),
 					},
 				],
@@ -113,8 +106,7 @@ export function registerSpeciesRepositoryContract(
 		it("full CRUD via segregated ports", async () => {
 			const c = await cat();
 			const row = await species.createOne({
-				workspace: wk,
-				categoryId: c.id,
+				workspace: wk, presentation: null, categoryId: c.id,
 				characteristics: fixtureSpeciesCharacteristics({ name: "Basil" }),
 			});
 			const got = await species.getOne({ filters: [{ id: row.id }] });
@@ -126,7 +118,7 @@ export function registerSpeciesRepositoryContract(
 			});
 			expect(updated.characteristics.name).toBe("Sweet basil");
 
-			const other = await speciesCategory.createOne({ workspace: wk, title: "Other" });
+			const other = await speciesCategory.createOne({ workspace: wk, presentation: null, title: "Other" });
 			const moved = await species.updateOne({
 				filters: [{ id: row.id }],
 				dto: { categoryId: other.id },
@@ -140,8 +132,7 @@ export function registerSpeciesRepositoryContract(
 		it("getOne OR filters", async () => {
 			const c = await cat();
 			const sp = await species.createOne({
-				workspace: wk,
-				categoryId: c.id,
+				workspace: wk, presentation: null, categoryId: c.id,
 				characteristics: fixtureSpeciesCharacteristics({ name: "oregano" }),
 			});
 			const ghost = speciesCategoryId("00000000-0000-4000-8000-00000000dead");
@@ -154,8 +145,7 @@ export function registerSpeciesRepositoryContract(
 		it("getMany filters: [] is empty", async () => {
 			const c = await cat();
 			await species.createOne({
-				workspace: wk,
-				categoryId: c.id,
+				workspace: wk, presentation: null, categoryId: c.id,
 				characteristics: fixtureSpeciesCharacteristics(),
 			});
 			const { items } = await species.getMany({ filters: [] });
@@ -165,8 +155,7 @@ export function registerSpeciesRepositoryContract(
 		it("getMany without filters returns all species in store", async () => {
 			const c = await cat();
 			await species.createOne({
-				workspace: wk,
-				categoryId: c.id,
+				workspace: wk, presentation: null, categoryId: c.id,
 				characteristics: fixtureSpeciesCharacteristics({ name: "all-a" }),
 			});
 			const { items } = await species.getMany();
@@ -176,13 +165,11 @@ export function registerSpeciesRepositoryContract(
 		it("getMany OR by categoryId or by characteristics.name subset", async () => {
 			const c = await cat();
 			const a = await species.createOne({
-				workspace: wk,
-				categoryId: c.id,
+				workspace: wk, presentation: null, categoryId: c.id,
 				characteristics: fixtureSpeciesCharacteristics({ name: "uniq-a" }),
 			});
 			const b = await species.createOne({
-				workspace: wk,
-				categoryId: c.id,
+				workspace: wk, presentation: null, categoryId: c.id,
 				characteristics: fixtureSpeciesCharacteristics({ name: "uniq-b" }),
 			});
 			const { items } = await species.getMany({
@@ -205,13 +192,11 @@ export function registerSpeciesRepositoryContract(
 			await species.createMany({
 				items: [
 					{
-						workspace: wk,
-						categoryId: c.id,
+						workspace: wk, presentation: null, categoryId: c.id,
 						characteristics: fixtureSpeciesCharacteristics({ name: "m1" }),
 					},
 					{
-						workspace: wk,
-						categoryId: c.id,
+						workspace: wk, presentation: null, categoryId: c.id,
 						characteristics: fixtureSpeciesCharacteristics({ name: "m2" }),
 					},
 				],
@@ -231,8 +216,7 @@ export function registerSpeciesRepositoryContract(
 		it("updateOne with bad categoryId throws", async () => {
 			const c = await cat();
 			const sp = await species.createOne({
-				workspace: wk,
-				categoryId: c.id,
+				workspace: wk, presentation: null, categoryId: c.id,
 				characteristics: fixtureSpeciesCharacteristics(),
 			});
 			await expect(
@@ -246,13 +230,11 @@ export function registerSpeciesRepositoryContract(
 		it("deleteOne unbinds linked cultivars by setting speciesId to null", async () => {
 			const c = await cat();
 			const sp = await species.createOne({
-				workspace: wk,
-				categoryId: c.id,
+				workspace: wk, presentation: null, categoryId: c.id,
 				characteristics: fixtureSpeciesCharacteristics(),
 			});
 			await cultivar.createOne({
-				workspace: wk,
-				speciesId: sp.id,
+				workspace: wk, presentation: null, speciesId: sp.id,
 				characteristics: { name: "cv", description: null },
 			});
 			await species.deleteOne({ filters: [{ id: sp.id }] });
@@ -263,13 +245,11 @@ export function registerSpeciesRepositoryContract(
 		it("deleteOne allows species when cultivars only have null speciesId", async () => {
 			const c = await cat();
 			const sp = await species.createOne({
-				workspace: wk,
-				categoryId: c.id,
+				workspace: wk, presentation: null, categoryId: c.id,
 				characteristics: fixtureSpeciesCharacteristics({ name: "to-delete" }),
 			});
 			await cultivar.createOne({
-				workspace: wk,
-				speciesId: null,
+				workspace: wk, presentation: null, speciesId: null,
 				characteristics: { name: "orphan-cv", description: null },
 			});
 			await species.deleteOne({ filters: [{ id: sp.id }] });
@@ -287,18 +267,15 @@ export function registerSpeciesRepositoryContract(
 		it("deleteMany removes free species; skips species referenced by cultivar", async () => {
 			const c = await cat();
 			const free = await species.createOne({
-				workspace: wk,
-				categoryId: c.id,
+				workspace: wk, presentation: null, categoryId: c.id,
 				characteristics: fixtureSpeciesCharacteristics({ name: "free-sp" }),
 			});
 			const blocked = await species.createOne({
-				workspace: wk,
-				categoryId: c.id,
+				workspace: wk, presentation: null, categoryId: c.id,
 				characteristics: fixtureSpeciesCharacteristics({ name: "blocked-sp" }),
 			});
 			await cultivar.createOne({
-				workspace: wk,
-				speciesId: blocked.id,
+				workspace: wk, presentation: null, speciesId: blocked.id,
 				characteristics: { name: "c", description: null },
 			});
 			const { count } = await species.deleteMany({
@@ -322,8 +299,7 @@ export function registerSpeciesRepositoryContract(
 		it("getMany single-field filter by id", async () => {
 			const c = await cat();
 			const sp = await species.createOne({
-				workspace: wk,
-				categoryId: c.id,
+				workspace: wk, presentation: null, categoryId: c.id,
 				characteristics: fixtureSpeciesCharacteristics({ name: "single-id-sp" }),
 			});
 			const { items } = await species.getMany({ filters: [{ id: sp.id }] });
@@ -334,8 +310,7 @@ export function registerSpeciesRepositoryContract(
 		it("getMany multi-field AND: wrong workspaceKey excludes row", async () => {
 			const c = await cat();
 			const sp = await species.createOne({
-				workspace: wk,
-				categoryId: c.id,
+				workspace: wk, presentation: null, categoryId: c.id,
 				characteristics: fixtureSpeciesCharacteristics({ name: "ws-and-sp" }),
 			});
 			const { items } = await species.getMany({ filters: [{ id: sp.id, workspace: wkB }] });
@@ -345,8 +320,7 @@ export function registerSpeciesRepositoryContract(
 		it("getMany OR combines categoryId miss with id hit", async () => {
 			const c = await cat();
 			const sp = await species.createOne({
-				workspace: wk,
-				categoryId: c.id,
+				workspace: wk, presentation: null, categoryId: c.id,
 				characteristics: fixtureSpeciesCharacteristics({ name: "or-mix-sp" }),
 			});
 			const { items } = await species.getMany({
@@ -359,8 +333,7 @@ export function registerSpeciesRepositoryContract(
 		it("updateOne OR filters", async () => {
 			const c = await cat();
 			const sp = await species.createOne({
-				workspace: wk,
-				categoryId: c.id,
+				workspace: wk, presentation: null, categoryId: c.id,
 				characteristics: fixtureSpeciesCharacteristics({ name: "uo-or-sp" }),
 			});
 			const u = await species.updateOne({
@@ -373,13 +346,11 @@ export function registerSpeciesRepositoryContract(
 		it("updateMany OR by id; count 0 when no match", async () => {
 			const c = await cat();
 			const a = await species.createOne({
-				workspace: wk,
-				categoryId: c.id,
+				workspace: wk, presentation: null, categoryId: c.id,
 				characteristics: fixtureSpeciesCharacteristics({ name: "um-a" }),
 			});
 			const b = await species.createOne({
-				workspace: wk,
-				categoryId: c.id,
+				workspace: wk, presentation: null, categoryId: c.id,
 				characteristics: fixtureSpeciesCharacteristics({ name: "um-b" }),
 			});
 			const { count } = await species.updateMany({
@@ -397,8 +368,7 @@ export function registerSpeciesRepositoryContract(
 		it("deleteOne OR filters", async () => {
 			const c = await cat();
 			const sp = await species.createOne({
-				workspace: wk,
-				categoryId: c.id,
+				workspace: wk, presentation: null, categoryId: c.id,
 				characteristics: fixtureSpeciesCharacteristics({ name: "del-or-sp" }),
 			});
 			await species.deleteOne({
@@ -410,13 +380,11 @@ export function registerSpeciesRepositoryContract(
 		it("deleteMany OR by id and by characteristics name", async () => {
 			const c = await cat();
 			const a = await species.createOne({
-				workspace: wk,
-				categoryId: c.id,
+				workspace: wk, presentation: null, categoryId: c.id,
 				characteristics: fixtureSpeciesCharacteristics({ name: "dm-sp-a" }),
 			});
 			const b = await species.createOne({
-				workspace: wk,
-				categoryId: c.id,
+				workspace: wk, presentation: null, categoryId: c.id,
 				characteristics: fixtureSpeciesCharacteristics({ name: "dm-sp-b" }),
 			});
 			const { count } = await species.deleteMany({

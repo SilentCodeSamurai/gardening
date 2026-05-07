@@ -14,7 +14,7 @@ import type {
 	CultivarRepositoryUpdateOutputDTO,
 	CultivarRepositoryUpdatePatchDTO,
 } from "@backend/core/application/ports/repositories/gardening/cultivar.repository.port";
-import { BaseRepositoryErrors } from "@backend/core/application/ports/repositories/shared/base-repository.errors";
+import { BaseRepository } from "@backend/core/application/ports/repositories/shared/base.repository";
 import type { CultivarEntity, HydratedCultivarEntity } from "@backend/core/domain/gardening/entities";
 import { InMemoryTransactionManagerAdapter } from "@backend/infrastructure/adapters/transaction/in-memory-transaction-manager.adapter";
 import type { InMemoryStore } from "@backend/infrastructure/integrations/in-memory-database/client";
@@ -26,7 +26,7 @@ import {
 } from "#/backend/infrastructure/adapters/repositories/in-memory/shared/in-memory-entity-filter";
 
 @injectable()
-export class CultivarInMemoryRepository extends BaseRepositoryErrors implements CultivarRepositoryPort {
+export class CultivarInMemoryRepository extends BaseRepository implements CultivarRepositoryPort {
 	constructor(
 		@inject(InMemoryTransactionManagerAdapter)
 		private readonly transactionManager: InMemoryTransactionManagerAdapter,

@@ -13,7 +13,7 @@ import type {
 	LocationRepositoryUpdateOutputDTO,
 	LocationRepositoryUpdatePatchDTO,
 } from "@backend/core/application/ports/repositories/gardening/location.repository.port";
-import { BaseRepositoryErrors } from "@backend/core/application/ports/repositories/shared/base-repository.errors";
+import { BaseRepository } from "@backend/core/application/ports/repositories/shared/base.repository";
 import type { LocationEntity } from "@backend/core/domain/gardening/entities";
 import { InMemoryTransactionManagerAdapter } from "@backend/infrastructure/adapters/transaction/in-memory-transaction-manager.adapter";
 import type { InMemoryStore } from "@backend/infrastructure/integrations/in-memory-database/client";
@@ -25,7 +25,7 @@ import {
 } from "#/backend/infrastructure/adapters/repositories/in-memory/shared/in-memory-entity-filter";
 
 @injectable()
-export class LocationInMemoryRepository extends BaseRepositoryErrors implements LocationRepositoryPort {
+export class LocationInMemoryRepository extends BaseRepository implements LocationRepositoryPort {
 	constructor(
 		@inject(InMemoryTransactionManagerAdapter)
 		private readonly transactionManager: InMemoryTransactionManagerAdapter,

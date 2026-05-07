@@ -1,4 +1,4 @@
-import { BaseRepositoryErrors } from "@backend/core/application/ports/repositories/shared/base-repository.errors";
+import { BaseRepository } from "@backend/core/application/ports/repositories/shared/base.repository";
 import type {
 	SpatialNodeRepositoryCreateInputDTO,
 	SpatialNodeRepositoryCreateManyInputDTO,
@@ -28,7 +28,7 @@ import {
 } from "#/backend/infrastructure/adapters/repositories/in-memory/shared/in-memory-entity-filter";
 
 @injectable()
-export class SpatialNodeInMemoryRepository extends BaseRepositoryErrors implements SpatialNodeRepositoryPort {
+export class SpatialNodeInMemoryRepository extends BaseRepository implements SpatialNodeRepositoryPort {
 	constructor(
 		@inject(InMemoryTransactionManagerAdapter)
 		private readonly transactionManager: InMemoryTransactionManagerAdapter,
