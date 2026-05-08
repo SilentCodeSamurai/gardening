@@ -1,6 +1,7 @@
 import { UserButton } from "@daveyplate/better-auth-ui";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ChevronDownIcon, HomeIcon, Sprout } from "lucide-react";
+import { useLayoutEffect, useRef } from "react";
 import { CollectionIcon } from "@/components/icon/collection-icon";
 import { SidebarLanguageMenu } from "@/components/layout/sidebar-language-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -18,6 +19,7 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 	SidebarRail,
+	useSidebar,
 } from "@/components/ui/sidebar";
 import { markIntentToOpenPublicHome } from "@/lib/public-home-navigation";
 import {
@@ -32,14 +34,29 @@ import * as m from "@/paraglide/messages.js";
 
 export function DashboardSidebar() {
 	const pathname = useRouterState({ select: (s) => s.location.pathname });
+	const locationKey = useRouterState({
+		select: (s) => s.location.href,
+	});
 	const isActivePath = (to: string) => pathname === to;
+	const { isMobile, setOpenMobile } = useSidebar();
+	const prevLocationKey = useRef(locationKey);
+
+	// Close the mobile sheet after the route updates so Sheet teardown does not run
+	// in the same turn as navigation (that pairing was noticeably delaying transitions).
+	useLayoutEffect(() => {
+		if (prevLocationKey.current === locationKey) return;
+		prevLocationKey.current = locationKey;
+		if (isMobile) setOpenMobile(false);
+	}, [locationKey, isMobile, setOpenMobile]);
 
 	return (
 		<Sidebar variant="inset" collapsible="offcanvas" aria-label={m.components_layout_appShell_sidebarNavLabel()}>
 			<SidebarHeader className="border-sidebar-border border-b px-2 py-2">
 				<Link
 					to="/"
-					onClick={() => markIntentToOpenPublicHome()}
+					onClick={() => {
+						markIntentToOpenPublicHome();
+					}}
 					className="flex items-center gap-2 rounded-md px-2 py-1.5 outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
 					aria-label={m.components_layout_sidebar_logoLinkAria()}
 				>
