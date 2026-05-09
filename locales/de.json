@@ -507,6 +507,7 @@
   "collections_speciesCategory_deleteLinkedMany": "Diese Kategorie wird von {count} Arten verwendet. Wenn Sie sie löschen, bleiben die Arten bestehen und verlieren nur diese Kategorie.",
   "common_open": "Öffnen",
   "common_close": "Schließen",
+  "common_back": "Zurück",
   "common_cancel": "Abbrechen",
   "common_ok": "OK",
   "common_unknown": "Unbekannt",

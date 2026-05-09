@@ -641,6 +641,11 @@ function CultivarsPage() {
 		hasPlacedInSelection: false,
 		enabledTooltip: m.collections_cultivar_deleteManyTooltip(),
 	});
+	const bulkUpdateTooltip = tableSelectionBulkTooltip({
+		selectedCount: selectedCultivarIds.length,
+		hasPlacedInSelection: false,
+		enabledTooltip: m.common_updateSelected(),
+	});
 	const emptyMessage =
 		items.length === 0
 			? m.items_noElements()
@@ -682,14 +687,16 @@ function CultivarsPage() {
 						listDefaultSorting={CULTIVARS_LIST_DEFAULT_SORTING}
 						selectedActions={
 							<div className="flex items-center gap-2">
-								<Button
-									type="button"
-									variant="outline"
-									disabled={bulkUpdateDisabled}
-									onClick={() => setBulkUpdateOpen(true)}
-								>
-									{m.common_updateSelected()}
-								</Button>
+								<ButtonTooltip label={bulkUpdateTooltip} disabled={bulkUpdateDisabled}>
+									<Button
+										type="button"
+										variant="outline"
+										disabled={bulkUpdateDisabled}
+										onClick={() => setBulkUpdateOpen(true)}
+									>
+										{m.common_updateSelected()}
+									</Button>
+								</ButtonTooltip>
 								<ButtonTooltip label={bulkDeleteTooltip} disabled={bulkDeleteDisabled}>
 									<Button
 										type="button"

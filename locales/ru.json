@@ -507,6 +507,7 @@
   "collections_speciesCategory_deleteLinkedMany": "Эта категория используется у {count} видов. После удаления виды останутся, просто без категории.",
   "common_open": "Открыть",
   "common_close": "Закрыть",
+  "common_back": "Назад",
   "common_cancel": "Отмена",
   "common_ok": "ОК",
   "common_unknown": "Неизвестно",

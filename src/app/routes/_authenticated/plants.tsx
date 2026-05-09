@@ -981,6 +981,11 @@ function PlantsPage() {
 		hasPlacedInSelection: selectionHasPlacedPlant,
 		enabledTooltip: m.collections_plant_deleteManyTooltip(),
 	});
+	const bulkUpdateTooltip = tableSelectionBulkTooltip({
+		selectedCount: selectedPlantIds.length,
+		hasPlacedInSelection: false,
+		enabledTooltip: m.common_updateSelected(),
+	});
 	const emptyMessage =
 		items.length === 0
 			? m.items_noElements()
@@ -1035,14 +1040,16 @@ function PlantsPage() {
 										{m.collections_gardeningEvent_create()}
 									</Button>
 								</ButtonTooltip>
-								<Button
-									type="button"
-									variant="outline"
-									disabled={bulkUpdateManyDisabled}
-									onClick={() => setBulkUpdateOpen(true)}
-								>
-									{m.common_updateSelected()}
-								</Button>
+								<ButtonTooltip label={bulkUpdateTooltip} disabled={bulkUpdateManyDisabled}>
+									<Button
+										type="button"
+										variant="outline"
+										disabled={bulkUpdateManyDisabled}
+										onClick={() => setBulkUpdateOpen(true)}
+									>
+										{m.common_updateSelected()}
+									</Button>
+								</ButtonTooltip>
 								<ButtonTooltip label={bulkDeleteManyTooltip} disabled={bulkDeleteManyDisabled}>
 									<Button
 										type="button"

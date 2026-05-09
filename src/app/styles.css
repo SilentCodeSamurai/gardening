@@ -8,7 +8,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-	--color-primary: oklch(67.448% 0.21406 144.676);
+	--color-primary: oklch(86.847% 0.19672 143.967);
 	--background: oklch(1 0 0);
 	--foreground: oklch(0.145 0 0);
 	--card: oklch(1 0 0);
@@ -16,7 +16,7 @@
 	--popover: oklch(1 0 0);
 	--popover-foreground: oklch(0.145 0 0);
 	--primary: var(--color-primary);
-	--primary-foreground: oklch(0.985 0 0);
+	--primary-foreground: oklch(0.145 0 0);
 	--secondary: oklch(0.97 0 0);
 	--secondary-foreground: oklch(0.205 0 0);
 	--muted: oklch(0.97 0 0);
@@ -36,7 +36,7 @@
 	--sidebar: oklch(0.985 0 0);
 	--sidebar-foreground: oklch(0.145 0 0);
 	--sidebar-primary: var(--color-primary);
-	--sidebar-primary-foreground: oklch(0.985 0 0);
+	--sidebar-primary-foreground: oklch(0.145 0 0);
 	--sidebar-accent: oklch(0.97 0 0);
 	--sidebar-accent-foreground: oklch(0.205 0 0);
 	--sidebar-border: oklch(0.922 0 0);
@@ -81,8 +81,9 @@
 	--accent-foreground: oklch(0.985 0 0);
 	--destructive: oklch(0.704 0.191 22.216);
 	--destructive-foreground: oklch(0.985 0 0);
-	--border: oklch(0.275 0 0);
-	--input: oklch(0.325 0 0);
+	/* Stronger than popover/card so outline buttons (e.g. Cancel, Clear) read clearly */
+	--border: oklch(0.42 0 0);
+	--input: oklch(0.36 0 0);
 	--ring: oklch(0.556 0 0);
 	--chart-1: oklch(0.81 0.1 252);
 	--chart-2: oklch(0.62 0.19 260);
@@ -95,7 +96,7 @@
 	--sidebar-primary-foreground: oklch(0.985 0 0);
 	--sidebar-accent: oklch(0.269 0 0);
 	--sidebar-accent-foreground: oklch(0.985 0 0);
-	--sidebar-border: oklch(0.275 0 0);
+	--sidebar-border: oklch(0.42 0 0);
 	--sidebar-ring: oklch(0.439 0 0);
 	--font-sans:
 		ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";

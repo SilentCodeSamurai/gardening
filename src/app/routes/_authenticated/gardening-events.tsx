@@ -277,6 +277,11 @@ function GardeningEventsPage() {
 		hasPlacedInSelection: false,
 		enabledTooltip: m.collections_gardeningEvent_deleteManyTooltip(),
 	});
+	const bulkUpdateTooltip = tableSelectionBulkTooltip({
+		selectedCount: selectedEventIds.length,
+		hasPlacedInSelection: false,
+		enabledTooltip: m.common_updateSelected(),
+	});
 	return (
 		<div id="events-page" className="flex min-h-0 flex-1 flex-col overflow-hidden">
 			<DashboardPageHeading
@@ -312,14 +317,16 @@ function GardeningEventsPage() {
 						listDefaultSorting={GARDENING_EVENTS_LIST_DEFAULT_SORTING}
 						selectedActions={
 							<div className="flex flex-wrap items-center gap-2">
-								<Button
-									type="button"
-									variant="outline"
-									disabled={bulkUpdateEventsDisabled}
-									onClick={() => setBulkUpdateOpen(true)}
-								>
-									{m.common_updateSelected()}
-								</Button>
+								<ButtonTooltip label={bulkUpdateTooltip} disabled={bulkUpdateEventsDisabled}>
+									<Button
+										type="button"
+										variant="outline"
+										disabled={bulkUpdateEventsDisabled}
+										onClick={() => setBulkUpdateOpen(true)}
+									>
+										{m.common_updateSelected()}
+									</Button>
+								</ButtonTooltip>
 								<ButtonTooltip label={bulkDeleteManyTooltip} disabled={bulkDeleteEventsDisabled}>
 									<Button
 										type="button"

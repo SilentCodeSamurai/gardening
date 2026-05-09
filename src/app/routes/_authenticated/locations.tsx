@@ -381,6 +381,11 @@ function LocationsPage() {
 		hasPlacedInSelection: selectionHasPlacedLocation,
 		enabledTooltip: m.collections_location_deleteManyTooltip(),
 	});
+	const bulkUpdateTooltip = tableSelectionBulkTooltip({
+		selectedCount: selectedLocationIds.length,
+		hasPlacedInSelection: false,
+		enabledTooltip: m.common_updateSelected(),
+	});
 	const selectedSingleLocationEventInitialValues = useMemo<
 		GardeningEventCreateDialogInitialValues | undefined
 	>(() => {
@@ -449,14 +454,16 @@ function LocationsPage() {
 										{m.collections_gardeningEvent_create()}
 									</Button>
 								</ButtonTooltip>
-								<Button
-									type="button"
-									variant="outline"
-									disabled={bulkLocationUpdateDisabled}
-									onClick={() => setBulkUpdateOpen(true)}
-								>
-									{m.common_updateSelected()}
-								</Button>
+								<ButtonTooltip label={bulkUpdateTooltip} disabled={bulkLocationUpdateDisabled}>
+									<Button
+										type="button"
+										variant="outline"
+										disabled={bulkLocationUpdateDisabled}
+										onClick={() => setBulkUpdateOpen(true)}
+									>
+										{m.common_updateSelected()}
+									</Button>
+								</ButtonTooltip>
 								<ButtonTooltip label={bulkDeleteManyTooltip} disabled={bulkLocationDeleteDisabled}>
 									<Button
 										type="button"

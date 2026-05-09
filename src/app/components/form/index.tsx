@@ -3,6 +3,7 @@ import { useStore } from "@tanstack/react-form";
 import { de, enUS, ru } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import { useEffect, useState, type ReactNode, type WheelEvent } from "react";
+import * as m from "@/paraglide/messages.js";
 import { HexAlphaColorPicker } from "react-colorful";
 import { SELECT_NONE } from "@/components/form/select-sentinel";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
@@ -611,13 +612,29 @@ export function ColorPicker({
 	const errors = useStore(field.store, (state) => state.meta.errors);
 	const triggerId = `${field.form.formId}-${String(field.name)}-color-picker`;
 	const color = field.state.value.trim();
+	const [pickerOpen, setPickerOpen] = useState(false);
+	const [draftColor, setDraftColor] = useState(color);
+
+	const handlePickerOpenChange = (open: boolean) => {
+		if (open) {
+			setDraftColor(field.state.value.trim());
+		} else {
+			field.handleBlur();
+		}
+		setPickerOpen(open);
+	};
+
+	const applyDraftColor = () => {
+		field.handleChange(draftColor);
+		handlePickerOpenChange(false);
+	};
 
 	return (
 		<div className={cn("grid gap-1", className)}>
 			<Label htmlFor={triggerId} className="font-medium text-xs">
 				{label}
 			</Label>
-			<DropdownMenu onOpenChange={(open) => !open && field.handleBlur()}>
+			<DropdownMenu open={pickerOpen} onOpenChange={handlePickerOpenChange}>
 				<DropdownMenuTrigger asChild>
 					<Button
 						id={triggerId}
@@ -639,15 +656,26 @@ export function ColorPicker({
 				</DropdownMenuTrigger>
 				<DropdownMenuContent className="w-auto min-w-0">
 					<div className="grid gap-2 p-2">
-						<HexAlphaColorPicker color={color || "#000000"} onChange={(next) => field.handleChange(next)} />
-						<Input
-							value={field.state.value}
-							placeholder={placeholder}
-							onChange={(e) => field.handleChange(e.target.value)}
+						<HexAlphaColorPicker
+							color={draftColor || "#000000"}
+							onChange={(next) => setDraftColor(next)}
 						/>
-						<Button type="button" variant="outline" size="sm" onClick={() => field.handleChange("")}>
+						<Input
+							value={draftColor}
+							placeholder={placeholder}
+							onChange={(e) => setDraftColor(e.target.value)}
+						/>
+						<Button type="button" variant="outline" size="sm" className="w-fit" onClick={() => setDraftColor("")}>
 							Clear
 						</Button>
+						<div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+							<Button type="button" variant="outline" size="sm" onClick={() => handlePickerOpenChange(false)}>
+								{m.common_cancel()}
+							</Button>
+							<Button type="button" size="sm" onClick={applyDraftColor}>
+								{m.filtering_apply()}
+							</Button>
+						</div>
 					</div>
 				</DropdownMenuContent>
 			</DropdownMenu>

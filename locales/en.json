@@ -507,6 +507,7 @@
   "collections_speciesCategory_deleteLinkedMany": "This category is used by {count} species. If you delete it, the species will stay and just lose this category.",
   "common_open": "Open",
   "common_close": "Close",
+  "common_back": "Back",
   "common_cancel": "Cancel",
   "common_ok": "OK",
   "common_unknown": "Unknown",
