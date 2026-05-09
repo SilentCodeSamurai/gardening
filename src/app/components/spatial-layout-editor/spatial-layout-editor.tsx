@@ -1,3 +1,4 @@
+import { useGesture } from "@use-gesture/react";
 import {
 	ChevronDown,
 	Grid2x2Check,
@@ -14,6 +15,7 @@ import {
 import {
 	type ReactNode,
 	type PointerEvent as ReactPointerEvent,
+	type WheelEvent as ReactWheelEvent,
 	startTransition,
 	useCallback,
 	useEffect,
@@ -122,13 +124,6 @@ function mergeAutoLayoutDisplay(
 
 type Interaction =
 	| {
-			kind: "pan";
-			startClientX: number;
-			startClientY: number;
-			startViewportX: number;
-			startViewportY: number;
-	  }
-	| {
 			kind: "move-node";
 			acceptsChildren: true;
 			id: string;
@@ -178,7 +173,22 @@ type Interaction =
 			startHeight: number;
 	  };
 
+type ViewportPanInteraction = {
+	pointerId: number;
+	startClientX: number;
+	startClientY: number;
+	startViewportX: number;
+	startViewportY: number;
+	button: number;
+	moved: boolean;
+};
+
 const defaultHistoryDisabled: SpatialLayoutEditorHistoryOptions = { enabled: false };
+const WHEEL_ZOOM_SENSITIVITY = 0.0035;
+const TOUCHPAD_PINCH_ZOOM_SENSITIVITY = 0.008;
+const WHEEL_BASE_STEP_PX = 1;
+const WHEEL_SPEED_CURVE_STRENGTH = 0.75;
+const WHEEL_SMOOTHING_ALPHA = 0.35;
 
 type SpatialLayoutEditorResolvedClassNames<TNode extends SpatialLayoutNode> = SpatialLayoutEditorClassNames<TNode> & {
 	rootShell: NonNullable<SpatialLayoutEditorClassNames<TNode>["rootShell"]>;
@@ -274,10 +284,14 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 	const [interaction, setInteraction] = useState<Interaction | null>(null);
 	const [layoutInteractionLocked, setLayoutInteractionLocked] = useState(true);
 	const [gridDisplayVisible, setGridDisplayVisible] = useState(true);
+	const [isViewportPanning, setIsViewportPanning] = useState(false);
+	const [viewportPanInteraction, setViewportPanInteraction] = useState<ViewportPanInteraction | null>(null);
 	const [viewport, setViewport] = useState(() => ({
 		...DEFAULT_INITIAL_VIEWPORT,
 		...initialViewportPartial,
 	}));
+	const suppressNextContextMenuRef = useRef(false);
+	const wheelSmoothedDeltaRef = useRef(0);
 
 	// Local geometry during drag/resize (uncommitted until persist).
 	const [drafts, setDrafts] = useState<Record<string, DraftRect>>({});
@@ -927,25 +941,48 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 		});
 	}, [layoutDataRevisionEffective]);
 
-	// Wheel zoom/scroll on the viewport (non-passive so we can `preventDefault`).
-	useEffect(() => {
-		const viewportEl = viewportRef.current;
-		if (!viewportEl) return;
-		const onWheel = (event: WheelEvent) => {
-			event.preventDefault();
+	const zoomViewportAtClientPoint = useCallback(
+		(clientX: number, clientY: number, nextScaleInput: number | ((prevScale: number) => number)): void => {
+			const viewportEl = viewportRef.current;
+			if (!viewportEl) return;
 			const rect = viewportEl.getBoundingClientRect();
 			setViewport((prev) => {
-				const worldBeforeX = (event.clientX - rect.left - prev.x) / prev.scale;
-				const worldBeforeY = (event.clientY - rect.top - prev.y) / prev.scale;
-				const nextScale = Math.min(3, Math.max(0.4, prev.scale * (event.deltaY > 0 ? 0.9 : 1.1)));
-				const nextX = event.clientX - rect.left - worldBeforeX * nextScale;
-				const nextY = event.clientY - rect.top - worldBeforeY * nextScale;
-				return { x: nextX, y: nextY, scale: nextScale };
+				const rawNextScale = typeof nextScaleInput === "function" ? nextScaleInput(prev.scale) : nextScaleInput;
+				const boundedScale = Math.min(3, Math.max(0.4, rawNextScale));
+				const worldBeforeX = (clientX - rect.left - prev.x) / prev.scale;
+				const worldBeforeY = (clientY - rect.top - prev.y) / prev.scale;
+				const nextX = clientX - rect.left - worldBeforeX * boundedScale;
+				const nextY = clientY - rect.top - worldBeforeY * boundedScale;
+				return { x: nextX, y: nextY, scale: boundedScale };
 			});
-		};
-		viewportEl.addEventListener("wheel", onWheel, { passive: false });
-		return () => viewportEl.removeEventListener("wheel", onWheel);
-	}, []);
+		},
+		[],
+	);
+
+	useGesture(
+		{
+			onWheel: ({ event }) => {
+				event.preventDefault();
+			},
+			onPinch: ({ event, origin: [ox, oy], offset: [, scale], first, last }) => {
+				event.preventDefault();
+				// Ignore synthetic pinch updates generated from non-touch sources (e.g. ctrl+wheel).
+				if (event instanceof WheelEvent) return;
+				if (!Number.isFinite(scale) || scale <= 0) {
+					return;
+				}
+				if (first) setIsViewportPanning(true);
+				zoomViewportAtClientPoint(ox, oy, scale);
+				if (last) setIsViewportPanning(false);
+			},
+		},
+		{
+			target: viewportRef,
+			eventOptions: { passive: false },
+			pinch: { scaleBounds: { min: 0.4, max: 3 } },
+			wheel: { eventOptions: { passive: false } },
+		},
+	);
 
 	// Global undo/redo shortcuts when a history API is available.
 	useEffect(() => {
@@ -1199,59 +1236,66 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 		return overlaps;
 	}
 
-	// Viewport pan (middle button or touch/pen on empty canvas).
-	function startPan(event: ReactPointerEvent<HTMLDivElement>): void {
-		event.preventDefault();
-		setInteraction({
-			kind: "pan",
-			startClientX: event.clientX,
-			startClientY: event.clientY,
-			startViewportX: viewport.x,
-			startViewportY: viewport.y,
-		});
-	}
-
-	function isLeftMouseButton(event: ReactPointerEvent<HTMLDivElement>): boolean {
-		return event.pointerType === "mouse" && event.button === 0;
-	}
-
-	function isMiddleMouseButton(event: ReactPointerEvent<HTMLDivElement>): boolean {
-		return event.pointerType === "mouse" && event.button === 1;
-	}
-
 	function isPrimaryManipulationPointer(event: ReactPointerEvent<HTMLDivElement>): boolean {
-		return event.pointerType !== "mouse" || isLeftMouseButton(event);
+		return event.pointerType !== "mouse" || event.button === 0;
 	}
 
-	function handleViewportPointerDownCapture(event: ReactPointerEvent<HTMLDivElement>): void {
-		if (!isMiddleMouseButton(event)) return;
-		event.stopPropagation();
-		startPan(event);
+	function handleViewportWheel(event: ReactWheelEvent<HTMLDivElement>): void {
+		event.preventDefault();
+		if (event.shiftKey) {
+			wheelSmoothedDeltaRef.current = 0;
+			setViewport((prev) => ({
+				...prev,
+				x: prev.x - event.deltaX,
+				y: prev.y - event.deltaY,
+			}));
+			return;
+		}
+		const normalizedDeltaY =
+			event.deltaMode === WheelEvent.DOM_DELTA_LINE
+				? event.deltaY * 16
+				: event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+					? event.deltaY * 80
+					: event.deltaY;
+		if (normalizedDeltaY === 0) return;
+		const direction = Math.sign(normalizedDeltaY);
+		const curvedMagnitude = WHEEL_BASE_STEP_PX + Math.abs(normalizedDeltaY) ** 0.85 * WHEEL_SPEED_CURVE_STRENGTH;
+		const curvedDeltaY = direction * curvedMagnitude;
+		const smoothedDeltaY =
+			wheelSmoothedDeltaRef.current * (1 - WHEEL_SMOOTHING_ALPHA) + curvedDeltaY * WHEEL_SMOOTHING_ALPHA;
+		wheelSmoothedDeltaRef.current = smoothedDeltaY;
+		const zoomSensitivity = event.ctrlKey ? TOUCHPAD_PINCH_ZOOM_SENSITIVITY : WHEEL_ZOOM_SENSITIVITY;
+		const zoomFactor = Math.exp(-smoothedDeltaY * zoomSensitivity);
+		zoomViewportAtClientPoint(event.clientX, event.clientY, (prevScale) => prevScale * zoomFactor);
 	}
 
 	function handleViewportPointerDown(event: ReactPointerEvent<HTMLDivElement>): void {
 		if (interaction) return;
-		if (isMiddleMouseButton(event)) {
-			startPan(event);
-			return;
-		}
-		if (isLeftMouseButton(event)) {
-			const target = event.target;
-			if (target instanceof Element) {
-				const onNodeShell = target.closest('[data-layout-node-shell="true"]') !== null;
-				const onRootResizeHandle = target.closest("#layout-editor-root-resize-handle") !== null;
-				const onRootSurface = target.closest("#layout-editor-root-surface") !== null;
-				const onViewportBackground = target === event.currentTarget;
-				if (!onNodeShell && !onRootResizeHandle && (onRootSurface || onViewportBackground)) {
-					startPan(event);
-					return;
-				}
-			}
-		}
-		// Touch/pen users can pan from empty canvas area.
-		if (event.pointerType !== "mouse" && event.target === event.currentTarget) {
-			startPan(event);
-		}
+		const target = event.target;
+		if (!(target instanceof Element)) return;
+		const onNodeShell = target.closest('[data-layout-node-shell="true"]') !== null;
+		const onRootResizeHandle = target.closest("#layout-editor-root-resize-handle") !== null;
+		const onRootSurface = target.closest("#layout-editor-root-surface") !== null;
+		const onViewportBackground = target === event.currentTarget;
+		const canStartFromCanvas = !onNodeShell && !onRootResizeHandle && (onRootSurface || onViewportBackground);
+		const isMouse = event.pointerType === "mouse";
+		const isRightMouse = isMouse && event.button === 2;
+		const isLeftMouse = isMouse && event.button === 0;
+		const isTouchOrPen = !isMouse;
+		const shouldPan = isRightMouse || (isLeftMouse && canStartFromCanvas) || (isTouchOrPen && canStartFromCanvas);
+		if (!shouldPan) return;
+		event.preventDefault();
+		event.currentTarget.setPointerCapture(event.pointerId);
+		setIsViewportPanning(true);
+		setViewportPanInteraction({
+			pointerId: event.pointerId,
+			startClientX: event.clientX,
+			startClientY: event.clientY,
+			startViewportX: viewport.x,
+			startViewportY: viewport.y,
+			button: event.button,
+			moved: false,
+		});
 	}
 
 	// Begin move / resize: subtree capture for frames vs single-node moves, plus root resize.
@@ -1642,20 +1686,22 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 		setDropTargetFrameId(args.targetId ?? (args.allowRootFallback && !args.outOfBounds ? String(root.id) : null));
 	}
 
-	// Pointer move: update draft rectangles and hit-test feedback for pan / move / resize / root resize.
+	// Pointer move: update draft rectangles and hit-test feedback for move / resize / root resize.
 	function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>): void {
-		if (!interaction) return;
-		if (interaction.kind === "pan") {
-			const dx = event.clientX - interaction.startClientX;
-			const dy = event.clientY - interaction.startClientY;
+		if (viewportPanInteraction && viewportPanInteraction.pointerId === event.pointerId) {
+			const dx = event.clientX - viewportPanInteraction.startClientX;
+			const dy = event.clientY - viewportPanInteraction.startClientY;
+			if (!viewportPanInteraction.moved && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) {
+				setViewportPanInteraction((prev) => (prev ? { ...prev, moved: true } : prev));
+			}
 			setViewport((prev) => ({
 				...prev,
-				x: interaction.startViewportX + dx,
-				y: interaction.startViewportY + dy,
+				x: viewportPanInteraction.startViewportX + dx,
+				y: viewportPanInteraction.startViewportY + dy,
 			}));
-			setCollisionTargetKeys([]);
 			return;
 		}
+		if (!interaction) return;
 
 		const dxWorld = (event.clientX - interaction.startClientX) / viewport.scale;
 		const dyWorld = (event.clientY - interaction.startClientY) / viewport.scale;
@@ -1781,9 +1827,41 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 		resetInteractionIndicators();
 	}
 
+	function endViewportPan(): void {
+		if (viewportPanInteraction?.button === 2 && viewportPanInteraction.moved) {
+			suppressNextContextMenuRef.current = true;
+		}
+		setViewportPanInteraction(null);
+		setIsViewportPanning(false);
+	}
+
+	function handleViewportPointerUp(event: ReactPointerEvent<HTMLDivElement>): void {
+		if (viewportPanInteraction && viewportPanInteraction.pointerId === event.pointerId) {
+			if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+				event.currentTarget.releasePointerCapture(event.pointerId);
+			}
+			endViewportPan();
+			return;
+		}
+		finishInteraction();
+	}
+
+	function handleViewportPointerCancel(event: ReactPointerEvent<HTMLDivElement>): void {
+		if (viewportPanInteraction && viewportPanInteraction.pointerId === event.pointerId) {
+			if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+				event.currentTarget.releasePointerCapture(event.pointerId);
+			}
+			endViewportPan();
+			return;
+		}
+		finishInteraction();
+	}
+
 	useEffect(() => {
 		if (!layoutInteractionLocked || placementBlocked) return;
 		setInteraction(null);
+		setIsViewportPanning(false);
+		setViewportPanInteraction(null);
 		setDropTargetFrameId(null);
 		setInvalidDragObject(null);
 		setCollisionTargetKeys([]);
@@ -2227,9 +2305,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 		if (options.length === 0) return null;
 		return (
 			<ContextMenuSub>
-				<ContextMenuSubTrigger disabled={placementBlocked}>
-					{lb.createMenu}
-				</ContextMenuSubTrigger>
+				<ContextMenuSubTrigger disabled={placementBlocked}>{lb.createMenu}</ContextMenuSubTrigger>
 				<ContextMenuSubContent>
 					{options.map((option) => (
 						<ContextMenuItem
@@ -2506,9 +2582,9 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 	// --- Render ---
 	return (
 		<div id="layout-editor-root" className={cn("space-y-3", cc.root)}>
-			<div className="flex items-center justify-between">
+			<div className="flex flex-wrap items-center justify-between gap-2">
 				<h3 className="font-semibold">{lb.headerLabel ?? lb.fallbackHeader}</h3>
-				<div className="flex items-center gap-2">
+				<div className="flex w-full items-center gap-2 overflow-x-auto pb-1 sm:w-auto sm:overflow-visible sm:pb-0">
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Toggle
@@ -2570,7 +2646,6 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 									size="icon-lg"
 									id="layout-editor-zoom-out"
 									aria-label={lb.zoomOut}
-									
 									onClick={() => setViewport((p) => ({ ...p, scale: Math.max(0.4, p.scale - 0.1) }))}
 								>
 									<Minus />
@@ -2585,7 +2660,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 									variant="outline"
 									size="icon-lg"
 									id="layout-editor-zoom-in"
-									aria-label={lb.zoomIn}	
+									aria-label={lb.zoomIn}
 									onClick={() => setViewport((p) => ({ ...p, scale: Math.min(3, p.scale + 0.1) }))}
 								>
 									<Plus />
@@ -2657,15 +2732,22 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 					backgroundImage: gridDisplayVisible
 						? "linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.08) 1px, transparent 1px)"
 						: "none",
-					cursor: interaction?.kind === "pan" ? "grabbing" : geometryEditFrozen ? "default" : "grab",
+					cursor: isViewportPanning ? "grabbing" : geometryEditFrozen ? "default" : "grab",
 					touchAction: "none",
 				}}
-				onPointerDownCapture={handleViewportPointerDownCapture}
+				onWheel={handleViewportWheel}
 				onPointerDown={handleViewportPointerDown}
 				onPointerMove={handlePointerMove}
-				onPointerUp={finishInteraction}
-				onPointerLeave={finishInteraction}
-				onContextMenuCapture={() => {
+				onPointerUp={handleViewportPointerUp}
+				onPointerCancel={handleViewportPointerCancel}
+				onPointerLeave={handleViewportPointerCancel}
+				onContextMenuCapture={(event) => {
+					if (suppressNextContextMenuRef.current) {
+						suppressNextContextMenuRef.current = false;
+						event.preventDefault();
+						event.stopPropagation();
+						return;
+					}
 					setActiveContextTarget(null);
 				}}
 			>
@@ -2723,7 +2805,11 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 									>
 										<ContextMenuTrigger>
 											<div
-												id={nodeId === primaryTourNodeId ? "layout-editor-primary-node" : undefined}
+												id={
+													nodeId === primaryTourNodeId
+														? "layout-editor-primary-node"
+														: undefined
+												}
 												data-layout-node-shell="true"
 												className={cn(
 													cc.nodeShell(node, vis),
@@ -2844,7 +2930,11 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 													(activePlacement?.kind === "external" &&
 														placementCompanionIds.has(nodeId)) ? null : (
 														<div
-															id={nodeId === primaryTourNodeId ? "layout-editor-primary-node-resize" : undefined}
+															id={
+																nodeId === primaryTourNodeId
+																	? "layout-editor-primary-node-resize"
+																	: undefined
+															}
 															className={cn(cc.nodeResizeHandle)}
 															onPointerDown={(event) =>
 																startResizeGeometry(event, {
@@ -2932,10 +3022,10 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 																				</ContextMenuSubContent>
 																			</ContextMenuSub>
 																			<ContextMenuSub>
-																			<ContextMenuSubTrigger
-																				id="layout-editor-remove-menu"
-																				className="text-destructive"
-																			>
+																				<ContextMenuSubTrigger
+																					id="layout-editor-remove-menu"
+																					className="text-destructive"
+																				>
 																					{removeMenuLabel}
 																				</ContextMenuSubTrigger>
 																				<ContextMenuSubContent>
