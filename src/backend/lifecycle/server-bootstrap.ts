@@ -6,6 +6,9 @@ import { populateData } from "./populate-data";
 let bootstrapOnce: Promise<void> | undefined;
 let backendBootstrapped = false;
 
+const SHOULD_SEED_DEFAULT_CATALOG =
+	process.env.BOOTSTRAP_SEED === "1" || process.env.BOOTSTRAP_SEED === "true";
+
 /**
  * Runs {@link bootstrap} once per server process before RPC and pages are served.
  * Subsequent calls return the same settled promise.
@@ -15,20 +18,29 @@ export function ensureBackendBootstrap(): Promise<void> {
 		try {
 			console.info("[bootstrap] Starting backend bootstrap...");
 
-			console.info("[bootstrap] Resolving MongoDB client from DI container(connecting to MongoDB)...");
-			appContainer.resolve(MongoDBClient);
-			console.info("[bootstrap] MongoDB client resolved(connected to MongoDB).");
+			console.info("[bootstrap] Resolving MongoDB client from DI container...");
+			const mongo = appContainer.resolve(MongoDBClient);
 
-			const result = await populateData({
-				actorSubject: bootstrapServiceAccount,
-			});
+			const pingStart = Date.now();
+			await mongo.db("admin").command({ ping: 1 });
+			console.info(`[bootstrap] MongoDB ping succeeded in ${Date.now() - pingStart} ms.`);
 
-			if (result.status === "reconciled") {
-				console.info(
-					`[bootstrap] Default catalog reconciled (${result.createdCategories} created categories, ${result.updatedCategories} updated categories, ${result.createdSpecies} created species, ${result.updatedSpecies} updated species).`,
-				);
+			if (SHOULD_SEED_DEFAULT_CATALOG) {
+				const result = await populateData({
+					actorSubject: bootstrapServiceAccount,
+				});
+
+				if (result.status === "reconciled") {
+					console.info(
+						`[bootstrap] Default catalog reconciled (${result.createdCategories} created categories, ${result.updatedCategories} updated categories, ${result.createdSpecies} created species, ${result.updatedSpecies} updated species).`,
+					);
+				} else {
+					console.info("[bootstrap] Default catalog already up to date.");
+				}
 			} else {
-				console.info("[bootstrap] Default catalog already up to date.");
+				console.info(
+					"[bootstrap] Skipping default catalog seed (set BOOTSTRAP_SEED=1 to enable).",
+				);
 			}
 
 			backendBootstrapped = true;
