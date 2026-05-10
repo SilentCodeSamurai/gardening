@@ -3,7 +3,6 @@ import { fileURLToPath } from "node:url";
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import tailwindcss from "@tailwindcss/vite";
 import { devtools } from "@tanstack/devtools-vite";
-import netlify from "@netlify/vite-plugin-tanstack-start";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
 import { config as loadEnvConfig } from "dotenv";
@@ -45,7 +44,6 @@ const config = defineConfig({
 				generatedRouteTree: "app/routeTree.gen.ts",
 			},
 		}),
-		netlify(),
 		viteReact({
 			include: [/src\/app\/.*\.[tj]sx?$/],
 			babel: {
