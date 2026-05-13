@@ -183,6 +183,7 @@ type Interaction =
 
 type ViewportPanInteraction = {
 	pointerId: number;
+	pointerType: string;
 	startClientX: number;
 	startClientY: number;
 	startViewportX: number;
@@ -300,10 +301,71 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 		...initialViewportPartial,
 	}));
 	const suppressNextContextMenuRef = useRef(false);
+	const suppressContextMenusUntilMsRef = useRef(0);
+	const endViewportPanRef = useRef<(() => void) | null>(null);
 	const viewportStateRef = useRef(viewport);
 	viewportStateRef.current = viewport;
-	const webkitPinchActiveRef = useRef(false);
+	const viewportPanInteractionRef = useRef<ViewportPanInteraction | null>(null);
+	viewportPanInteractionRef.current = viewportPanInteraction;
+	const pinchBlockPanRef = useRef(false);
 	const webkitPinchBaseScaleRef = useRef(1);
+	const webkitGestureRafRef = useRef(0);
+	const webkitGesturePendingRef = useRef<{ cx: number; cy: number; nextScale: number } | null>(null);
+	const cancelViewportPanForPinch = useCallback(() => {
+		const pan = viewportPanInteractionRef.current;
+		if (pan?.moved) {
+			suppressNextContextMenuRef.current = true;
+			suppressContextMenusUntilMsRef.current = performance.now() + 800;
+		}
+		const el = viewportRef.current;
+		if (el && pan && el.hasPointerCapture(pan.pointerId)) {
+			el.releasePointerCapture(pan.pointerId);
+		}
+		setViewportPanInteraction(null);
+		setIsViewportPanning(false);
+	}, []);
+
+	// Touch / pen: do not use pointer capture on the viewport (it steals pointermove from Radix
+	// ContextMenuTrigger, so the 700ms long-press timer never clears and the menu opens after a pan).
+	// biome-ignore lint/correctness/useExhaustiveDependencies: pointerId + pointerType identify a session; omitting `moved` keeps window listeners stable for the whole gesture.
+	useEffect(() => {
+		const pan = viewportPanInteraction;
+		if (!pan || pan.pointerType === "mouse") return;
+
+		const onMove = (e: PointerEvent) => {
+			if (e.pointerId !== pan.pointerId) return;
+			const live = viewportPanInteractionRef.current;
+			if (!live || live.pointerId !== pan.pointerId) return;
+			const dx = e.clientX - live.startClientX;
+			const dy = e.clientY - live.startClientY;
+			let nextPan = live;
+			if (!live.moved && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) {
+				nextPan = { ...live, moved: true };
+				viewportPanInteractionRef.current = nextPan;
+				setViewportPanInteraction(nextPan);
+			}
+			setViewport((prev) => ({
+				...prev,
+				x: nextPan.startViewportX + dx,
+				y: nextPan.startViewportY + dy,
+			}));
+		};
+
+		const onEnd = (e: PointerEvent) => {
+			if (e.pointerId !== pan.pointerId) return;
+			endViewportPanRef.current?.();
+		};
+
+		window.addEventListener("pointermove", onMove, { passive: false });
+		window.addEventListener("pointerup", onEnd);
+		window.addEventListener("pointercancel", onEnd);
+		return () => {
+			window.removeEventListener("pointermove", onMove);
+			window.removeEventListener("pointerup", onEnd);
+			window.removeEventListener("pointercancel", onEnd);
+		};
+	}, [viewportPanInteraction?.pointerId, viewportPanInteraction?.pointerType]);
+
 	const wheelSmoothedDeltaRef = useRef(0);
 
 	// Local geometry during drag/resize (uncommitted until persist).
@@ -979,9 +1041,12 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 			},
 			onPinch: ({ event, origin: [ox, oy], offset: [, scale], first, last }) => {
 				event.preventDefault();
-				// Ignore synthetic pinch updates generated from non-touch sources (e.g. ctrl+wheel).
+				// Ctrl+wheel pinch-zoom is handled in `handleViewportWheel`.
 				if (event instanceof WheelEvent) return;
-				if (webkitPinchActiveRef.current) return;
+				// WebKit exposes `GestureEvent` for touch pinch; using both fights the gesture and feels janky.
+				if (typeof window !== "undefined" && "GestureEvent" in window) return;
+				// Two-finger touch pinch is handled by native pointer tracking (Android / non-WebKit).
+				if (event instanceof PointerEvent && event.pointerType === "touch") return;
 				if (!Number.isFinite(scale) || scale <= 0) {
 					return;
 				}
@@ -998,16 +1063,24 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 		},
 	);
 
-	// WebKit (iOS Safari, desktop Safari): reliable pinch-zoom via GestureEvent; complements @use-gesture on other engines.
+	// WebKit (iOS Safari, Safari): single authoritative pinch path via GestureEvent (no @use-gesture pinch).
 	useLayoutEffect(() => {
 		if (typeof window === "undefined" || !("GestureEvent" in window)) return;
 		const el = viewportRef.current;
 		if (!el) return;
 
+		const flushWebkitGesture = () => {
+			webkitGestureRafRef.current = 0;
+			const pending = webkitGesturePendingRef.current;
+			webkitGesturePendingRef.current = null;
+			if (!pending) return;
+			zoomViewportAtClientPoint(pending.cx, pending.cy, pending.nextScale);
+		};
+
 		const onGestureStart = (ev: Event) => {
-			const e = ev as WebKitPinchGestureEvent;
-			e.preventDefault();
-			webkitPinchActiveRef.current = true;
+			(ev as WebKitPinchGestureEvent).preventDefault();
+			pinchBlockPanRef.current = true;
+			cancelViewportPanForPinch();
 			webkitPinchBaseScaleRef.current = viewportStateRef.current.scale;
 			setIsViewportPanning(true);
 		};
@@ -1015,11 +1088,23 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 			const e = ev as WebKitPinchGestureEvent;
 			e.preventDefault();
 			const next = Math.min(3, Math.max(0.4, webkitPinchBaseScaleRef.current * e.scale));
-			zoomViewportAtClientPoint(e.clientX, e.clientY, next);
+			webkitGesturePendingRef.current = { cx: e.clientX, cy: e.clientY, nextScale: next };
+			if (!webkitGestureRafRef.current) {
+				webkitGestureRafRef.current = requestAnimationFrame(flushWebkitGesture);
+			}
 		};
 		const onGestureEnd = (ev: Event) => {
 			(ev as WebKitPinchGestureEvent).preventDefault();
-			webkitPinchActiveRef.current = false;
+			if (webkitGestureRafRef.current) {
+				cancelAnimationFrame(webkitGestureRafRef.current);
+				webkitGestureRafRef.current = 0;
+			}
+			const pending = webkitGesturePendingRef.current;
+			webkitGesturePendingRef.current = null;
+			if (pending) {
+				zoomViewportAtClientPoint(pending.cx, pending.cy, pending.nextScale);
+			}
+			pinchBlockPanRef.current = false;
 			setIsViewportPanning(false);
 		};
 
@@ -1030,8 +1115,110 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 			el.removeEventListener("gesturestart", onGestureStart);
 			el.removeEventListener("gesturechange", onGestureChange);
 			el.removeEventListener("gestureend", onGestureEnd);
+			if (webkitGestureRafRef.current) {
+				cancelAnimationFrame(webkitGestureRafRef.current);
+				webkitGestureRafRef.current = 0;
+			}
+			webkitGesturePendingRef.current = null;
+			pinchBlockPanRef.current = false;
 		};
-	}, [zoomViewportAtClientPoint]);
+	}, [zoomViewportAtClientPoint, cancelViewportPanForPinch]);
+
+	// Two-finger touch pinch for engines without GestureEvent (e.g. Chrome on Android).
+	useLayoutEffect(() => {
+		if (typeof window === "undefined" || "GestureEvent" in window) return;
+		const el = viewportRef.current;
+		if (!el) return;
+
+		const pointers = new Map<number, { x: number; y: number }>();
+		let manualSession: { startDist: number; baseScale: number } | null = null;
+		let detachWindow: (() => void) | null = null;
+
+		const teardownWindow = () => {
+			if (!detachWindow) return;
+			detachWindow();
+			detachWindow = null;
+		};
+
+		const distance = (): number => {
+			const pts = [...pointers.values()];
+			if (pts.length < 2) return 0;
+			return Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+		};
+
+		const midpoint = (): { x: number; y: number } => {
+			const pts = [...pointers.values()];
+			return { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 };
+		};
+
+		const onPointerDownCapture = (e: PointerEvent) => {
+			if (e.pointerType !== "touch" || !el.contains(e.target as Node)) return;
+			if (manualSession) return;
+			pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+			if (pointers.size !== 2) return;
+			const d = distance();
+			if (d < 8) return;
+			manualSession = { startDist: d, baseScale: viewportStateRef.current.scale };
+			pinchBlockPanRef.current = true;
+			cancelViewportPanForPinch();
+
+			const onMove = (me: PointerEvent) => {
+				if (!pointers.has(me.pointerId)) return;
+				pointers.set(me.pointerId, { x: me.clientX, y: me.clientY });
+				if (!manualSession || pointers.size < 2) return;
+				const md = distance();
+				if (md < 1) return;
+				const { x, y } = midpoint();
+				const next = Math.min(3, Math.max(0.4, manualSession.baseScale * (md / manualSession.startDist)));
+				zoomViewportAtClientPoint(x, y, next);
+				me.preventDefault();
+			};
+
+			const onUpWindow = (ue: PointerEvent) => {
+				pointers.delete(ue.pointerId);
+				if (pointers.size < 2) {
+					teardownWindow();
+					pointers.clear();
+					manualSession = null;
+					pinchBlockPanRef.current = false;
+				}
+			};
+
+			window.addEventListener("pointermove", onMove, { passive: false, capture: true });
+			window.addEventListener("pointerup", onUpWindow, true);
+			window.addEventListener("pointercancel", onUpWindow, true);
+			detachWindow = () => {
+				window.removeEventListener("pointermove", onMove, { capture: true } as AddEventListenerOptions);
+				window.removeEventListener("pointerup", onUpWindow, true);
+				window.removeEventListener("pointercancel", onUpWindow, true);
+			};
+		};
+
+		const onPointerUpBubble = (e: PointerEvent) => {
+			if (e.pointerType !== "touch") return;
+			if (!pointers.has(e.pointerId)) return;
+			pointers.delete(e.pointerId);
+			if (pointers.size < 2) {
+				teardownWindow();
+				pointers.clear();
+				manualSession = null;
+				pinchBlockPanRef.current = false;
+			}
+		};
+
+		el.addEventListener("pointerdown", onPointerDownCapture, { capture: true });
+		el.addEventListener("pointerup", onPointerUpBubble);
+		el.addEventListener("pointercancel", onPointerUpBubble);
+		return () => {
+			el.removeEventListener("pointerdown", onPointerDownCapture, { capture: true });
+			el.removeEventListener("pointerup", onPointerUpBubble);
+			el.removeEventListener("pointercancel", onPointerUpBubble);
+			teardownWindow();
+			pointers.clear();
+			manualSession = null;
+			pinchBlockPanRef.current = false;
+		};
+	}, [zoomViewportAtClientPoint, cancelViewportPanForPinch]);
 
 	// Global undo/redo shortcuts when a history API is available.
 	useEffect(() => {
@@ -1320,6 +1507,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 
 	function handleViewportPointerDown(event: ReactPointerEvent<HTMLDivElement>): void {
 		if (interaction) return;
+		if (pinchBlockPanRef.current) return;
 		const target = event.target;
 		if (!(target instanceof Element)) return;
 		const onNodeShell = target.closest('[data-layout-node-shell="true"]') !== null;
@@ -1336,10 +1524,13 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 		const shouldPan = isRightMouse || (isLeftMouse && canStartFromCanvas) || (isTouchOrPen && canStartFromCanvas);
 		if (!shouldPan) return;
 		event.preventDefault();
-		event.currentTarget.setPointerCapture(event.pointerId);
+		if (event.pointerType === "mouse") {
+			event.currentTarget.setPointerCapture(event.pointerId);
+		}
 		setIsViewportPanning(true);
 		setViewportPanInteraction({
 			pointerId: event.pointerId,
+			pointerType: event.pointerType,
 			startClientX: event.clientX,
 			startClientY: event.clientY,
 			startViewportX: viewport.x,
@@ -1740,10 +1931,17 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 	// Pointer move: update draft rectangles and hit-test feedback for move / resize / root resize.
 	function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>): void {
 		if (viewportPanInteraction && viewportPanInteraction.pointerId === event.pointerId) {
+			if (viewportPanInteraction.pointerType !== "mouse") {
+				return;
+			}
 			const dx = event.clientX - viewportPanInteraction.startClientX;
 			const dy = event.clientY - viewportPanInteraction.startClientY;
 			if (!viewportPanInteraction.moved && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) {
-				setViewportPanInteraction((prev) => (prev ? { ...prev, moved: true } : prev));
+				setViewportPanInteraction((prev) => {
+					const next = prev ? { ...prev, moved: true } : prev;
+					if (next) viewportPanInteractionRef.current = next;
+					return next;
+				});
 			}
 			setViewport((prev) => ({
 				...prev,
@@ -1879,8 +2077,9 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 	}
 
 	function endViewportPan(): void {
-		if (viewportPanInteraction?.moved) {
+		if (viewportPanInteractionRef.current?.moved) {
 			suppressNextContextMenuRef.current = true;
+			suppressContextMenusUntilMsRef.current = performance.now() + 800;
 		}
 		setViewportPanInteraction(null);
 		setIsViewportPanning(false);
@@ -1888,7 +2087,10 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 
 	function handleViewportPointerUp(event: ReactPointerEvent<HTMLDivElement>): void {
 		if (viewportPanInteraction && viewportPanInteraction.pointerId === event.pointerId) {
-			if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+			if (
+				viewportPanInteraction.pointerType === "mouse" &&
+				event.currentTarget.hasPointerCapture(event.pointerId)
+			) {
 				event.currentTarget.releasePointerCapture(event.pointerId);
 			}
 			endViewportPan();
@@ -1899,7 +2101,10 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 
 	function handleViewportPointerCancel(event: ReactPointerEvent<HTMLDivElement>): void {
 		if (viewportPanInteraction && viewportPanInteraction.pointerId === event.pointerId) {
-			if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+			if (
+				viewportPanInteraction.pointerType === "mouse" &&
+				event.currentTarget.hasPointerCapture(event.pointerId)
+			) {
 				event.currentTarget.releasePointerCapture(event.pointerId);
 			}
 			endViewportPan();
@@ -2627,6 +2832,8 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 		return null;
 	}
 
+	endViewportPanRef.current = endViewportPan;
+
 	// --- Render ---
 	return (
 		<div id="layout-editor-root" className={cn("space-y-3", cc.root)}>
@@ -2807,9 +3014,15 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 				onPointerMove={handlePointerMove}
 				onPointerUp={handleViewportPointerUp}
 				onPointerCancel={handleViewportPointerCancel}
-				onPointerLeave={handleViewportPointerCancel}
+				onPointerLeave={(event) => {
+					if (viewportPanInteractionRef.current?.pointerType !== "mouse") return;
+					handleViewportPointerCancel(event);
+				}}
 				onContextMenuCapture={(event) => {
-					if (suppressNextContextMenuRef.current) {
+					if (
+						suppressNextContextMenuRef.current ||
+						performance.now() < suppressContextMenusUntilMsRef.current
+					) {
 						suppressNextContextMenuRef.current = false;
 						event.preventDefault();
 						event.stopPropagation();
