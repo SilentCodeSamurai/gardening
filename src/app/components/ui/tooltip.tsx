@@ -1,14 +1,40 @@
 import type * as React from "react";
+import { useSyncExternalStore } from "react";
 import { Tooltip as TooltipPrimitive } from "radix-ui";
 
 import { cn } from "@/lib/utils";
+
+function useDisableTooltipsForCoarsePointer(): boolean {
+	return useSyncExternalStore(
+		(onStoreChange) => {
+			if (typeof window === "undefined") return () => {};
+			const mq = window.matchMedia("(hover: none) and (pointer: coarse)");
+			mq.addEventListener("change", onStoreChange);
+			return () => mq.removeEventListener("change", onStoreChange);
+		},
+		() => window.matchMedia("(hover: none) and (pointer: coarse)").matches,
+		() => false,
+	);
+}
 
 function TooltipProvider({ delayDuration = 0, ...props }: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
 	return <TooltipPrimitive.Provider data-slot="tooltip-provider" delayDuration={delayDuration} {...props} />;
 }
 
-function Tooltip({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
-	return <TooltipPrimitive.Root data-slot="tooltip" {...props} />;
+function Tooltip({
+	open,
+	onOpenChange,
+	...props
+}: React.ComponentProps<typeof TooltipPrimitive.Root>) {
+	const disableForCoarsePointer = useDisableTooltipsForCoarsePointer();
+	return (
+		<TooltipPrimitive.Root
+			data-slot="tooltip"
+			{...props}
+			open={disableForCoarsePointer ? false : open}
+			onOpenChange={disableForCoarsePointer ? undefined : onOpenChange}
+		/>
+	);
 }
 
 function TooltipTrigger({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {

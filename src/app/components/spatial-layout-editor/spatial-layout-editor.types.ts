@@ -173,6 +173,8 @@ export type SpatialLayoutEditorLabels = Readonly<{
 	toolbarAutoLayout?: string;
 	zoomOut?: string;
 	zoomIn?: string;
+	/** Native zoom slider (`<input type="range">`) — `aria-label`. */
+	zoomSlider?: string;
 	/** Toolbar toggle: shown when layout is locked (view-only). */
 	lockLayoutToggleUnlockHint?: string;
 	/** Toolbar toggle: shown when layout is unlocked (editable). */

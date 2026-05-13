@@ -19,6 +19,7 @@ import {
 	startTransition,
 	useCallback,
 	useEffect,
+	useLayoutEffect,
 	useMemo,
 	useRef,
 	useState,
@@ -49,8 +50,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Toggle } from "@/components/ui/toggle";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useNativeHoverTitleHints } from "@/hooks/use-native-hover-title-hints";
 import { cn } from "@/lib/utils";
 import {
 	localChildGeometriesValidInParent,
@@ -108,6 +108,14 @@ import { useSpatialLayoutHistory } from "./use-spatial-layout-editor-history";
 function isProvisionalSpatialId(id: string): boolean {
 	return id.startsWith("pending-");
 }
+
+const LAYOUT_EDITOR_PAN_SURFACE_SELECTOR = "[data-layout-editor-pan-surface]";
+
+type WebKitPinchGestureEvent = Event & {
+	readonly scale: number;
+	readonly clientX: number;
+	readonly clientY: number;
+};
 
 function mergeAutoLayoutDisplay(
 	option: (typeof AUTO_LAYOUT_OPTIONS)[number],
@@ -233,6 +241,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 
 	// Merged presentation props (`labels` / `classNames`) for stable references when parents memoize partials.
 	const lb = useMemo(() => ({ ...DEFAULT_LABELS, ...labelsIn }), [labelsIn]);
+	const nativeTitleHints = useNativeHoverTitleHints();
 	const duplicateConfirmLabelResolved = lb.duplicateConfirmPlacement ?? lb.confirmPlacement;
 	const detachOrRemoveSubLabels = {
 		withChildren: lb.detachOrRemoveWithChildren ?? "With children",
@@ -291,6 +300,10 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 		...initialViewportPartial,
 	}));
 	const suppressNextContextMenuRef = useRef(false);
+	const viewportStateRef = useRef(viewport);
+	viewportStateRef.current = viewport;
+	const webkitPinchActiveRef = useRef(false);
+	const webkitPinchBaseScaleRef = useRef(1);
 	const wheelSmoothedDeltaRef = useRef(0);
 
 	// Local geometry during drag/resize (uncommitted until persist).
@@ -968,6 +981,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 				event.preventDefault();
 				// Ignore synthetic pinch updates generated from non-touch sources (e.g. ctrl+wheel).
 				if (event instanceof WheelEvent) return;
+				if (webkitPinchActiveRef.current) return;
 				if (!Number.isFinite(scale) || scale <= 0) {
 					return;
 				}
@@ -983,6 +997,41 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 			wheel: { eventOptions: { passive: false } },
 		},
 	);
+
+	// WebKit (iOS Safari, desktop Safari): reliable pinch-zoom via GestureEvent; complements @use-gesture on other engines.
+	useLayoutEffect(() => {
+		if (typeof window === "undefined" || !("GestureEvent" in window)) return;
+		const el = viewportRef.current;
+		if (!el) return;
+
+		const onGestureStart = (ev: Event) => {
+			const e = ev as WebKitPinchGestureEvent;
+			e.preventDefault();
+			webkitPinchActiveRef.current = true;
+			webkitPinchBaseScaleRef.current = viewportStateRef.current.scale;
+			setIsViewportPanning(true);
+		};
+		const onGestureChange = (ev: Event) => {
+			const e = ev as WebKitPinchGestureEvent;
+			e.preventDefault();
+			const next = Math.min(3, Math.max(0.4, webkitPinchBaseScaleRef.current * e.scale));
+			zoomViewportAtClientPoint(e.clientX, e.clientY, next);
+		};
+		const onGestureEnd = (ev: Event) => {
+			(ev as WebKitPinchGestureEvent).preventDefault();
+			webkitPinchActiveRef.current = false;
+			setIsViewportPanning(false);
+		};
+
+		el.addEventListener("gesturestart", onGestureStart, { passive: false });
+		el.addEventListener("gesturechange", onGestureChange, { passive: false });
+		el.addEventListener("gestureend", onGestureEnd, { passive: false });
+		return () => {
+			el.removeEventListener("gesturestart", onGestureStart);
+			el.removeEventListener("gesturechange", onGestureChange);
+			el.removeEventListener("gestureend", onGestureEnd);
+		};
+	}, [zoomViewportAtClientPoint]);
 
 	// Global undo/redo shortcuts when a history API is available.
 	useEffect(() => {
@@ -1277,7 +1326,9 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 		const onRootResizeHandle = target.closest("#layout-editor-root-resize-handle") !== null;
 		const onRootSurface = target.closest("#layout-editor-root-surface") !== null;
 		const onViewportBackground = target === event.currentTarget;
-		const canStartFromCanvas = !onNodeShell && !onRootResizeHandle && (onRootSurface || onViewportBackground);
+		const onPanHitPlane = target.closest(LAYOUT_EDITOR_PAN_SURFACE_SELECTOR) !== null;
+		const canStartFromCanvas =
+			!onNodeShell && !onRootResizeHandle && (onRootSurface || onViewportBackground || onPanHitPlane);
 		const isMouse = event.pointerType === "mouse";
 		const isRightMouse = isMouse && event.button === 2;
 		const isLeftMouse = isMouse && event.button === 0;
@@ -1828,7 +1879,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 	}
 
 	function endViewportPan(): void {
-		if (viewportPanInteraction?.button === 2 && viewportPanInteraction.moved) {
+		if (viewportPanInteraction?.moved) {
 			suppressNextContextMenuRef.current = true;
 		}
 		setViewportPanInteraction(null);
@@ -2451,24 +2502,21 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 											</DropdownMenuSub>
 										</DropdownMenuContent>
 									</DropdownMenu>
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<Button
-												type="button"
-												size="icon-sm"
-												variant="outline"
-												aria-label={lb.createManyReapplyLayout}
-												onPointerDown={(event) => event.stopPropagation()}
-												onClick={(event) => {
-													event.stopPropagation();
-													reapplyCreateManyLayout();
-												}}
-											>
-												<RefreshCcw className="size-3.5" />
-											</Button>
-										</TooltipTrigger>
-										<TooltipContent>{lb.createManyReapplyLayout}</TooltipContent>
-									</Tooltip>
+									<Button
+										type="button"
+										size="icon-sm"
+										variant="outline"
+										className="touch-manipulation"
+										aria-label={lb.createManyReapplyLayout}
+										title={nativeTitleHints ? lb.createManyReapplyLayout : undefined}
+										onPointerDown={(event) => event.stopPropagation()}
+										onClick={(event) => {
+											event.stopPropagation();
+											reapplyCreateManyLayout();
+										}}
+									>
+										<RefreshCcw className="size-3.5" />
+									</Button>
 								</div>
 							</div>
 						</div>
@@ -2584,140 +2632,159 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 		<div id="layout-editor-root" className={cn("space-y-3", cc.root)}>
 			<div className="flex flex-wrap items-center justify-between gap-2">
 				<h3 className="font-semibold">{lb.headerLabel ?? lb.fallbackHeader}</h3>
-				<div className="flex w-full items-center gap-2 overflow-x-auto pb-1 sm:w-auto sm:overflow-visible sm:pb-0">
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Toggle
-								variant="outline"
-								size="sm"
-								id="layout-editor-lock-toggle"
-								className="size-8 shrink-0 p-0"
-								pressed={layoutInteractionLocked}
-								onPressedChange={setLayoutInteractionLocked}
-								aria-label={
-									layoutInteractionLocked
-										? (lb.lockLayoutToggleUnlockHint ?? "")
-										: (lb.lockLayoutToggleLockHint ?? "")
-								}
-							>
-								{layoutInteractionLocked ? (
-									<Lock className="size-4" aria-hidden />
-								) : (
-									<LockOpen className="size-4" aria-hidden />
-								)}
-							</Toggle>
-						</TooltipTrigger>
-						<TooltipContent>
-							{layoutInteractionLocked ? lb.lockLayoutToggleUnlockHint : lb.lockLayoutToggleLockHint}
-						</TooltipContent>
-					</Tooltip>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Toggle
-								variant="outline"
-								size="sm"
-								id="layout-editor-grid-toggle"
-								className="size-8 shrink-0 p-0"
-								pressed={gridDisplayVisible}
-								onPressedChange={setGridDisplayVisible}
-								aria-label={
-									gridDisplayVisible
-										? (lb.gridDisplayToggleHideHint ?? "")
-										: (lb.gridDisplayToggleShowHint ?? "")
-								}
-							>
-								{gridDisplayVisible ? (
-									<Grid2x2Check className="size-4" aria-hidden />
-								) : (
-									<Grid2x2X className="size-4" aria-hidden />
-								)}
-							</Toggle>
-						</TooltipTrigger>
-						<TooltipContent>
-							{gridDisplayVisible ? lb.gridDisplayToggleHideHint : lb.gridDisplayToggleShowHint}
-						</TooltipContent>
-					</Tooltip>
+				<div className="flex w-full flex-wrap items-center gap-2 overflow-x-auto pb-1 sm:w-auto sm:overflow-visible sm:pb-0">
+					<label
+						id="layout-editor-lock-toggle"
+						htmlFor="layout-editor-lock-input"
+						className={cn(
+							"inline-flex size-10 shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded-md border border-input bg-transparent shadow-xs transition-colors hover:bg-muted sm:h-8 sm:w-8",
+							layoutInteractionLocked && "bg-muted",
+							"has-focus-visible:outline-none has-focus-visible:ring-2 has-focus-visible:ring-ring/55",
+						)}
+						title={
+							nativeTitleHints
+								? layoutInteractionLocked
+									? lb.lockLayoutToggleUnlockHint
+									: lb.lockLayoutToggleLockHint
+								: undefined
+						}
+					>
+						<input
+							type="checkbox"
+							id="layout-editor-lock-input"
+							className="peer sr-only"
+							checked={layoutInteractionLocked}
+							onChange={(event) => setLayoutInteractionLocked(event.target.checked)}
+							aria-label={
+								layoutInteractionLocked
+									? (lb.lockLayoutToggleUnlockHint ?? "")
+									: (lb.lockLayoutToggleLockHint ?? "")
+							}
+						/>
+						<span className="pointer-events-none text-foreground" aria-hidden>
+							{layoutInteractionLocked ? (
+								<Lock className="size-4" aria-hidden />
+							) : (
+								<LockOpen className="size-4" aria-hidden />
+							)}
+						</span>
+					</label>
+					<label
+						id="layout-editor-grid-toggle"
+						htmlFor="layout-editor-grid-input"
+						className={cn(
+							"inline-flex size-10 shrink-0 cursor-pointer touch-manipulation items-center justify-center rounded-md border border-input bg-transparent shadow-xs transition-colors hover:bg-muted sm:h-8 sm:w-8",
+							gridDisplayVisible && "bg-muted",
+							"has-focus-visible:outline-none has-focus-visible:ring-2 has-focus-visible:ring-ring/55",
+						)}
+						title={
+							nativeTitleHints
+								? gridDisplayVisible
+									? lb.gridDisplayToggleHideHint
+									: lb.gridDisplayToggleShowHint
+								: undefined
+						}
+					>
+						<input
+							type="checkbox"
+							id="layout-editor-grid-input"
+							className="peer sr-only"
+							checked={gridDisplayVisible}
+							onChange={(event) => setGridDisplayVisible(event.target.checked)}
+							aria-label={
+								gridDisplayVisible
+									? (lb.gridDisplayToggleHideHint ?? "")
+									: (lb.gridDisplayToggleShowHint ?? "")
+							}
+						/>
+						<span className="pointer-events-none text-foreground" aria-hidden>
+							{gridDisplayVisible ? (
+								<Grid2x2Check className="size-4" aria-hidden />
+							) : (
+								<Grid2x2X className="size-4" aria-hidden />
+							)}
+						</span>
+					</label>
+					<input
+						type="range"
+						id="layout-editor-zoom-slider"
+						className="h-9 min-w-28 flex-1 touch-manipulation accent-primary sm:max-w-56"
+						min={40}
+						max={300}
+						step={5}
+						aria-label={lb.zoomSlider}
+						value={Math.round(Math.min(3, Math.max(0.4, viewport.scale)) * 100)}
+						onChange={(event) => {
+							const next = Number.parseInt(event.target.value, 10) / 100;
+							if (!Number.isFinite(next)) return;
+							setViewport((p) => ({ ...p, scale: Math.min(3, Math.max(0.4, next)) }));
+						}}
+					/>
 					<ButtonGroup>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									type="button"
-									variant="outline"
-									size="icon-lg"
-									id="layout-editor-zoom-out"
-									aria-label={lb.zoomOut}
-									onClick={() => setViewport((p) => ({ ...p, scale: Math.max(0.4, p.scale - 0.1) }))}
-								>
-									<Minus />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>{lb.zoomOut}</TooltipContent>
-						</Tooltip>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									type="button"
-									variant="outline"
-									size="icon-lg"
-									id="layout-editor-zoom-in"
-									aria-label={lb.zoomIn}
-									onClick={() => setViewport((p) => ({ ...p, scale: Math.min(3, p.scale + 0.1) }))}
-								>
-									<Plus />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>{lb.zoomIn}</TooltipContent>
-						</Tooltip>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									type="button"
-									variant="outline"
-									size="icon-lg"
-									aria-label={lb.resetView}
-									onClick={() =>
-										setViewport({ ...DEFAULT_INITIAL_VIEWPORT, ...initialViewportPartial })
-									}
-								>
-									<RotateCcw />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>{lb.resetView}</TooltipContent>
-						</Tooltip>
+						<Button
+							type="button"
+							variant="outline"
+							size="icon-lg"
+							id="layout-editor-zoom-out"
+							className="touch-manipulation"
+							aria-label={lb.zoomOut}
+							title={nativeTitleHints ? lb.zoomOut : undefined}
+							onClick={() => setViewport((p) => ({ ...p, scale: Math.max(0.4, p.scale - 0.1) }))}
+						>
+							<Minus />
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							size="icon-lg"
+							id="layout-editor-zoom-in"
+							className="touch-manipulation"
+							aria-label={lb.zoomIn}
+							title={nativeTitleHints ? lb.zoomIn : undefined}
+							onClick={() => setViewport((p) => ({ ...p, scale: Math.min(3, p.scale + 0.1) }))}
+						>
+							<Plus />
+						</Button>
+						<Button
+							type="button"
+							variant="outline"
+							size="icon-lg"
+							className="touch-manipulation"
+							aria-label={lb.resetView}
+							title={nativeTitleHints ? lb.resetView : undefined}
+							onClick={() => setViewport({ ...DEFAULT_INITIAL_VIEWPORT, ...initialViewportPartial })}
+						>
+							<RotateCcw />
+						</Button>
 					</ButtonGroup>
 					{layoutHistoryResolved ? (
 						<ButtonGroup>
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										type="button"
-										variant="outline"
-										size="icon-lg"
-										id="layout-editor-history-undo"
-										aria-label={lb.undo}
-										disabled={geometryEditFrozen || !layoutHistoryResolved.canUndo}
-										onClick={() => void layoutHistoryResolved.undo()}
-									>
-										<Undo2 />
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent>{lb.undo}</TooltipContent>
-							</Tooltip>
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										type="button"
-										variant="outline"
-										size="icon-lg"
-										aria-label={lb.redo}
-										disabled={geometryEditFrozen || !layoutHistoryResolved.canRedo}
-										onClick={() => void layoutHistoryResolved.redo()}
-									>
-										<Redo2 />
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent>{lb.redo}</TooltipContent>
-							</Tooltip>
+							<Button
+								type="button"
+								variant="outline"
+								size="icon-lg"
+								id="layout-editor-history-undo"
+								className="touch-manipulation"
+								aria-label={lb.undo}
+								title={nativeTitleHints ? lb.undo : undefined}
+								disabled={geometryEditFrozen || !layoutHistoryResolved.canUndo}
+								onClick={() => void layoutHistoryResolved.undo()}
+							>
+								<Undo2 />
+							</Button>
+							<Button
+								type="button"
+								variant="outline"
+								size="icon-lg"
+								id="layout-editor-history-redo"
+								className="touch-manipulation"
+								aria-label={lb.redo}
+								title={nativeTitleHints ? lb.redo : undefined}
+								disabled={geometryEditFrozen || !layoutHistoryResolved.canRedo}
+								onClick={() => void layoutHistoryResolved.redo()}
+							>
+								<Redo2 />
+							</Button>
 						</ButtonGroup>
 					) : null}
 				</div>
@@ -2751,6 +2818,11 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 					setActiveContextTarget(null);
 				}}
 			>
+				<div
+					data-layout-editor-pan-surface
+					aria-hidden
+					className="pointer-events-auto absolute inset-0 z-0 touch-none"
+				/>
 				<ContextMenu
 					onOpenChange={(open) => {
 						setContextMenuOpenState(toContextTarget(rootId), open);

@@ -28,6 +28,7 @@ export const DEFAULT_LABELS: SpatialLayoutEditorLabels = {
 	toolbarAutoLayout: "Auto-layout",
 	zoomOut: "Zoom out",
 	zoomIn: "Zoom in",
+	zoomSlider: "Zoom level",
 	lockLayoutToggleUnlockHint: "Layout is locked — click to move and resize items",
 	lockLayoutToggleLockHint: "Layout is editable — click to lock moving and resizing",
 	gridDisplayToggleShowHint: "Show layout grid",
