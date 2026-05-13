@@ -36,18 +36,20 @@ export function TableGlobalSearch({
 				clearAriaLabel={clearSearchLabel}
 				aria-label={searchPlaceholder}
 			/>
-			<ButtonTooltip label={clearFiltersLabel}>
-				<Button
-					type="button"
-					variant="outline"
-					size="icon"
-					onClick={onClearFilters}
-					aria-label={clearFiltersLabel}
-				>
-					<XIcon />
-				</Button>
-			</ButtonTooltip>
-			{trailingActions}
+			<div className="flex shrink-0 flex-wrap items-end gap-2">
+				<ButtonTooltip label={clearFiltersLabel}>
+					<Button
+						type="button"
+						variant="outline"
+						size="icon"
+						onClick={onClearFilters}
+						aria-label={clearFiltersLabel}
+					>
+						<XIcon />
+					</Button>
+				</ButtonTooltip>
+				{trailingActions}
+			</div>
 		</div>
 	);
 }
