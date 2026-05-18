@@ -60,22 +60,23 @@ export const DEFAULT_LABELS: SpatialLayoutEditorLabels = {
 export function defaultGetRootShellClassName(root: SpatialLayoutNode, state: SpatialLayoutRootVisualState): string {
 	void root;
 	if (state.contextActive) return "border-primary";
-	if (state.dropTarget) return "border-amber-600 animate-pulse";
-	return "border-primary/30";
+	if (state.dropTarget) return "border-spatial-layout-drop-target animate-pulse";
+	if (state.nodeRelatedActionFormHost) return "border-spatial-layout-form-host";
+	return "border-spatial-layout-root";
 }
 
 /** Default node frame: `box-border` keeps the stroke inside the laid-out rect (grid-aligned outer edge). */
 export function defaultGetNodeShellClassName(node: SpatialLayoutNode, state: SpatialLayoutNodeVisualState): string {
 	void node;
 	const borderColor = state.invalidDrag
-		? "border-red-500"
+		? "border-spatial-layout-invalid"
 		: state.collisionTarget
-			? "border-red-800"
+			? "border-spatial-layout-collision"
 			: state.contextActive
-				? "border-teal-500"
+				? "border-spatial-layout-context"
 				: state.dropTarget
-					? "border-amber-600 animate-pulse"
-					: "border-primary/60";
+					? "border-spatial-layout-drop-target animate-pulse"
+					: "border-spatial-layout-node";
 	return `box-border absolute cursor-move overflow-visible bg-muted/50 text-xs border-2 border-solid transition-colors ${borderColor}`;
 }
 
@@ -86,31 +87,36 @@ export function defaultGetNodeDraftShellClassName(
 ): string {
 	void node;
 	void state;
-	return "!border-cyan-500 !border-dashed !bg-cyan-500/10";
+	return "!border-spatial-layout-draft !border-dashed !bg-spatial-layout-draft-fill";
 }
 
-/** Extra border treatment for create-many template draft node. */
-export function defaultGetNodeDraftTemplateShellClassName(
+/** Border for a node that hosts an inline placement form (create many, …). */
+export function defaultGetNodeRelatedActionFormHostShellClassName(
 	node: SpatialLayoutNode,
 	state: SpatialLayoutNodeVisualState,
 ): string {
 	void node;
 	void state;
-	return "!border-blue-500 !border-dashed !bg-blue-500/10";
+	return "!border-spatial-layout-form-host !border-dashed !bg-spatial-layout-form-host-fill";
 }
+
+/** @deprecated Use {@link defaultGetNodeRelatedActionFormHostShellClassName}. */
+export const defaultGetNodeDraftTemplateShellClassName = defaultGetNodeRelatedActionFormHostShellClassName;
 
 /** Default Tailwind/class hooks for `SpatialLayoutEditor` (merge with `classNames` prop). */
 export const DEFAULT_CLASS_NAMES: SpatialLayoutEditorClassNames = {
 	viewport: "relative min-h-[420px] border rounded-md bg-muted/25 overflow-hidden",
-	interactionGhost: "absolute pointer-events-none border-2 border-dashed border-slate-500/70 bg-slate-300/10",
+	interactionGhost:
+		"absolute pointer-events-none border-2 border-dashed border-spatial-layout-ghost bg-spatial-layout-ghost-fill",
 	rootResizeHandle:
 		"absolute right-0 bottom-0 z-20 h-4 w-4 cursor-se-resize border border-primary-foreground bg-primary",
 	nodeResizeHandle:
 		"absolute right-0 bottom-0 z-20 h-3 w-3 cursor-se-resize border border-primary-foreground bg-primary",
 	nodeContent: "relative z-0 box-border h-full min-h-0 p-1 pr-4 pb-4",
-	nodeHighlight: "ring-1 ring-amber-300/70 animate-pulse",
+	nodeHighlight: "ring-1 ring-spatial-layout-highlight animate-pulse",
 	nodeDraftShell: defaultGetNodeDraftShellClassName,
-	nodeDraftTemplateShell: defaultGetNodeDraftTemplateShellClassName,
+	nodeRelatedActionFormHostShell: defaultGetNodeRelatedActionFormHostShellClassName,
+	nodeDraftTemplateShell: defaultGetNodeRelatedActionFormHostShellClassName,
 	rootShell: defaultGetRootShellClassName,
 	nodeShell: defaultGetNodeShellClassName,
 };

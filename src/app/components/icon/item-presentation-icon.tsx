@@ -5,9 +5,12 @@ import { cn } from "@/lib/utils";
 export function ItemPresentationIcon({
 	presentation,
 	className,
+	variant = "badge",
 }: {
 	presentation?: ItemPresentationValueObject | null;
 	className?: string;
+	/** `badge` = bordered tile (lists, forms). `inline` = icon color only (e.g. layout canvas nodes). */
+	variant?: "badge" | "inline";
 }) {
 	if (!presentation) return null;
 
@@ -17,6 +20,20 @@ export function ItemPresentationIcon({
 					className: "size-5 shrink-0",
 				})
 			: null;
+
+	if (variant === "inline") {
+		if (!iconNode) return null;
+		return (
+			<span
+				data-slot="item-presentation-icon"
+				className={cn("inline-flex shrink-0 items-center justify-center [&>svg]:block [&>svg]:shrink-0", className)}
+				style={{ color: presentation.iconColor?.trim() || undefined }}
+				aria-hidden
+			>
+				{iconNode}
+			</span>
+		);
+	}
 
 	const hasCustomBg = Boolean(presentation.backgroundColor?.trim());
 

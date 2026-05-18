@@ -45,6 +45,8 @@ export type SpatialLayoutViewportState = {
 export type SpatialLayoutRootVisualState = {
 	contextActive: boolean;
 	dropTarget: boolean;
+	/** Canvas root hosts an inline placement form (create many, create, duplicate, …). */
+	nodeRelatedActionFormHost: boolean;
 };
 
 /** Visual/interaction flags for a node. */
@@ -53,6 +55,8 @@ export type SpatialLayoutNodeVisualState = {
 	collisionTarget: boolean;
 	contextActive: boolean;
 	dropTarget: boolean;
+	/** Node hosts an inline placement form (create many, create, duplicate, …). */
+	nodeRelatedActionFormHost: boolean;
 };
 
 export type SpatialLayoutNodePatch = {
@@ -228,7 +232,11 @@ export type SpatialLayoutEditorClassNames<TNode extends SpatialLayoutNode = Spat
 	nodeHighlight?: string;
 	/** Extra shell class for draft nodes (create, duplicate, create-many). */
 	nodeDraftShell?: (node: TNode, state: SpatialLayoutNodeVisualState) => string;
-	/** Extra shell class for the create-many template draft node. */
+	/** Extra shell when this node hosts an inline form (create many, future node actions). */
+	nodeRelatedActionFormHostShell?: (node: TNode, state: SpatialLayoutNodeVisualState) => string;
+	/**
+	 * @deprecated Use {@link SpatialLayoutEditorClassNames.nodeRelatedActionFormHostShell}.
+	 */
 	nodeDraftTemplateShell?: (node: TNode, state: SpatialLayoutNodeVisualState) => string;
 	/**
 	 * Root frame: positioning/interaction, fill, and stateful border (`border-2` draws inside `width`/`height` when using `box-border`).

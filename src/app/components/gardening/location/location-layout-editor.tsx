@@ -556,7 +556,7 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 		() => ({
 			root: cn("flex min-h-0 min-w-0 flex-1 flex-col", className),
 			viewport: "min-h-0 flex-1",
-			nodeHighlight: "ring-4 ring-amber-400/80 animate-pulse",
+			nodeHighlight: "ring-4 ring-spatial-layout-highlight animate-pulse",
 		}),
 		[className],
 	);
@@ -881,18 +881,19 @@ export function LocationLayoutEditor({ rootLocation, className, highlightLocatio
 	}, []);
 
 	const renderNodeContent = useCallback((node: LayoutNode) => {
+		const backgroundColor = node.presentation?.backgroundColor?.trim();
 		return (
 			<>
-				{node.presentation?.backgroundColor ? (
+				{backgroundColor ? (
 					<div
 						aria-hidden
 						className="pointer-events-none absolute inset-0"
-						style={{ backgroundColor: node.presentation.backgroundColor }}
+						style={{ backgroundColor }}
 					/>
 				) : null}
-				{node.nodeType === "plant" ? (
+				{node.presentation ? (
 					<div className="pointer-events-none absolute inset-0 grid place-items-center">
-						<ItemPresentationIcon presentation={node.presentation} className="size-6 border-none" />
+						<ItemPresentationIcon presentation={node.presentation} variant="inline" className="size-6" />
 					</div>
 				) : null}
 			</>

@@ -1,13 +1,14 @@
 import type { ItemPresentationValueObject } from "@backend/core/domain/gardening/value-objects";
 import { useStore } from "@tanstack/react-form";
 import { de, enUS, ru } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Copy } from "lucide-react";
 import { useEffect, useState, type ReactNode, type WheelEvent } from "react";
 import * as m from "@/paraglide/messages.js";
 import { HexAlphaColorPicker } from "react-colorful";
 import { SELECT_NONE } from "@/components/form/select-sentinel";
 import { ItemPresentationIcon } from "@/components/icon/item-presentation-icon";
 import { Button } from "@/components/ui/button";
+import { ButtonTooltip } from "@/components/ui/button-tooltip";
 import { Calendar } from "@/components/ui/calendar";
 import {
 	Combobox,
@@ -19,6 +20,7 @@ import {
 } from "@/components/ui/combobox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import * as ShadcnSelect from "@/components/ui/select";
@@ -613,20 +615,12 @@ export function ColorPicker({
 	const triggerId = `${field.form.formId}-${String(field.name)}-color-picker`;
 	const color = field.state.value.trim();
 	const [pickerOpen, setPickerOpen] = useState(false);
-	const [draftColor, setDraftColor] = useState(color);
 
 	const handlePickerOpenChange = (open: boolean) => {
-		if (open) {
-			setDraftColor(field.state.value.trim());
-		} else {
+		if (!open) {
 			field.handleBlur();
 		}
 		setPickerOpen(open);
-	};
-
-	const applyDraftColor = () => {
-		field.handleChange(draftColor);
-		handlePickerOpenChange(false);
 	};
 
 	return (
@@ -657,22 +651,36 @@ export function ColorPicker({
 				<DropdownMenuContent className="w-auto min-w-0">
 					<div className="grid gap-2 p-2">
 						<HexAlphaColorPicker
-							color={draftColor || "#000000"}
-							onChange={(next) => setDraftColor(next)}
+							color={color || "#000000"}
+							onChange={(next) => field.handleChange(next)}
 						/>
-						<Input
-							value={draftColor}
-							placeholder={placeholder}
-							onChange={(e) => setDraftColor(e.target.value)}
-						/>
-						<Button type="button" variant="outline" size="sm" className="w-fit" onClick={() => setDraftColor("")}>
-							Clear
-						</Button>
+						<InputGroup>
+							<InputGroupInput
+								value={field.state.value}
+								placeholder={placeholder}
+								onChange={(e) => field.handleChange(e.target.value)}
+							/>
+							<InputGroupAddon align="inline-end">
+								<ButtonTooltip label={m.common_copy()} disabled={!color}>
+									<InputGroupButton
+										size="icon-xs"
+										variant="ghost"
+										disabled={!color}
+										aria-label={m.common_copy()}
+										onClick={() => {
+											void navigator.clipboard.writeText(color);
+										}}
+									>
+										<Copy />
+									</InputGroupButton>
+								</ButtonTooltip>
+							</InputGroupAddon>
+						</InputGroup>
 						<div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
 							<Button type="button" variant="outline" size="sm" onClick={() => handlePickerOpenChange(false)}>
 								{m.common_cancel()}
 							</Button>
-							<Button type="button" size="sm" onClick={applyDraftColor}>
+							<Button type="button" size="sm" onClick={() => handlePickerOpenChange(false)}>
 								{m.filtering_apply()}
 							</Button>
 						</div>

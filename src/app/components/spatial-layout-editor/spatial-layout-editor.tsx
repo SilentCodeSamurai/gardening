@@ -193,17 +193,21 @@ type ViewportPanInteraction = {
 };
 
 const defaultHistoryDisabled: SpatialLayoutEditorHistoryOptions = { enabled: false };
-const WHEEL_ZOOM_SENSITIVITY = 0.0035;
-const TOUCHPAD_PINCH_ZOOM_SENSITIVITY = 0.008;
-const WHEEL_BASE_STEP_PX = 1;
-const WHEEL_SPEED_CURVE_STRENGTH = 0.75;
-const WHEEL_SMOOTHING_ALPHA = 0.35;
+/** Wheel zoom — linear in delta, no extra smoothing or speed curves. */
+const WHEEL_ZOOM_SENSITIVITY = 0.002;
+/** Block touch long-press menu that Radix may still fire after a pan (~700ms). */
+const CONTEXT_MENU_TOUCH_SUPPRESS_AFTER_PAN_MS = 720;
+/** Staged placement drafts above committed nodes; controls hosts above labels (9000). */
+const LAYOUT_EDITOR_DRAFT_NODE_Z_BASE = 8000;
+const LAYOUT_EDITOR_DRAFT_CONTROLS_Z = 9100;
 
 type SpatialLayoutEditorResolvedClassNames<TNode extends SpatialLayoutNode> = SpatialLayoutEditorClassNames<TNode> & {
 	rootShell: NonNullable<SpatialLayoutEditorClassNames<TNode>["rootShell"]>;
 	nodeShell: NonNullable<SpatialLayoutEditorClassNames<TNode>["nodeShell"]>;
 	nodeDraftShell: NonNullable<SpatialLayoutEditorClassNames<TNode>["nodeDraftShell"]>;
-	nodeDraftTemplateShell: NonNullable<SpatialLayoutEditorClassNames<TNode>["nodeDraftTemplateShell"]>;
+	nodeRelatedActionFormHostShell: NonNullable<
+		SpatialLayoutEditorClassNames<TNode>["nodeRelatedActionFormHostShell"]
+	>;
 };
 
 export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLayoutNode>(
@@ -256,15 +260,18 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 		columns: lb.autoLayoutGroupLabels?.columns ?? "Columns",
 	};
 
-	const cc = useMemo(
-		() =>
-			({
-				...DEFAULT_CLASS_NAMES,
-				...classNamesIn,
-				viewport: cn(DEFAULT_CLASS_NAMES.viewport, classNamesIn.viewport),
-			}) as SpatialLayoutEditorResolvedClassNames<TNode>,
-		[classNamesIn],
-	);
+	const cc = useMemo(() => {
+		const nodeRelatedActionFormHostShell =
+			classNamesIn.nodeRelatedActionFormHostShell ??
+			classNamesIn.nodeDraftTemplateShell ??
+			DEFAULT_CLASS_NAMES.nodeRelatedActionFormHostShell;
+		return {
+			...DEFAULT_CLASS_NAMES,
+			...classNamesIn,
+			viewport: cn(DEFAULT_CLASS_NAMES.viewport, classNamesIn.viewport),
+			nodeRelatedActionFormHostShell,
+		} as SpatialLayoutEditorResolvedClassNames<TNode>;
+	}, [classNamesIn]);
 
 	const buildHostContextMenuSlices = useCallback(
 		(node: TNode, includeLayout: boolean): ReactNode => {
@@ -302,6 +309,19 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 	}));
 	const suppressNextContextMenuRef = useRef(false);
 	const suppressContextMenusUntilMsRef = useRef(0);
+	const suppressContextMenuAfterViewportPan = useCallback((pan: ViewportPanInteraction) => {
+		if (!pan.moved) return;
+		if (pan.pointerType === "mouse") {
+			// Left-drag pan: no suppression — user should open the menu immediately after.
+			// Right-drag pan: block the spurious `contextmenu` on pointer up only.
+			if (pan.button === 2) {
+				suppressNextContextMenuRef.current = true;
+			}
+			return;
+		}
+		suppressNextContextMenuRef.current = true;
+		suppressContextMenusUntilMsRef.current = performance.now() + CONTEXT_MENU_TOUCH_SUPPRESS_AFTER_PAN_MS;
+	}, []);
 	const endViewportPanRef = useRef<(() => void) | null>(null);
 	const viewportStateRef = useRef(viewport);
 	viewportStateRef.current = viewport;
@@ -313,17 +333,14 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 	const webkitGesturePendingRef = useRef<{ cx: number; cy: number; nextScale: number } | null>(null);
 	const cancelViewportPanForPinch = useCallback(() => {
 		const pan = viewportPanInteractionRef.current;
-		if (pan?.moved) {
-			suppressNextContextMenuRef.current = true;
-			suppressContextMenusUntilMsRef.current = performance.now() + 800;
-		}
+		if (pan) suppressContextMenuAfterViewportPan(pan);
 		const el = viewportRef.current;
 		if (el && pan && el.hasPointerCapture(pan.pointerId)) {
 			el.releasePointerCapture(pan.pointerId);
 		}
 		setViewportPanInteraction(null);
 		setIsViewportPanning(false);
-	}, []);
+	}, [suppressContextMenuAfterViewportPan]);
 
 	// Touch / pen: do not use pointer capture on the viewport (it steals pointermove from Radix
 	// ContextMenuTrigger, so the 700ms long-press timer never clears and the menu opens after a pan).
@@ -365,8 +382,6 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 			window.removeEventListener("pointercancel", onEnd);
 		};
 	}, [viewportPanInteraction?.pointerId, viewportPanInteraction?.pointerType]);
-
-	const wheelSmoothedDeltaRef = useRef(0);
 
 	// Local geometry during drag/resize (uncommitted until persist).
 	const [drafts, setDrafts] = useState<Record<string, DraftRect>>({});
@@ -457,10 +472,12 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 		() => (createManyPlacement ? new Set(createManyPlacement.nodes.map((n) => String(n.id))) : new Set<string>()),
 		[createManyPlacement],
 	);
-	const createManyTemplateNodeId = useMemo(
-		() => (createManyPlacement?.nodes[0] ? String(createManyPlacement.nodes[0].id) : null),
-		[createManyPlacement],
-	);
+	/** Node (or root id) that currently anchors the inline placement form. */
+	const nodeRelatedActionFormHostId = useMemo((): string | null => {
+		if (createManyPlacement) return createManyPlacement.parentId;
+		if (activePlacement && placementNodeId) return placementNodeId;
+		return null;
+	}, [activePlacement, createManyPlacement, placementNodeId]);
 	const primaryTourNodeId = useMemo(
 		() => (effectiveNodes.length > 0 ? String(effectiveNodes[0]?.id ?? "") : null),
 		[effectiveNodes],
@@ -1310,8 +1327,9 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 		(): SpatialLayoutRootVisualState => ({
 			contextActive: activeContextTarget === toContextTarget(rootId),
 			dropTarget: dropTargetFrameId === rootId,
+			nodeRelatedActionFormHost: nodeRelatedActionFormHostId === rootId,
 		}),
-		[activeContextTarget, dropTargetFrameId, rootId, toContextTarget],
+		[activeContextTarget, dropTargetFrameId, nodeRelatedActionFormHostId, rootId, toContextTarget],
 	);
 
 	const getNodeVisualState = useCallback(
@@ -1320,8 +1338,15 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 			collisionTarget: collisionTargetKeySet.has(`node:${node.id}`),
 			contextActive: activeContextTarget === `node:${node.id}`,
 			dropTarget: node.acceptsChildren && dropTargetFrameId === String(node.id),
+			nodeRelatedActionFormHost: nodeRelatedActionFormHostId === String(node.id),
 		}),
-		[activeContextTarget, collisionTargetKeySet, dropTargetFrameId, invalidDragObject],
+		[
+			activeContextTarget,
+			collisionTargetKeySet,
+			dropTargetFrameId,
+			invalidDragObject,
+			nodeRelatedActionFormHostId,
+		],
 	);
 
 	// World / canvas rectangles: committed layout plus optional draft overlay per node.
@@ -1331,6 +1356,48 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 
 	function getFrameDepthFor(frameId: string): number {
 		return computeFrameDepth(frameId, nodeById, root.id);
+	}
+
+	function resolveNodeShellZIndex(args: {
+		depthKey: string;
+		acceptsChildren: boolean;
+		isDraftNode: boolean;
+		isCreateManyDraft: boolean;
+	}): number {
+		const depthLayer =
+			getFrameDepthFor(args.depthKey) * 10 + (args.acceptsChildren ? 0 : 5);
+		// Entire create-many pack above committed siblings (parent shell must not take this band).
+		if (args.isCreateManyDraft) return LAYOUT_EDITOR_DRAFT_NODE_Z_BASE + 1000 + depthLayer;
+		if (args.isDraftNode) return LAYOUT_EDITOR_DRAFT_NODE_Z_BASE + depthLayer;
+		return 10 + depthLayer;
+	}
+
+	function resolveDraftControlsAnchor(parentId: string): { left: number; top: number; width: number } | null {
+		if (parentId === String(root.id)) {
+			const width = rootDraft?.width ?? root.geometry.width;
+			const height = rootDraft?.height ?? root.geometry.height;
+			return { left: 0, top: height + 8, width };
+		}
+		const parent = nodeById.get(parentId) ?? effectiveNodes.find((n) => String(n.id) === parentId);
+		if (!parent) return null;
+		const rect = getNodeCanvasRect(parent);
+		return { left: rect.x, top: rect.y + rect.height + 8, width: rect.width };
+	}
+
+	function renderDraftControlsOverlay(anchor: { left: number; top: number; width: number }, children: ReactNode): ReactNode {
+		return (
+			<div
+				className="pointer-events-none absolute flex justify-center px-1"
+				style={{
+					zIndex: LAYOUT_EDITOR_DRAFT_CONTROLS_Z,
+					left: anchor.left,
+					top: anchor.top,
+					width: anchor.width,
+				}}
+			>
+				<div className="pointer-events-auto w-fit min-w-0 max-w-full">{children}</div>
+			</div>
+		);
 	}
 
 	function getFrameNodeRect(node: TNode): DraftRect {
@@ -1476,32 +1543,38 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 		return event.pointerType !== "mouse" || event.button === 0;
 	}
 
+	function normalizeWheelDelta(event: ReactWheelEvent<HTMLDivElement>): { dx: number; dy: number } {
+		const unit =
+			event.deltaMode === WheelEvent.DOM_DELTA_LINE
+				? 16
+				: event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+					? 80
+					: 1;
+		return { dx: event.deltaX * unit, dy: event.deltaY * unit };
+	}
+
 	function handleViewportWheel(event: ReactWheelEvent<HTMLDivElement>): void {
 		event.preventDefault();
+		const { dx, dy } = normalizeWheelDelta(event);
+
 		if (event.shiftKey) {
-			wheelSmoothedDeltaRef.current = 0;
+			let panX = dx;
+			let panY = dy;
+			if (dx === 0 && dy !== 0) {
+				panX = dy;
+				panY = 0;
+			}
+			if (panX === 0 && panY === 0) return;
 			setViewport((prev) => ({
 				...prev,
-				x: prev.x - event.deltaX,
-				y: prev.y - event.deltaY,
+				x: prev.x - panX,
+				y: prev.y - panY,
 			}));
 			return;
 		}
-		const normalizedDeltaY =
-			event.deltaMode === WheelEvent.DOM_DELTA_LINE
-				? event.deltaY * 16
-				: event.deltaMode === WheelEvent.DOM_DELTA_PAGE
-					? event.deltaY * 80
-					: event.deltaY;
-		if (normalizedDeltaY === 0) return;
-		const direction = Math.sign(normalizedDeltaY);
-		const curvedMagnitude = WHEEL_BASE_STEP_PX + Math.abs(normalizedDeltaY) ** 0.85 * WHEEL_SPEED_CURVE_STRENGTH;
-		const curvedDeltaY = direction * curvedMagnitude;
-		const smoothedDeltaY =
-			wheelSmoothedDeltaRef.current * (1 - WHEEL_SMOOTHING_ALPHA) + curvedDeltaY * WHEEL_SMOOTHING_ALPHA;
-		wheelSmoothedDeltaRef.current = smoothedDeltaY;
-		const zoomSensitivity = event.ctrlKey ? TOUCHPAD_PINCH_ZOOM_SENSITIVITY : WHEEL_ZOOM_SENSITIVITY;
-		const zoomFactor = Math.exp(-smoothedDeltaY * zoomSensitivity);
+
+		if (dy === 0) return;
+		const zoomFactor = Math.exp(-dy * WHEEL_ZOOM_SENSITIVITY);
 		zoomViewportAtClientPoint(event.clientX, event.clientY, (prevScale) => prevScale * zoomFactor);
 	}
 
@@ -2077,10 +2150,8 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 	}
 
 	function endViewportPan(): void {
-		if (viewportPanInteractionRef.current?.moved) {
-			suppressNextContextMenuRef.current = true;
-			suppressContextMenusUntilMsRef.current = performance.now() + 800;
-		}
+		const pan = viewportPanInteractionRef.current;
+		if (pan) suppressContextMenuAfterViewportPan(pan);
 		setViewportPanInteraction(null);
 		setIsViewportPanning(false);
 	}
@@ -2608,8 +2679,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 		);
 	}
 
-	function renderCreateManyPlacementForm(parentId: string, positionClassName = "top-[calc(100%+8px)]") {
-		if (createManyPlacement?.parentId !== parentId) return null;
+	function renderCreateManyPlacementFormContent(): ReactNode {
 		const selectedLayoutOption =
 			AUTO_LAYOUT_OPTIONS.find((opt) => opt.id === createManyForm.layoutMode) ?? AUTO_LAYOUT_OPTIONS[0];
 		const SelectedLayoutIcon = selectedLayoutOption.icon;
@@ -2636,11 +2706,10 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 				);
 			});
 		return (
-			<div className={cn("absolute left-0 w-full px-1", positionClassName)}>
-				<Card
-					className="mx-auto max-w-[min(100%,28rem)] bg-background/95 shadow-sm"
-					onPointerDown={(event) => event.stopPropagation()}
-				>
+			<Card
+				className="mx-auto max-w-[min(100%,28rem)] bg-background/95 shadow-sm"
+				onPointerDown={(event) => event.stopPropagation()}
+			>
 					<div className="flex flex-col gap-2">
 						<div className="grid gap-2">
 							<div className="grid gap-1">
@@ -2753,8 +2822,75 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 							</Button>
 						</div>
 					</div>
-				</Card>
-			</div>
+			</Card>
+		);
+	}
+
+	function renderCreateManyPlacementFormOverlay(): ReactNode {
+		if (!createManyPlacement) return null;
+		const anchor = resolveDraftControlsAnchor(createManyPlacement.parentId);
+		if (!anchor) return null;
+		return renderDraftControlsOverlay(anchor, renderCreateManyPlacementFormContent());
+	}
+
+	function renderSinglePlacementControlsOverlay(): ReactNode {
+		if (!activePlacement || createManyPlacement || !placementNodeId) return null;
+		const anchor = resolveDraftControlsAnchor(placementNodeId);
+		if (!anchor) return null;
+		return renderDraftControlsOverlay(
+			anchor,
+			<div className="mx-auto w-fit rounded-md border bg-background/95 p-1 shadow-sm">
+				<ButtonGroup>
+					<Button
+						size="sm"
+						variant="secondary"
+						className="h-7 px-2"
+						onPointerDown={(event) => event.stopPropagation()}
+						onClick={(event) => {
+							event.stopPropagation();
+							if (activePlacement.kind === "create") setCreatePlacement(null);
+							else if (activePlacement.kind === "duplicate") setDuplicatePlacement(null);
+							else placementCandidate?.onCancel();
+						}}
+					>
+						{lb.cancelPlacement}
+					</Button>
+					<Button
+						size="sm"
+						className="h-7 px-2"
+						disabled={!isCreatePlacementValid}
+						onPointerDown={(event) => event.stopPropagation()}
+						onClick={(event) => {
+							event.stopPropagation();
+							if (!activePlacement) return;
+							if (activePlacement.kind === "create") {
+								const result = onCreatePlacementConfirm?.({
+									optionId: createPlacement?.optionId ?? "",
+									node: activePlacement.node,
+									parent: nodeById.get(createPlacement?.parentId ?? "") ?? root,
+								});
+								void Promise.resolve(result).finally(() => {
+									setCreatePlacement(null);
+								});
+							} else if (activePlacement.kind === "duplicate") {
+								const result = onDuplicateNodePlacementConfirm?.({
+									sourceNode: activePlacement.source,
+									duplicateNode: activePlacement.node,
+								});
+								void Promise.resolve(result).finally(() => {
+									setDuplicatePlacement(null);
+								});
+							} else {
+								void Promise.resolve(resolvedPlacementCandidate?.onConfirm(activePlacement.node));
+							}
+						}}
+					>
+						{activePlacement.kind === "duplicate"
+							? duplicateConfirmLabelResolved
+							: lb.confirmPlacement}
+					</Button>
+				</ButtonGroup>
+			</div>,
 		);
 	}
 
@@ -3004,7 +3140,7 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 					width: "100%",
 					...(gridDisplayVisible ? viewportWorldGridBackground : {}),
 					backgroundImage: gridDisplayVisible
-						? "linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.08) 1px, transparent 1px)"
+						? "linear-gradient(to right, var(--spatial-layout-grid-line) 1px, transparent 1px), linear-gradient(to bottom, var(--spatial-layout-grid-line) 1px, transparent 1px)"
 						: "none",
 					cursor: isViewportPanning ? "grabbing" : geometryEditFrozen ? "default" : "grab",
 					touchAction: "none",
@@ -3059,6 +3195,9 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 									cc.rootShell(root, rootVisualState),
 								)}
 							/>
+							<div className={cn(cc.nodeContent, "pointer-events-none absolute inset-0 z-1")}>
+								{renderNodeContent(root, getNodeVisualState(root))}
+							</div>
 							{renderInteractionGhosts()}
 							{geometryEditFrozen ? null : (
 								<div
@@ -3067,7 +3206,6 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 									onPointerDown={startResizeRoot}
 								/>
 							)}
-							{renderCreateManyPlacementForm(rootId)}
 							{effectiveNodes.map((node) => {
 								const nodeId = String(node.id);
 								const nodeTarget = toContextTarget(nodeId);
@@ -3076,12 +3214,17 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 									nodeId === placementNodeId ||
 									createManyIds.has(String(nodeId)) ||
 									placementCompanionIds.has(nodeId);
-								const isTemplateDraftNode = createManyTemplateNodeId === nodeId;
+								const isCreateManyDraft = createManyIds.has(nodeId);
 								const rect = getNodeCanvasRect(node);
 								const w = activeDrafts[nodeId]?.width ?? node.geometry.width;
 								const h = activeDrafts[nodeId]?.height ?? node.geometry.height;
 								const depthKey = String(node.acceptsChildren ? node.id : (node.parentId ?? root.id));
-								const zIndex = 10 + getFrameDepthFor(depthKey) * 10 + (node.acceptsChildren ? 0 : 5);
+								const zIndex = resolveNodeShellZIndex({
+									depthKey,
+									acceptsChildren: node.acceptsChildren,
+									isDraftNode,
+									isCreateManyDraft,
+								});
 
 								return (
 									<ContextMenu
@@ -3100,8 +3243,8 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 													cc.nodeShell(node, vis),
 													activeHighlightNodeId === nodeId ? cc.nodeHighlight : undefined,
 													isDraftNode ? cc.nodeDraftShell(node, vis) : undefined,
-													isTemplateDraftNode
-														? cc.nodeDraftTemplateShell(node, vis)
+													vis.nodeRelatedActionFormHost
+														? cc.nodeRelatedActionFormHostShell(node, vis)
 														: undefined,
 													geometryEditFrozen ? "cursor-default!" : null,
 												)}
@@ -3126,91 +3269,6 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 											>
 												<div className={cn(cc.nodeContent)}>
 													{renderNodeContent(node, vis)}
-													{placementNodeId === nodeId && activePlacement ? (
-														<div className="pointer-events-none absolute top-[calc(100%+8px)] left-0 z-20 w-full">
-															<div className="pointer-events-auto mx-auto w-fit rounded-md border bg-background/95 p-1 shadow-sm">
-																<ButtonGroup>
-																	<Button
-																		size="sm"
-																		variant="secondary"
-																		className="h-7 px-2"
-																		onPointerDown={(event) =>
-																			event.stopPropagation()
-																		}
-																		onClick={(event) => {
-																			event.stopPropagation();
-																			if (activePlacement.kind === "create")
-																				setCreatePlacement(null);
-																			else if (
-																				activePlacement.kind === "duplicate"
-																			)
-																				setDuplicatePlacement(null);
-																			else placementCandidate?.onCancel();
-																		}}
-																	>
-																		{lb.cancelPlacement}
-																	</Button>
-																	<Button
-																		size="sm"
-																		className="h-7 px-2"
-																		disabled={!isCreatePlacementValid}
-																		onPointerDown={(event) =>
-																			event.stopPropagation()
-																		}
-																		onClick={(event) => {
-																			event.stopPropagation();
-																			if (!activePlacement) return;
-																			if (activePlacement.kind === "create") {
-																				const result =
-																					onCreatePlacementConfirm?.({
-																						optionId:
-																							createPlacement?.optionId ??
-																							"",
-																						node: activePlacement.node,
-																						parent:
-																							nodeById.get(
-																								createPlacement?.parentId ??
-																									"",
-																							) ?? root,
-																					});
-																				void Promise.resolve(result).finally(
-																					() => {
-																						setCreatePlacement(null);
-																					},
-																				);
-																			} else if (
-																				activePlacement.kind === "duplicate"
-																			) {
-																				const result =
-																					onDuplicateNodePlacementConfirm?.({
-																						sourceNode:
-																							activePlacement.source,
-																						duplicateNode:
-																							activePlacement.node,
-																					});
-																				void Promise.resolve(result).finally(
-																					() => {
-																						setDuplicatePlacement(null);
-																					},
-																				);
-																			} else {
-																				void Promise.resolve(
-																					resolvedPlacementCandidate?.onConfirm(
-																						activePlacement.node,
-																					),
-																				);
-																			}
-																		}}
-																	>
-																		{activePlacement.kind === "duplicate"
-																			? duplicateConfirmLabelResolved
-																			: lb.confirmPlacement}
-																	</Button>
-																</ButtonGroup>
-															</div>
-														</div>
-													) : null}
-													{renderCreateManyPlacementForm(nodeId)}
 													{geometryEditFrozen ||
 													(activePlacement?.kind === "external" &&
 														placementCompanionIds.has(nodeId)) ? null : (
@@ -3385,6 +3443,29 @@ export function SpatialLayoutEditor<TNode extends SpatialLayoutNode = SpatialLay
 									</ContextMenu>
 								);
 							})}
+							{renderCreateManyPlacementFormOverlay()}
+							{renderSinglePlacementControlsOverlay()}
+							{(() => {
+								const rootVis = getNodeVisualState(root);
+								const rootW = rootDraft?.width ?? root.geometry.width;
+								const rootLabelEl = renderNodeLabel(root, rootVis);
+								if (rootLabelEl == null) return null;
+								return (
+									<div
+										key={`spatial-node-label-${rootId}`}
+										className="pointer-events-none absolute min-w-0"
+										style={{
+											zIndex: 9000,
+											left: rootW / 2,
+											top: "-1.25rem",
+											transform: "translateX(-50%)",
+											maxWidth: Math.max(48, rootW * 1.4 - 8),
+										}}
+									>
+										{rootLabelEl}
+									</div>
+								);
+							})()}
 							{effectiveNodes.map((node) => {
 								const nodeId = String(node.id);
 								const vis = getNodeVisualState(node);
